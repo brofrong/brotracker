@@ -1,0 +1,199 @@
+<select id="fs-main" name="f[]" multiple="multiple" size="18">
+<option id="fs--1" value="-1">&nbsp;Все имеющиеся</option>
+<optgroup label="&nbsp;Новости">
+	<option id="fs-196" value="196" class="root_forum has_sf">🎅 НОВОГОДНИЙ РАЗДЕЛ 🎄&nbsp;</option>
+	<option id="fs-1298" value="1298" class="fp-196"> |- Фильмы. Мультфильмы. Сериалы. Спектакли [НГ]&nbsp;</option>
+	<option id="fs-674" value="674" class="fp-196"> |- Развлекательные передачи. Документальные фильмы [НГ]&nbsp;</option>
+	<option id="fs-823" value="823" class="fp-196"> |- Музыка [НГ]&nbsp;</option>
+	<option id="fs-1694" value="1694" class="fp-196"> |- Музыкальное видео [НГ]&nbsp;</option>
+	<option id="fs-972" value="972" class="fp-196"> |- Книги. Журналы. Ноты [НГ]&nbsp;</option>
+	<option id="fs-1006" value="1006" class="fp-196"> |- Аудиокниги [НГ]&nbsp;</option>
+	<option id="fs-1243" value="1243" class="fp-196"> |- Игры для Windows [НГ]&nbsp;</option>
+	<option id="fs-776" value="776" class="fp-196"> |- Разное (открытки, обои, картинки, видео и пр.) [НГ]&nbsp;</option>
+	<option id="fs-1246" value="1246" class="root_forum">GENERATION.TORRENT - Музыкальный конкурс&nbsp;</option>
+	<option id="fs-1289" value="1289" class="root_forum has_sf">Rutracker Awards (мероприятия и конкурсы)&nbsp;</option>
+	<option id="fs-2214" value="2214" class="fp-1289"> |- Rutracker Awards (Раздачи)&nbsp;</option>
+</optgroup>
+<optgroup label="&nbsp;Кино, Видео и ТВ">
+	<option id="fs-22" value="22" class="root_forum has_sf">Наше кино&nbsp;</option>
+	<option id="fs-941" value="941" class="fp-22"> |- Кино СССР&nbsp;</option>
+	<option id="fs-1666" value="1666" class="fp-22"> |- Детские отечественные фильмы&nbsp;</option>
+	<option id="fs-376" value="376" class="fp-22"> |- Авторские дебюты&nbsp;</option>
+	<option id="fs-106" value="106" class="fp-22"> |- Фильмы России и СССР на национальных языках [без перевода]&nbsp;</option>
+	<option id="fs-7" value="7" class="root_forum has_sf">Зарубежное кино&nbsp;</option>
+	<option id="fs-187" value="187" class="fp-7"> |- Классика мирового кинематографа&nbsp;</option>
+	<option id="fs-2090" value="2090" class="fp-7"> |- Фильмы до 1990 года&nbsp;</option>
+	<option id="fs-2221" value="2221" class="fp-7"> |- Фильмы 1991-2000&nbsp;</option>
+	<option id="fs-2091" value="2091" class="fp-7"> |- Фильмы 2001-2005&nbsp;</option>
+	<option id="fs-2092" value="2092" class="fp-7"> |- Фильмы 2006-2010&nbsp;</option>
+	<option id="fs-2093" value="2093" class="fp-7"> |- Фильмы 2011-2015&nbsp;</option>
+	<option id="fs-2200" value="2200" class="fp-7"> |- Фильмы 2016-2020&nbsp;</option>
+	<option id="fs-1950" value="1950" class="fp-7"> |- Фильмы 2021-2024&nbsp;</option>
+	<option id="fs-252" value="252" class="fp-7"> |- Фильмы 2025&nbsp;</option>
+	<option id="fs-2540" value="2540" class="fp-7"> |- Фильмы ближнего зарубежья&nbsp;</option>
+	<option id="fs-934" value="934" class="fp-7"> |- Азиатские фильмы&nbsp;</option>
+	<option id="fs-505" value="505" class="fp-7"> |- Индийское кино&nbsp;</option>
+	<option id="fs-212" value="212" class="fp-7"> |- Сборники фильмов&nbsp;</option>
+	<option id="fs-2459" value="2459" class="fp-7"> |- Короткий метр&nbsp;</option>
+	<option id="fs-1235" value="1235" class="fp-7"> |- Грайндхаус&nbsp;</option>
+	<option id="fs-166" value="166" class="fp-7"> |- Зарубежные фильмы без перевода&nbsp;</option>
+	<option id="fs-185" value="185" class="fp-7"> |- Звуковые дорожки и Переводы&nbsp;</option>
+	<option id="fs-124" value="124" class="root_forum has_sf">Арт-хаус и авторское кино&nbsp;</option>
+	<option id="fs-1543" value="1543" class="fp-124"> |- Короткий метр (Арт-хаус и авторское кино)&nbsp;</option>
+	<option id="fs-709" value="709" class="fp-124"> |- Документальные фильмы (Арт-хаус и авторское кино)&nbsp;</option>
+	<option id="fs-1577" value="1577" class="fp-124"> |- Анимация (Арт-хаус и авторское кино)&nbsp;</option>
+	<option id="fs-511" value="511" class="root_forum has_sf">Театр&nbsp;</option>
+	<option id="fs-1493" value="1493" class="fp-511"> |- Спектакли без перевода&nbsp;</option>
+	<option id="fs-93" value="93" class="root_forum has_sf">DVD Video&nbsp;</option>
+	<option id="fs-905" value="905" class="fp-93"> |- Классика мирового кинематографа (DVD Video)&nbsp;</option>
+	<option id="fs-101" value="101" class="fp-93"> |- Зарубежное кино (DVD Video)&nbsp;</option>
+	<option id="fs-100" value="100" class="fp-93"> |- Наше кино (DVD Video)&nbsp;</option>
+	<option id="fs-877" value="877" class="fp-93"> |- Фильмы Ближнего Зарубежья (DVD Video)&nbsp;</option>
+	<option id="fs-1576" value="1576" class="fp-93"> |- Азиатские фильмы (DVD Video)&nbsp;</option>
+	<option id="fs-572" value="572" class="fp-93"> |- Арт-хаус и авторское кино (DVD Video)&nbsp;</option>
+	<option id="fs-2220" value="2220" class="fp-93"> |- Индийское кино (DVD Video)&nbsp;</option>
+	<option id="fs-1670" value="1670" class="fp-93"> |- Грайндхаус (DVD Video)&nbsp;</option>
+	<option id="fs-2198" value="2198" class="root_forum has_sf">HD Video&nbsp;</option>
+	<option id="fs-2199" value="2199" class="fp-2198"> |- Классика мирового кинематографа (HD Video)&nbsp;</option>
+	<option id="fs-313" value="313" class="fp-2198"> |- Зарубежное кино (HD Video)&nbsp;</option>
+	<option id="fs-312" value="312" class="fp-2198"> |- Наше кино (HD Video)&nbsp;</option>
+	<option id="fs-1247" value="1247" class="fp-2198"> |- Фильмы Ближнего Зарубежья (HD Video)&nbsp;</option>
+	<option id="fs-2201" value="2201" class="fp-2198"> |- Азиатские фильмы (HD Video)&nbsp;</option>
+	<option id="fs-2339" value="2339" class="fp-2198"> |- Арт-хаус и авторское кино (HD Video)&nbsp;</option>
+	<option id="fs-140" value="140" class="fp-2198"> |- Индийское кино (HD Video)&nbsp;</option>
+	<option id="fs-194" value="194" class="fp-2198"> |- Грайндхаус (HD Video)&nbsp;</option>
+	<option id="fs-718" value="718" class="root_forum has_sf">UHD Video&nbsp;</option>
+	<option id="fs-775" value="775" class="fp-718"> |- Классика мирового кинематографа (UHD Video)&nbsp;</option>
+	<option id="fs-1457" value="1457" class="fp-718"> |- Зарубежное кино (UHD Video)&nbsp;</option>
+	<option id="fs-1940" value="1940" class="fp-718"> |- Наше кино (UHD Video)&nbsp;</option>
+	<option id="fs-272" value="272" class="fp-718"> |- Азиатские фильмы (UHD Video)&nbsp;</option>
+	<option id="fs-271" value="271" class="fp-718"> |- Арт-хаус и авторское кино (UHD Video)&nbsp;</option>
+	<option id="fs-352" value="352" class="root_forum has_sf">3D/Стерео Кино, Видео, TV и Спорт&nbsp;</option>
+	<option id="fs-549" value="549" class="fp-352"> |- 3D Кинофильмы&nbsp;</option>
+	<option id="fs-1213" value="1213" class="fp-352"> |- 3D Мультфильмы&nbsp;</option>
+	<option id="fs-2109" value="2109" class="fp-352"> |- 3D Документальные фильмы&nbsp;</option>
+	<option id="fs-514" value="514" class="fp-352"> |- 3D Спорт&nbsp;</option>
+	<option id="fs-2097" value="2097" class="fp-352"> |- 3D Ролики, Музыкальное видео, Трейлеры к фильмам&nbsp;</option>
+	<option id="fs-4" value="4" class="root_forum has_sf">Мультфильмы&nbsp;</option>
+	<option id="fs-84" value="84" class="fp-4"> |- Мультфильмы (UHD Video)&nbsp;</option>
+	<option id="fs-2343" value="2343" class="fp-4"> |- Отечественные мультфильмы (HD Video)&nbsp;</option>
+	<option id="fs-930" value="930" class="fp-4"> |- Иностранные мультфильмы (HD Video)&nbsp;</option>
+	<option id="fs-2365" value="2365" class="fp-4"> |- Иностранные короткометражные мультфильмы (HD Video)&nbsp;</option>
+	<option id="fs-1900" value="1900" class="fp-4"> |- Отечественные мультфильмы (DVD)&nbsp;</option>
+	<option id="fs-2258" value="2258" class="fp-4"> |- Иностранные короткометражные мультфильмы (DVD)&nbsp;</option>
+	<option id="fs-521" value="521" class="fp-4"> |- Иностранные мультфильмы (DVD)&nbsp;</option>
+	<option id="fs-208" value="208" class="fp-4"> |- Отечественные мультфильмы&nbsp;</option>
+	<option id="fs-539" value="539" class="fp-4"> |- Отечественные полнометражные мультфильмы&nbsp;</option>
+	<option id="fs-2183" value="2183" class="fp-4"> |- Мультфильмы Ближнего Зарубежья&nbsp;</option>
+	<option id="fs-209" value="209" class="fp-4"> |- Иностранные мультфильмы&nbsp;</option>
+	<option id="fs-484" value="484" class="fp-4"> |- Иностранные короткометражные мультфильмы&nbsp;</option>
+	<option id="fs-822" value="822" class="fp-4"> |- Сборники мультфильмов&nbsp;</option>
+	<option id="fs-181" value="181" class="fp-4"> |- Мультфильмы без перевода&nbsp;</option>
+	<option id="fs-921" value="921" class="root_forum has_sf">Мультсериалы&nbsp;</option>
+	<option id="fs-815" value="815" class="fp-921"> |- Мультсериалы (SD Video)&nbsp;</option>
+	<option id="fs-816" value="816" class="fp-921"> |- Мультсериалы (DVD Video)&nbsp;</option>
+	<option id="fs-1460" value="1460" class="fp-921"> |- Мультсериалы (HD Video)&nbsp;</option>
+	<option id="fs-498" value="498" class="fp-921"> |- Мультсериалы (UHD Video)&nbsp;</option>
+	<option id="fs-33" value="33" class="root_forum has_sf">Аниме&nbsp;</option>
+	<option id="fs-1106" value="1106" class="fp-33"> |- Онгоинги (HD Video)&nbsp;</option>
+	<option id="fs-1105" value="1105" class="fp-33"> |- Аниме (HD Video)&nbsp;</option>
+	<option id="fs-599" value="599" class="fp-33"> |- Аниме (DVD Video)&nbsp;</option>
+	<option id="fs-1389" value="1389" class="fp-33"> |- Аниме (SD Video)&nbsp;</option>
+	<option id="fs-1391" value="1391" class="fp-33"> |- Аниме (плеерный подраздел)&nbsp;</option>
+	<option id="fs-2491" value="2491" class="fp-33"> |- Аниме (QC подраздел)&nbsp;</option>
+	<option id="fs-2544" value="2544" class="fp-33"> |- Ван-Пис&nbsp;</option>
+	<option id="fs-1642" value="1642" class="fp-33"> |- Гандам&nbsp;</option>
+	<option id="fs-1390" value="1390" class="fp-33"> |- Наруто&nbsp;</option>
+	<option id="fs-404" value="404" class="fp-33"> |- Покемоны&nbsp;</option>
+	<option id="fs-1277" value="1277" class="fp-33"> |- Дунхуа и Эни&nbsp;</option>
+	<option id="fs-809" value="809" class="fp-33"> |- Звуковые дорожки и Переводы (Аниме)&nbsp;</option>
+	<option id="fs-2484" value="2484" class="fp-33"> |- Артбуки и журналы (Аниме)&nbsp;</option>
+	<option id="fs-1386" value="1386" class="fp-33"> |- Обои, сканы, аватары, арт&nbsp;</option>
+	<option id="fs-1387" value="1387" class="fp-33"> |- AMV и другие ролики&nbsp;</option>
+</optgroup>
+<optgroup label="&nbsp;Сериалы">
+	<option id="fs-9" value="9" class="root_forum has_sf">Русские сериалы&nbsp;</option>
+	<option id="fs-81" value="81" class="fp-9"> |- Русские сериалы (HD Video)&nbsp;</option>
+	<option id="fs-920" value="920" class="fp-9"> |- Русские сериалы (DVD Video)&nbsp;</option>
+	<option id="fs-80" value="80" class="fp-9"> |- Сельский детектив&nbsp;</option>
+	<option id="fs-1535" value="1535" class="fp-9"> |- По законам военного времени&nbsp;</option>
+	<option id="fs-188" value="188" class="fp-9"> |- Московские тайны&nbsp;</option>
+	<option id="fs-91" value="91" class="fp-9"> |- Я знаю твои секреты&nbsp;</option>
+	<option id="fs-990" value="990" class="fp-9"> |- Универ / Универ. Новая общага / СашаТаня&nbsp;</option>
+	<option id="fs-1408" value="1408" class="fp-9"> |- Женская версия&nbsp;</option>
+	<option id="fs-175" value="175" class="fp-9"> |- След&nbsp;</option>
+	<option id="fs-79" value="79" class="fp-9"> |- Некрасивая подружка&nbsp;</option>
+	<option id="fs-104" value="104" class="fp-9"> |- Психология преступления&nbsp;</option>
+	<option id="fs-189" value="189" class="root_forum has_sf">Зарубежные сериалы&nbsp;</option>
+	<option id="fs-842" value="842" class="fp-189"> |- Новинки и сериалы в стадии показа&nbsp;</option>
+	<option id="fs-235" value="235" class="fp-189"> |- Сериалы США и Канады&nbsp;</option>
+	<option id="fs-242" value="242" class="fp-189"> |- Сериалы Великобритании и Ирландии&nbsp;</option>
+	<option id="fs-819" value="819" class="fp-189"> |- Скандинавские сериалы&nbsp;</option>
+	<option id="fs-1531" value="1531" class="fp-189"> |- Испанские сериалы&nbsp;</option>
+	<option id="fs-721" value="721" class="fp-189"> |- Итальянские сериалы&nbsp;</option>
+	<option id="fs-1102" value="1102" class="fp-189"> |- Европейские сериалы&nbsp;</option>
+	<option id="fs-1120" value="1120" class="fp-189"> |- Сериалы стран Африки, Ближнего и Среднего Востока&nbsp;</option>
+	<option id="fs-1214" value="1214" class="fp-189"> |- Сериалы Австралии и Новой Зеландии&nbsp;</option>
+	<option id="fs-489" value="489" class="fp-189"> |- Сериалы Ближнего Зарубежья&nbsp;</option>
+	<option id="fs-387" value="387" class="fp-189"> |- Сериалы совместного производства нескольких стран&nbsp;</option>
+	<option id="fs-1359" value="1359" class="fp-189"> |- Веб-сериалы, Вебизоды к сериалам и Пилотные серии сериалов&nbsp;</option>
+	<option id="fs-184" value="184" class="fp-189"> |- Бесстыжие / Shameless (US)&nbsp;</option>
+	<option id="fs-1171" value="1171" class="fp-189"> |- Викинги / Vikings&nbsp;</option>
+	<option id="fs-1417" value="1417" class="fp-189"> |- Во все тяжкие / Breaking Bad&nbsp;</option>
+	<option id="fs-625" value="625" class="fp-189"> |- Доктор Хаус / House M.D.&nbsp;</option>
+	<option id="fs-1449" value="1449" class="fp-189"> |- Игра престолов / Game of Thrones&nbsp;</option>
+	<option id="fs-273" value="273" class="fp-189"> |- Карточный Домик / House of Cards&nbsp;</option>
+	<option id="fs-504" value="504" class="fp-189"> |- Клан Сопрано / The Sopranos&nbsp;</option>
+	<option id="fs-372" value="372" class="fp-189"> |- Сверхъестественное / Supernatural&nbsp;</option>
+	<option id="fs-110" value="110" class="fp-189"> |- Секретные материалы / The X-Files&nbsp;</option>
+	<option id="fs-121" value="121" class="fp-189"> |- Твин пикс / Twin Peaks&nbsp;</option>
+	<option id="fs-507" value="507" class="fp-189"> |- Теория большого взрыва + Детство Шелдона&nbsp;</option>
+	<option id="fs-536" value="536" class="fp-189"> |- Форс-мажоры / Костюмы в законе / Suits&nbsp;</option>
+	<option id="fs-1144" value="1144" class="fp-189"> |- Ходячие мертвецы + Бойтесь ходячих мертвецов&nbsp;</option>
+	<option id="fs-173" value="173" class="fp-189"> |- Черное зеркало / Black Mirror&nbsp;</option>
+	<option id="fs-195" value="195" class="fp-189"> |- Для некондиционных раздач&nbsp;</option>
+	<option id="fs-2366" value="2366" class="root_forum has_sf">Зарубежные сериалы (HD Video)&nbsp;</option>
+	<option id="fs-119" value="119" class="fp-2366"> |- Зарубежные сериалы (UHD Video)&nbsp;</option>
+	<option id="fs-1803" value="1803" class="fp-2366"> |- Новинки и сериалы в стадии показа (HD Video)&nbsp;</option>
+	<option id="fs-266" value="266" class="fp-2366"> |- Сериалы США и Канады (HD Video)&nbsp;</option>
+	<option id="fs-193" value="193" class="fp-2366"> |- Сериалы Великобритании и Ирландии (HD Video)&nbsp;</option>
+	<option id="fs-1690" value="1690" class="fp-2366"> |- Скандинавские сериалы (HD Video)&nbsp;</option>
+	<option id="fs-1459" value="1459" class="fp-2366"> |- Европейские сериалы (HD Video)&nbsp;</option>
+	<option id="fs-1463" value="1463" class="fp-2366"> |- Сериалы стран Африки, Ближнего и Среднего Востока (HD Video)&nbsp;</option>
+	<option id="fs-825" value="825" class="fp-2366"> |- Сериалы Австралии и Новой Зеландии (HD Video)&nbsp;</option>
+	<option id="fs-1248" value="1248" class="fp-2366"> |- Сериалы Ближнего Зарубежья (HD Video)&nbsp;</option>
+	<option id="fs-1288" value="1288" class="fp-2366"> |- Сериалы совместного производства нескольких стран (HD Video)&nbsp;</option>
+	<option id="fs-1669" value="1669" class="fp-2366"> |- Викинги / Vikings (HD Video)&nbsp;</option>
+	<option id="fs-2393" value="2393" class="fp-2366"> |- Доктор Хаус / House M.D. (HD Video)&nbsp;</option>
+	<option id="fs-265" value="265" class="fp-2366"> |- Игра престолов / Game of Thrones (HD Video)&nbsp;</option>
+	<option id="fs-2406" value="2406" class="fp-2366"> |- Карточный домик (HD Video)&nbsp;</option>
+	<option id="fs-2404" value="2404" class="fp-2366"> |- Сверхъестественное / Supernatural (HD Video)&nbsp;</option>
+	<option id="fs-2405" value="2405" class="fp-2366"> |- Секретные материалы / The X-Files (HD Video)&nbsp;</option>
+	<option id="fs-2370" value="2370" class="fp-2366"> |- Твин пикс / Twin Peaks (HD Video)&nbsp;</option>
+	<option id="fs-2396" value="2396" class="fp-2366"> |- Теория Большого Взрыва / The Big Bang Theory (HD Video)&nbsp;</option>
+	<option id="fs-2398" value="2398" class="fp-2366"> |- Ходячие мертвецы + Бойтесь ходячих мертвецов (HD Video)&nbsp;</option>
+	<option id="fs-1949" value="1949" class="fp-2366"> |- Черное зеркало / Black Mirror (HD Video)&nbsp;</option>
+	<option id="fs-1498" value="1498" class="fp-2366"> |- Для некондиционных раздач (HD Video)&nbsp;</option>
+	<option id="fs-911" value="911" class="root_forum has_sf">Сериалы Латинской Америки, Турции и Индии&nbsp;</option>
+	<option id="fs-325" value="325" class="fp-911"> |- Сериалы Аргентины&nbsp;</option>
+	<option id="fs-534" value="534" class="fp-911"> |- Сериалы Бразилии&nbsp;</option>
+	<option id="fs-594" value="594" class="fp-911"> |- Сериалы Венесуэлы&nbsp;</option>
+	<option id="fs-1301" value="1301" class="fp-911"> |- Сериалы Индии&nbsp;</option>
+	<option id="fs-607" value="607" class="fp-911"> |- Сериалы Колумбии&nbsp;</option>
+	<option id="fs-1574" value="1574" class="fp-911"> |- Сериалы Латинской Америки с озвучкой (раздачи папками)&nbsp;</option>
+	<option id="fs-1539" value="1539" class="fp-911"> |- Сериалы Латинской Америки с субтитрами&nbsp;</option>
+	<option id="fs-694" value="694" class="fp-911"> |- Сериалы Мексики&nbsp;</option>
+	<option id="fs-781" value="781" class="fp-911"> |- Сериалы совместного производства&nbsp;</option>
+	<option id="fs-704" value="704" class="fp-911"> |- Сериалы Турции&nbsp;</option>
+	<option id="fs-1537" value="1537" class="fp-911"> |- Для некондиционных раздач&nbsp;</option>
+	<option id="fs-2100" value="2100" class="root_forum has_sf">Азиатские сериалы&nbsp;</option>
+	<option id="fs-820" value="820" class="fp-2100"> |- Азиатские сериалы (UHD Video)&nbsp;</option>
+	<option id="fs-915" value="915" class="fp-2100"> |- Корейские сериалы&nbsp;</option>
+	<option id="fs-1242" value="1242" class="fp-2100"> |- Корейские сериалы (HD Video)&nbsp;</option>
+	<option id="fs-717" value="717" class="fp-2100"> |- Китайские сериалы&nbsp;</option>
+	<option id="fs-1939" value="1939" class="fp-2100"> |- Японские сериалы&nbsp;</option>
+	<option id="fs-2412" value="2412" class="fp-2100"> |- Сериалы Таиланда, Индонезии, Сингапура&nbsp;</option>
+	<option id="fs-2102" value="2102" class="fp-2100"> |- VMV и др. ролики&nbsp;</option>
+</optgroup>
+
+								</select>
