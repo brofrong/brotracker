@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: brotracker-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: brotracker
+      POSTGRES_PASSWORD: brotracker
+      POSTGRES_DB: brotracker
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brotracker -d brotracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: brotracker-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Cloudflare solver for RuTracker (Byparr API, FlareSolverr-compatible /v1).
+  # Backend calls http://localhost:8191/v1 when cf_clearance is missing/expired.
+  byparr:
+    image: ghcr.io/thephaseless/byparr:latest
+    container_name: brotracker-byparr
+    restart: unless-stopped
+    ports:
+      - "8191:8191"
+    shm_size: 1gb
+    # If RuTracker HTTP goes through a proxy, set the same proxy here so
+    # cf_clearance is bound to the same egress IP:
+    # environment:
+    #   PROXY_SERVER: http://user:pass@host:port
+
+volumes:
+  postgres_data:
+  minio_data:

@@ -1,6 +1,6 @@
 import { HttpsProxyAgent } from "https-proxy-agent";
 import axios from "axios";
-import { env } from "../src/utils/env";
+import { env } from "../../src/utils/env";
 import parse from "node-html-parser";
 import iconv from "iconv-lite";
 

@@ -1,9 +1,12 @@
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import { createHTTPServer } from "@trpc/server/adapters/standalone";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import path from "node:path";
+import { existsSync } from "node:fs";
 import { WebSocketServer } from "ws";
 import { appRouter } from "./appRouter";
 import { runMigrations } from "./db/migrate";
+import { tryServeStatic } from "./http/static";
 import { ensureBucket } from "./storage/s3";
 import { env } from "./utils/env";
 import { logger } from "./utils/logger";
@@ -14,6 +17,20 @@ try {
 	await ensureBucket();
 } catch (err) {
 	logger.warn({ err }, "MinIO bucket bootstrap failed; continuing without S3");
+}
+
+const staticDir = path.resolve(
+	env.STATIC_DIR ?? path.join(import.meta.dir, "../public"),
+);
+const staticEnabled = existsSync(staticDir);
+
+if (staticEnabled) {
+	logger.info({ staticDir }, "Serving frontend static assets");
+} else {
+	logger.info(
+		{ staticDir },
+		"No frontend static dir; API-only (set STATIC_DIR or build public/)",
+	);
 }
 
 function applyCorsHeaders(req: IncomingMessage, res: ServerResponse) {
@@ -31,14 +48,17 @@ const server = createHTTPServer({
 	router: appRouter,
 	basePath: "/trpc/",
 	allowBatching: true,
-	onError({ error, path, type }) {
-		logger.error({ err: error, path, type }, "tRPC request error");
+	onError({ error, path: rpcPath, type }) {
+		logger.error({ err: error, path: rpcPath, type }, "tRPC request error");
 	},
 	middleware(req, res, next) {
 		applyCorsHeaders(req, res);
 		if (req.method === "OPTIONS") {
 			res.statusCode = 204;
 			res.end();
+			return;
+		}
+		if (staticEnabled && tryServeStatic(req, res, staticDir)) {
 			return;
 		}
 		next();
@@ -60,4 +80,4 @@ applyWSSHandler({
 
 server.listen(env.PORT);
 
-logger.info({ port: env.PORT }, "Server is running");
+logger.info({ port: env.PORT, staticEnabled }, "Server is running");

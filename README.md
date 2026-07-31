@@ -1,135 +1,151 @@
-# Turborepo starter
+# BroTracker
 
-This Turborepo starter is maintained by the Turborepo core team.
+Self-hosted torrent search and download helper. Search RuTracker, cache results locally, fetch covers, and monitor downloads in qBittorrent — from one UI.
 
-## Using this example
+> **Intended for personal / local use.** The API has no authentication. Do not expose it to the public internet without putting it behind your own auth (VPN, reverse proxy, etc.).
 
-Run the following command:
+## Features
 
-```sh
-npx create-turbo@latest
-```
+- **Local-first search** — query cached torrents in Postgres (`pg_trgm`), fall back to live RuTracker when needed
+- **Cover images** — background fetch + MinIO/S3 storage
+- **qBittorrent** — live status over WebSocket subscriptions
+- **In-app settings** — RuTracker credentials, proxy, qBittorrent URL / API key
+- **Cloudflare bypass** — [Byparr](https://github.com/thephaseless/byparr) (FlareSolverr-compatible) for RuTracker access
 
-## What's inside?
+## Stack
 
-This Turborepo includes the following packages/apps:
+| Layer | Tech |
+|--------|------|
+| Monorepo | Bun workspaces + Turborepo |
+| Backend | Bun, tRPC, Drizzle ORM, Postgres, MinIO |
+| Frontend | React 19, TanStack Router/Query, Vite, Astryx |
+| Tracker client | `@brotracker/rutracker-ts` (workspace package) |
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+## Repository layout
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+apps/
+  backend/     # Bun HTTP + WebSocket API, serves SPA in production
+  frontend/    # Vite SPA (search, torrents, settings)
+packages/
+  rutracker-ts/          # RuTracker client (login, search, CF bypass)
+  typescript-config/     # Shared TypeScript configs
+docker/                  # Compose files for infra (+ full stack)
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+## Prerequisites
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+- [Bun](https://bun.sh) `>= 1.2`
+- [Docker](https://docs.docker.com/get-docker/) (Postgres, MinIO, Byparr)
+- A [qBittorrent](https://www.qbittorrent.org/) instance with Web UI / API enabled (optional but needed for the Torrents page)
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+## Quick start (development)
 
-### Develop
+### 1. Install
 
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+```bash
+bun install
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### 2. Start infrastructure
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+```bash
+docker compose -f docker/docker-compose.dev.yml up -d
 ```
 
-### Remote Caching
+This starts:
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+| Service | Port |
+|---------|------|
+| Postgres | `5432` |
+| MinIO | `9000` (API), `9001` (console) |
+| Byparr | `8191` |
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+### 3. Environment
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+Copy examples and adjust if needed:
 
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+```bash
+cp apps/backend/.env.example apps/backend/.env
+cp apps/frontend/.env.example apps/frontend/.env.local
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+Defaults match the compose file (local Postgres / MinIO / Byparr).
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+### 4. Run apps
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+```bash
+bun run dev
 ```
 
-## Useful Links
+- Frontend: http://localhost:3100  
+- Backend (tRPC): http://localhost:3101/trpc  
 
-Learn more about the power of Turborepo:
+Open **Settings** in the UI and configure RuTracker + qBittorrent, then use **Test** before searching.
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+Database migrations run automatically when the backend starts.
+
+## Production (Docker)
+
+Build and run the full stack (app + Postgres + MinIO + Byparr):
+
+```bash
+docker compose -f docker/docker-compose.yml up --build
+```
+
+App: http://localhost:3101  
+
+Compose uses demo credentials (`brotracker` / `minioadmin`). Change them before any networked deployment.
+
+## Environment variables
+
+### Backend (`apps/backend`)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `postgresql://brotracker:brotracker@localhost:5432/brotracker` | Postgres connection |
+| `PORT` | `3101` | HTTP / WS port |
+| `CORS_ORIGIN` | `http://localhost:3100` | Allowed browser origin |
+| `S3_ENDPOINT` | `http://localhost:9000` | MinIO / S3 endpoint |
+| `S3_ACCESS_KEY` | `minioadmin` | S3 access key |
+| `S3_SECRET_KEY` | `minioadmin` | S3 secret key |
+| `S3_BUCKET` | `brotracker` | Cover bucket |
+| `S3_PUBLIC_URL` | `http://localhost:9000/brotracker` | Public URL prefix for covers |
+| `BYPARR_URL` | `http://localhost:8191/v1` | Cloudflare solver API |
+| `STATIC_DIR` | _(unset)_ | SPA assets dir (set in Docker) |
+
+RuTracker and qBittorrent credentials are stored in the database via the Settings UI, not via env.
+
+### Frontend (`apps/frontend`)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VITE_BACKEND_URL` | `""` | Backend host for tRPC/WS. Empty = same origin (production). Dev: `http://localhost:3101` |
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `bun run dev` | Start all apps in watch mode |
+| `bun run build` | Build all packages/apps |
+| `bun run lint` | Lint via Turbo |
+| `bun run check-types` | Typecheck via Turbo |
+
+Backend DB helpers (from `apps/backend`):
+
+```bash
+bun run db:generate
+bun run db:migrate
+bun run db:studio
+```
+
+## Security notes
+
+- **No auth** on tRPC procedures — settings can return and update plaintext passwords / API keys.
+- Keep the app on localhost or behind a VPN / authenticated reverse proxy.
+- Never commit `.env`, `.env.local`, or `**/.data/` (session cookies live there).
+- Default Docker passwords are for local demos only.
+
+## License
+
+MIT © [brofrong](https://github.com/brofrong)

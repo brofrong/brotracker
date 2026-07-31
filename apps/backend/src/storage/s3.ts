@@ -78,35 +78,18 @@ export async function ensureBucket(): Promise<boolean> {
 	}
 }
 
-function extFromContentType(contentType: string): string {
-	const subtype = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
-	switch (subtype) {
-		case "image/jpeg":
-		case "image/jpg":
-			return "jpg";
-		case "image/png":
-			return "png";
-		case "image/webp":
-			return "webp";
-		default:
-			return "jpg";
-	}
-}
-
-/** Upload cover bytes; returns the object key `covers/{id}.{ext}`. */
+/** Upload cover as WebP; returns the object key `covers/{id}.webp`. */
 export async function putCover(
 	torrentId: string,
 	bytes: Uint8Array,
-	contentType: string,
 ): Promise<string> {
-	const ext = extFromContentType(contentType);
-	const key = `covers/${torrentId}.${ext}`;
+	const key = `covers/${torrentId}.webp`;
 	await s3.send(
 		new PutObjectCommand({
 			Bucket: env.S3_BUCKET,
 			Key: key,
 			Body: bytes,
-			ContentType: contentType,
+			ContentType: "image/webp",
 		}),
 	);
 	return key;

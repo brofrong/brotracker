@@ -1,9 +1,10 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db/db";
 import { torrents } from "../db/torrent/torrent.schema";
+import { optimizeCover } from "../storage/cover-image";
 import { putCover } from "../storage/s3";
 import { logger } from "../utils/logger";
-import { tracker } from "./torrent.tracker";
+import { getTracker } from "./torrent.tracker";
 
 const CONCURRENCY = 3;
 const FETCH_TIMEOUT_MS = 15_000;
@@ -56,6 +57,7 @@ async function processOne(torrentId: string): Promise<void> {
 			return;
 		}
 
+		const tracker = await getTracker();
 		const imageResult = await tracker.getImage(torrentId);
 		if (imageResult.isErr()) {
 			logger.warn(
@@ -75,11 +77,21 @@ async function processOne(torrentId: string): Promise<void> {
 			return;
 		}
 
-		const key = await putCover(
-			torrentId,
-			bytesResult.bytes,
-			bytesResult.contentType,
-		);
+		let webp: Uint8Array;
+		try {
+			webp = await optimizeCover(bytesResult.bytes);
+		} catch (err) {
+			logger.warn(
+				{
+					torrentId,
+					err: err instanceof Error ? err.message : String(err),
+				},
+				"cover fetch: image optimize failed",
+			);
+			return;
+		}
+
+		const key = await putCover(torrentId, webp);
 
 		await db
 			.update(torrents)
@@ -93,6 +105,13 @@ async function processOne(torrentId: string): Promise<void> {
 	}
 }
 
+const COVER_FETCH_HEADERS = {
+	// Image hosts (e.g. fastpic) often 404 hotlinks without a forum Referer.
+	Referer: "https://rutracker.org/",
+	"User-Agent":
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+} as const;
+
 async function fetchCoverBytes(
 	url: string,
 ): Promise<{ bytes: Uint8Array; contentType: string } | null> {
@@ -100,6 +119,7 @@ async function fetchCoverBytes(
 		const response = await fetch(url, {
 			redirect: "follow",
 			signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+			headers: COVER_FETCH_HEADERS,
 		});
 		if (!response.ok) {
 			logger.warn(
@@ -111,6 +131,13 @@ async function fetchCoverBytes(
 		const contentType =
 			response.headers.get("content-type")?.split(";")[0]?.trim() ||
 			"image/jpeg";
+		if (!contentType.startsWith("image/")) {
+			logger.warn(
+				{ url, contentType },
+				"cover fetch: response is not an image",
+			);
+			return null;
+		}
 		const bytes = new Uint8Array(await response.arrayBuffer());
 		if (bytes.byteLength === 0) {
 			logger.warn({ url }, "cover fetch: empty image body");

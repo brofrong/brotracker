@@ -1,11 +1,16 @@
 import { basename } from "node:path";
-import { env } from "../utils/env";
+import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
 import type { QbittorentTorrent } from "./qbittorent.types";
 
 const TORRENT_URL_PATTERN = /^(magnet:|https?:|bc:\/\/bt\/)/i;
 
-function normalizeBaseUrl(url: string): string {
-	return url.replace(/\/+$/, "");
+export class QbittorrentNotConfiguredError extends Error {
+	constructor() {
+		super(
+			"qBittorrent is not configured. Set URL and API key in Settings.",
+		);
+		this.name = "QbittorrentNotConfiguredError";
+	}
 }
 
 function isTorrentUrl(value: string): boolean {
@@ -16,11 +21,16 @@ async function qbittorentRequest(
 	path: string,
 	init?: RequestInit,
 ): Promise<Response> {
-	const url = `${normalizeBaseUrl(env.QBITTORRENT_URL)}/api/v2${path}`;
+	const config = await loadQbittorrentConfig();
+	if (!config) {
+		throw new QbittorrentNotConfiguredError();
+	}
+
+	const url = `${config.url}/api/v2${path}`;
 	const response = await fetch(url, {
 		...init,
 		headers: {
-			Authorization: `Bearer ${env.QBITTORRENT_API_KEY}`,
+			Authorization: `Bearer ${config.apiKey}`,
 			...init?.headers,
 		},
 	});
@@ -38,6 +48,18 @@ async function qbittorentRequest(
 export async function getTorrents(): Promise<QbittorentTorrent[]> {
 	const response = await qbittorentRequest("/torrents/info");
 	return response.json() as Promise<QbittorentTorrent[]>;
+}
+
+/** Lightweight auth check: app version endpoint. */
+export async function testQbittorrentConnection(): Promise<{
+	ok: true;
+	version: string;
+	torrentCount: number;
+}> {
+	const versionResponse = await qbittorentRequest("/app/version");
+	const version = (await versionResponse.text()).trim();
+	const torrents = await getTorrents();
+	return { ok: true, version, torrentCount: torrents.length };
 }
 
 export async function addTorrent(
