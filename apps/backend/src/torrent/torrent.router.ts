@@ -7,6 +7,7 @@ export const torrentRouter = router({
 		.input(
 			z.object({
 				search: z.string().optional(),
+				force: z.boolean().optional().default(false),
 				options: z
 					.object({
 						category: z.enum(["films", "tv"]).optional(),
@@ -27,9 +28,10 @@ export const torrentRouter = router({
 		.query(async ({ input }) => {
 			const searchText = input.search;
 			if (!searchText) {
-				return [];
+				return { source: "local" as const, results: [], totalResults: null };
 			}
-			const results = await torrentService.search(searchText, input.options);
-			return results.isOk() ? results.value : [];
+			return torrentService.search(searchText, input.options, {
+				force: input.force,
+			});
 		}),
 });
