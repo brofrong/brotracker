@@ -50,6 +50,16 @@ export async function getTorrents(): Promise<QbittorentTorrent[]> {
 	return response.json() as Promise<QbittorentTorrent[]>;
 }
 
+/** Free space on qBittorrent's default save path (bytes). */
+export async function getFreeSpaceOnDisk(): Promise<number | null> {
+	const response = await qbittorentRequest("/sync/maindata?rid=0");
+	const data = (await response.json()) as {
+		server_state?: { free_space_on_disk?: number };
+	};
+	const free = data.server_state?.free_space_on_disk;
+	return typeof free === "number" && Number.isFinite(free) ? free : null;
+}
+
 /** Lightweight auth check: app version endpoint. */
 export async function testQbittorrentConnection(): Promise<{
 	ok: true;

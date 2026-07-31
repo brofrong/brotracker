@@ -13,6 +13,11 @@ export const qbittorentRouter = router({
 		return qbittorentService.getTorrents();
 	}),
 
+	freeSpace: publicProcedure.query(async () => {
+		const freeSpaceOnDisk = await qbittorentService.getFreeSpaceOnDisk();
+		return { freeSpaceOnDisk };
+	}),
+
 	listUpdates: publicProcedure.subscription(async function* (opts) {
 		yield* iterateTorrentUpdates(opts.signal);
 	}),

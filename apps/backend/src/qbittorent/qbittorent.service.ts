@@ -1,7 +1,11 @@
 import { RUTRACKER_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/constants";
 import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
 import { getTracker } from "../torrent/torrent.tracker";
-import { addTorrent, getTorrents } from "./qbittorent.client";
+import {
+	addTorrent,
+	getFreeSpaceOnDisk,
+	getTorrents,
+} from "./qbittorent.client";
 import type { AddTorrentOptions } from "./qbittorent.types";
 
 export class AddFromTrackerPreconditionError extends Error {
@@ -35,6 +39,7 @@ export function isAllowedRutrackerTorrentUrl(torrentFileUrl: string): boolean {
 
 export const qbittorentService = {
 	getTorrents,
+	getFreeSpaceOnDisk,
 	addTorrent: (
 		torrentFileOrMagnetLinkOrBytes: string | Uint8Array,
 		options: AddTorrentOptions,
