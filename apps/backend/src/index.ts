@@ -1,9 +1,11 @@
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import { createHTTPServer } from "@trpc/server/adapters/standalone";
+import { toNodeHandler } from "better-auth/node";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import { WebSocketServer } from "ws";
+import { auth } from "./auth/auth";
 import { appRouter } from "./appRouter";
 import { runMigrations } from "./db/migrate";
 import { tryServeStatic } from "./http/static";
@@ -44,6 +46,8 @@ function applyCorsHeaders(req: IncomingMessage, res: ServerResponse) {
 	);
 }
 
+const authHandler = toNodeHandler(auth);
+
 const server = createHTTPServer({
 	router: appRouter,
 	basePath: "/trpc/",
@@ -57,6 +61,10 @@ const server = createHTTPServer({
 			res.statusCode = 204;
 			res.end();
 			return;
+		}
+		const url = req.url ?? "";
+		if (url.startsWith("/api/auth")) {
+			return authHandler(req, res);
 		}
 		if (staticEnabled && tryServeStatic(req, res, staticDir)) {
 			return;
