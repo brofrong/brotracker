@@ -2,7 +2,7 @@
 
 Self-hosted torrent search and download helper. Search RuTracker, cache results locally, fetch covers, and monitor downloads in qBittorrent — from one UI.
 
-> **Intended for personal / local use.** The API has no authentication. Do not expose it to the public internet without putting it behind your own auth (VPN, reverse proxy, etc.).
+> **Intended for personal / local use.** Sign-in is required via [Authentik](https://goauthentik.io/) OIDC (Better Auth). See [docker/AUTHENTIK.md](docker/AUTHENTIK.md) for setup. Do not expose the app without TLS and real OIDC credentials.
 
 ## Features
 
@@ -113,8 +113,13 @@ Compose uses demo credentials (`brotracker` / `minioadmin`). Change them before 
 | `S3_PUBLIC_URL` | `http://localhost:9000/brotracker` | Public URL prefix for covers |
 | `BYPARR_URL` | `http://localhost:8191/v1` | Cloudflare solver API |
 | `STATIC_DIR` | _(unset)_ | SPA assets dir (set in Docker) |
+| `BETTER_AUTH_SECRET` | _(required)_ | Session signing secret (≥ 32 chars) |
+| `BETTER_AUTH_URL` | `http://localhost:3101` | Public backend URL for auth callbacks |
+| `AUTHENTIK_CLIENT_ID` | _(required)_ | OIDC client ID from Authentik |
+| `AUTHENTIK_CLIENT_SECRET` | _(required)_ | OIDC client secret from Authentik |
+| `AUTHENTIK_DISCOVERY_URL` | see `.env.example` | Authentik OpenID discovery endpoint |
 
-RuTracker and qBittorrent credentials are stored in the database via the Settings UI, not via env.
+RuTracker and qBittorrent credentials are stored in the database via the Settings UI, not via env. OIDC setup steps: [docker/AUTHENTIK.md](docker/AUTHENTIK.md).
 
 ### Frontend (`apps/frontend`)
 
@@ -176,10 +181,10 @@ bun run db:studio
 
 ## Security notes
 
-- **No auth** on tRPC procedures — settings can return and update plaintext passwords / API keys.
-- Keep the app on localhost or behind a VPN / authenticated reverse proxy.
-- Never commit `.env`, `.env.local`, or `**/.data/` (session cookies live there).
-- Default Docker passwords are for local demos only.
+- **Authentik OIDC** protects all tRPC procedures and WebSocket subscriptions; unauthenticated requests receive `UNAUTHORIZED`.
+- Settings still store RuTracker / qBittorrent credentials in the database — restrict who can sign in via Authentik.
+- Never commit `.env`, `.env.local`, `docker/authentik.env`, or real OIDC client secrets.
+- Default Docker passwords and compose auth placeholders are for local demos only.
 
 ## License
 
