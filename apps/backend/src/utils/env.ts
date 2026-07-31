@@ -14,6 +14,16 @@ const envSchema = z.object({
 	S3_PUBLIC_URL: z.string().default("http://localhost:9000/brotracker"),
 	/** Byparr / FlareSolverr-compatible endpoint for RuTracker Cloudflare bypass. */
 	BYPARR_URL: z.string().default("http://localhost:8191/v1"),
+	BETTER_AUTH_SECRET: z.string().min(32),
+	BETTER_AUTH_URL: z.string().url().default("http://localhost:3101"),
+	AUTHENTIK_CLIENT_ID: z.string().min(1),
+	AUTHENTIK_CLIENT_SECRET: z.string().min(1),
+	AUTHENTIK_DISCOVERY_URL: z
+		.string()
+		.url()
+		.default(
+			"http://localhost:9080/application/o/brotracker/.well-known/openid-configuration",
+		),
 	/**
 	 * Directory with frontend SPA assets (vite `dist/client`).
 	 * Default: `apps/backend/public` (populated by Docker build).
