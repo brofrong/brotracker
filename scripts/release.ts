@@ -14,6 +14,8 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import * as readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 
 const ROOT = resolve(import.meta.dir, "..");
 const PKG_PATH = resolve(ROOT, "package.json");
@@ -80,18 +82,13 @@ async function run(
 }
 
 async function promptLine(question: string): Promise<string> {
-	process.stdout.write(question);
-	const reader = Bun.stdin.stream().getReader();
-	const decoder = new TextDecoder();
-	let buf = "";
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-		buf += decoder.decode(value);
-		if (buf.includes("\n")) break;
+	const rl = readline.createInterface({ input, output });
+	try {
+		const answer = await rl.question(question);
+		return answer.trim();
+	} finally {
+		rl.close();
 	}
-	reader.releaseLock();
-	return buf.split("\n")[0]?.trim() ?? "";
 }
 
 async function main() {
