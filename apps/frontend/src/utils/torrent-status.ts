@@ -1,34 +1,58 @@
-// Prefer Badge for error/warning/paused states; routine downloading/uploading stay info/success.
-export type TorrentStatusVariant =
-	| "neutral"
-	| "info"
+import type { ComponentType, SVGProps } from "react";
+import {
+	Ban,
+	CircleAlert,
+	CircleHelp,
+	Clock,
+	Download,
+	FileX,
+	FolderInput,
+	HardDrive,
+	LoaderCircle,
+	Pause,
+	RefreshCw,
+	Upload,
+} from "lucide-react";
+
+export type TorrentStatusIconColor =
 	| "success"
 	| "warning"
 	| "error"
-	| "purple";
+	| "accent"
+	| "tertiary";
 
-const torrentStateVariants: Record<string, TorrentStatusVariant> = {
-	error: "error",
-	missingFiles: "error",
-	uploading: "success",
-	pausedUP: "warning",
-	queuedUP: "purple",
-	stalledUP: "warning",
-	checkingUP: "success",
-	forcedUP: "success",
-	allocating: "neutral",
-	downloading: "info",
-	metaDL: "info",
-	pausedDL: "warning",
-	queuedDL: "purple",
-	stalledDL: "warning",
-	checkingDL: "info",
-	forcedDL: "info",
-	checkingResumeData: "neutral",
-	moving: "neutral",
-	unknown: "neutral",
+type TorrentStateVisual = {
+	icon: ComponentType<SVGProps<SVGSVGElement>>;
+	color: TorrentStatusIconColor;
 };
 
-export function getTorrentStateVariant(state: string): TorrentStatusVariant {
-	return torrentStateVariants[state] ?? "neutral";
+const torrentStateVisuals: Record<string, TorrentStateVisual> = {
+	error: { icon: CircleAlert, color: "error" },
+	missingFiles: { icon: FileX, color: "error" },
+	uploading: { icon: Upload, color: "success" },
+	pausedUP: { icon: Pause, color: "warning" },
+	queuedUP: { icon: Clock, color: "accent" },
+	stalledUP: { icon: Ban, color: "warning" },
+	checkingUP: { icon: RefreshCw, color: "success" },
+	forcedUP: { icon: Upload, color: "success" },
+	allocating: { icon: HardDrive, color: "tertiary" },
+	downloading: { icon: Download, color: "accent" },
+	metaDL: { icon: Download, color: "accent" },
+	pausedDL: { icon: Pause, color: "warning" },
+	queuedDL: { icon: Clock, color: "accent" },
+	stalledDL: { icon: Ban, color: "warning" },
+	checkingDL: { icon: RefreshCw, color: "accent" },
+	forcedDL: { icon: Download, color: "accent" },
+	checkingResumeData: { icon: LoaderCircle, color: "tertiary" },
+	moving: { icon: FolderInput, color: "tertiary" },
+	unknown: { icon: CircleHelp, color: "tertiary" },
+};
+
+const fallbackVisual: TorrentStateVisual = {
+	icon: CircleHelp,
+	color: "tertiary",
+};
+
+export function getTorrentStateVisual(state: string): TorrentStateVisual {
+	return torrentStateVisuals[state] ?? fallbackVisual;
 }
