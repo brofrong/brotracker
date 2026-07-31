@@ -11,5 +11,11 @@ coverage
 docs
 agent-transcripts
 **/*.test.ts
+**/test
+**/tests
+**/*.md
 apps/frontend/dist
 apps/backend/public
+apps/backend/data
+packages/rutracker-ts/script
+packages/rutracker-ts/test

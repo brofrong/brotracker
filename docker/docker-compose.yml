@@ -1,17 +1,11 @@
-# Full stack: app (backend + frontend SPA) + postgres + minio + byparr
-# Pull & run from repo root:
-#   docker compose -f docker/docker-compose.yml up -d
-#
-# Override defaults via docker/.env (see .env.example).
-
 services:
-
   app:
     image: brofrong/brotracker:latest
-    container_name: brotracker-app
+    platform: linux/amd64
+    container_name: brotracker-prod-app
     restart: unless-stopped
-    ports:
-      - "${APP_PORT:-3101}:3101"
+    # ports:
+    #   - "${APP_PORT:-3101}:3101"
     environment:
       PORT: "3101"
       DATABASE_URL: postgresql://${POSTGRES_USER:-brotracker}:${POSTGRES_PASSWORD:-brotracker}@postgres:5432/${POSTGRES_DB:-brotracker}
@@ -37,7 +31,7 @@ services:
 
   postgres:
     image: postgres:latest
-    container_name: brotracker-postgres
+    container_name: brotracker-prod-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-brotracker}
@@ -55,7 +49,7 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: brotracker-minio
+    container_name: brotracker-prod-minio
     restart: unless-stopped
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
