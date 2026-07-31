@@ -44,6 +44,7 @@
         "@astryxdesign/core": "^0.2.0",
         "@astryxdesign/theme-stone": "^0.2.0",
         "@brotracker/backend": "workspace:*",
+        "@brotracker/rutracker-ts": "workspace:*",
         "@tailwindcss/vite": "^4.1.18",
         "@tanstack/react-devtools": "latest",
         "@tanstack/react-query": "^5.100.10",

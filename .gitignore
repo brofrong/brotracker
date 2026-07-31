@@ -42,5 +42,8 @@ apps/backend/public
 .cursor/
 **/.cursor/
 
+# Git worktrees
+.worktrees/
+
 # Runtime data (session cookies, local stores)
 **/.data/

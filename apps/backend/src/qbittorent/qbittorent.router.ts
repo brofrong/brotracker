@@ -1,6 +1,12 @@
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import { publicProcedure, router } from "../trpc";
 import { iterateTorrentUpdates } from "./qbittorent.poller";
-import { qbittorentService } from "./qbittorent.service";
+import {
+	AddFromTrackerGatewayError,
+	AddFromTrackerPreconditionError,
+	qbittorentService,
+} from "./qbittorent.service";
 
 export const qbittorentRouter = router({
 	list: publicProcedure.query(async () => {
@@ -10,4 +16,36 @@ export const qbittorentRouter = router({
 	listUpdates: publicProcedure.subscription(async function* (opts) {
 		yield* iterateTorrentUpdates(opts.signal);
 	}),
+
+	add: publicProcedure
+		.input(
+			z.object({
+				torrentFileUrl: z.string().url(),
+				mediaType: z.enum(["films", "tv"]),
+			}),
+		)
+		.mutation(async ({ input }) => {
+			try {
+				await qbittorentService.addFromTracker(
+					input.torrentFileUrl,
+					input.mediaType,
+				);
+			} catch (error) {
+				if (error instanceof AddFromTrackerPreconditionError) {
+					throw new TRPCError({
+						code: "PRECONDITION_FAILED",
+						message: error.message,
+					});
+				}
+				if (error instanceof AddFromTrackerGatewayError) {
+					throw new TRPCError({
+						code: "BAD_GATEWAY",
+						message: error.message,
+					});
+				}
+				throw error;
+			}
+
+			return { ok: true as const };
+		}),
 });

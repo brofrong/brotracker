@@ -1,6 +1,6 @@
 import { basename } from "node:path";
 import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
-import type { QbittorentTorrent } from "./qbittorent.types";
+import type { AddTorrentOptions, QbittorentTorrent } from "./qbittorent.types";
 
 const TORRENT_URL_PATTERN = /^(magnet:|https?:|bc:\/\/bt\/)/i;
 
@@ -63,26 +63,36 @@ export async function testQbittorrentConnection(): Promise<{
 }
 
 export async function addTorrent(
-	torrentFileOrMagnetLink: string,
-	options: { pathToSave: string },
+	torrentFileOrMagnetLinkOrBytes: string | Uint8Array,
+	options: AddTorrentOptions,
 ): Promise<void> {
 	const formData = new FormData();
 	formData.append("savepath", options.pathToSave);
 
-	if (isTorrentUrl(torrentFileOrMagnetLink)) {
-		formData.append("urls", torrentFileOrMagnetLink);
+	if (torrentFileOrMagnetLinkOrBytes instanceof Uint8Array) {
+		const bytes = Buffer.from(torrentFileOrMagnetLinkOrBytes);
+		const blob = new Blob([bytes], {
+			type: "application/x-bittorrent",
+		});
+		formData.append(
+			"torrents",
+			blob,
+			options.filename ?? "download.torrent",
+		);
+	} else if (isTorrentUrl(torrentFileOrMagnetLinkOrBytes)) {
+		formData.append("urls", torrentFileOrMagnetLinkOrBytes);
 	} else {
-		const torrentFile = Bun.file(torrentFileOrMagnetLink);
+		const torrentFile = Bun.file(torrentFileOrMagnetLinkOrBytes);
 		if (!(await torrentFile.exists())) {
 			throw new Error(
-				`Torrent source must be a magnet/URL or an existing .torrent file path: ${torrentFileOrMagnetLink}`,
+				`Torrent source must be a magnet/URL, raw .torrent bytes, or an existing .torrent file path: ${torrentFileOrMagnetLinkOrBytes}`,
 			);
 		}
 
 		formData.append(
 			"torrents",
 			torrentFile,
-			basename(torrentFileOrMagnetLink),
+			options.filename ?? basename(torrentFileOrMagnetLinkOrBytes),
 		);
 	}
 

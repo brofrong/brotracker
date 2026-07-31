@@ -24,7 +24,10 @@ export type SearchCardItem = {
 	date: string;
 	torrentFileUrl: string;
 	topicUrl: string;
+	forumId: string;
 };
+
+export type SearchCardTagsItem = Pick<SearchCardItem, "resolution" | "hdr">;
 
 function resolutionVariant(
 	resolution: SearchCardItem["resolution"],
@@ -41,7 +44,7 @@ function resolutionVariant(
 	}
 }
 
-function SearchCardTags({ item }: { item: SearchCardItem }) {
+function SearchCardTags({ item }: { item: SearchCardTagsItem }) {
 	return (
 		<HStack gap={1} wrap="wrap">
 			{item.resolution ? (
@@ -60,7 +63,13 @@ function SearchCardTags({ item }: { item: SearchCardItem }) {
 	);
 }
 
-function SearchCard({ item }: { item: SearchCardItem }) {
+function SearchCard({
+	item,
+	onDownload,
+}: {
+	item: SearchCardItem;
+	onDownload: (item: SearchCardItem) => void;
+}) {
 	return (
 		<Card padding={0} elevation="low" height="100%">
 			<VStack gap={0} height="100%">
@@ -97,16 +106,25 @@ function SearchCard({ item }: { item: SearchCardItem }) {
 						<Text type="supporting">{item.size}</Text>
 						<Text type="supporting">{item.date}</Text>
 					</HStack>
-					<Button
-						href={item.topicUrl}
-						icon={<Icon icon="externalLink" size="sm" />}
-						isExternalLink
-						label="На форум"
-						size="sm"
-						target="_blank"
-						variant="secondary"
-						width="100%"
-					/>
+					<VStack gap={2} width="100%">
+						<Button
+							label="Скачать"
+							size="sm"
+							variant="primary"
+							width="100%"
+							onClick={() => onDownload(item)}
+						/>
+						<Button
+							href={item.topicUrl}
+							icon={<Icon icon="externalLink" size="sm" />}
+							isExternalLink
+							label="На форум"
+							size="sm"
+							target="_blank"
+							variant="secondary"
+							width="100%"
+						/>
+					</VStack>
 				</VStack>
 			</VStack>
 		</Card>
@@ -115,13 +133,14 @@ function SearchCard({ item }: { item: SearchCardItem }) {
 
 type SearchResultsCardsProps = {
 	items: SearchCardItem[];
+	onDownload: (item: SearchCardItem) => void;
 };
 
-export function SearchResultsCards({ items }: SearchResultsCardsProps) {
+export function SearchResultsCards({ items, onDownload }: SearchResultsCardsProps) {
 	return (
 		<Grid columns={{ minWidth: 260, max: 4 }} gap={3} width="100%">
 			{items.map((item) => (
-				<SearchCard key={item.id} item={item} />
+				<SearchCard key={item.id} item={item} onDownload={onDownload} />
 			))}
 		</Grid>
 	);

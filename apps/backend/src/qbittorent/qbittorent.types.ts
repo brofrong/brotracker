@@ -69,4 +69,5 @@ export type QbittorentTorrent = {
 
 export type AddTorrentOptions = {
 	pathToSave: string;
+	filename?: string;
 };
