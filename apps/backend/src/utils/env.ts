@@ -13,6 +13,11 @@ const envSchema = z.object({
 	QBITTORRENT_API_KEY: z.string(),
 	/** Browser origin allowed to call the API (required when the frontend uses credentials). */
 	CORS_ORIGIN: z.string().default("http://localhost:3100"),
+	S3_ENDPOINT: z.string().default("http://localhost:9000"),
+	S3_ACCESS_KEY: z.string().default("minioadmin"),
+	S3_SECRET_KEY: z.string().default("minioadmin"),
+	S3_BUCKET: z.string().default("brotracker"),
+	S3_PUBLIC_URL: z.string().default("http://localhost:9000/brotracker"),
 });
 
 export const env = envSchema.parse(process.env);
