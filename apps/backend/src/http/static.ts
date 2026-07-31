@@ -73,7 +73,7 @@ export function tryServeStatic(
 	}
 
 	const urlPath = req.url ?? "/";
-	if (urlPath.startsWith("/trpc")) {
+	if (urlPath.startsWith("/trpc") || urlPath.startsWith("/api/auth")) {
 		return false;
 	}
 
