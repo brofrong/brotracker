@@ -110,7 +110,6 @@ Compose uses demo credentials (`brotracker` / `minioadmin`). Change them before 
 | `S3_ACCESS_KEY` | `minioadmin` | S3 access key |
 | `S3_SECRET_KEY` | `minioadmin` | S3 secret key |
 | `S3_BUCKET` | `brotracker` | Cover bucket |
-| `S3_PUBLIC_URL` | `http://localhost:9000/brotracker` | Public URL prefix for covers |
 | `BYPARR_URL` | `http://localhost:8191/v1` | Cloudflare solver API |
 | `STATIC_DIR` | _(unset)_ | SPA assets dir (set in Docker) |
 | `BETTER_AUTH_URL` | `http://localhost:3101` | Public backend URL for auth callbacks |

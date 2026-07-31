@@ -9,6 +9,7 @@ import { auth, initAuth } from "./auth/auth";
 import { appRouter } from "./appRouter";
 import { createContext } from "./trpc/context";
 import { runMigrations } from "./db/migrate";
+import { tryServeMedia } from "./http/media-proxy";
 import { tryServeStatic } from "./http/static";
 import { ensureBetterAuthSecret } from "./settings/app-settings";
 import { ensureBucket } from "./storage/s3";
@@ -72,10 +73,15 @@ const server = createHTTPServer({
 		if (url.startsWith("/api/auth")) {
 			return authHandler(req, res);
 		}
-		if (staticEnabled && tryServeStatic(req, res, staticDir)) {
-			return;
-		}
-		next();
+		void (async () => {
+			if (await tryServeMedia(req, res)) {
+				return;
+			}
+			if (staticEnabled && tryServeStatic(req, res, staticDir)) {
+				return;
+			}
+			next();
+		})();
 	},
 });
 

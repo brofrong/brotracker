@@ -11,7 +11,6 @@ const envSchema = z.object({
 	S3_ACCESS_KEY: z.string().default("minioadmin"),
 	S3_SECRET_KEY: z.string().default("minioadmin"),
 	S3_BUCKET: z.string().default("brotracker"),
-	S3_PUBLIC_URL: z.string().default("http://localhost:9000/brotracker"),
 	/** Byparr / FlareSolverr-compatible endpoint for RuTracker Cloudflare bypass. */
 	BYPARR_URL: z.string().default("http://localhost:8191/v1"),
 	BETTER_AUTH_URL: z.string().url().default("http://localhost:3101"),

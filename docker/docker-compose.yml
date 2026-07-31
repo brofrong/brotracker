@@ -1,72 +1,32 @@
 # Full stack: app (backend + frontend SPA) + postgres + minio + byparr
-# Build from repo root:
-#   docker compose -f docker/docker-compose.yml up --build
+# Pull & run from repo root:
+#   docker compose -f docker/docker-compose.yml up -d
+#
+# Override defaults via docker/.env (see .env.example).
 
 services:
-  postgres:
-    image: postgres:latest
-    container_name: brotracker-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: brotracker
-      POSTGRES_PASSWORD: brotracker
-      POSTGRES_DB: brotracker
-    volumes:
-      - postgres_data:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U brotracker -d brotracker"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  minio:
-    image: minio/minio:latest
-    container_name: brotracker-minio
-    restart: unless-stopped
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    volumes:
-      - minio_data:/data
-    command: server /data --console-address ":9001"
-
-  byparr:
-    image: ghcr.io/thephaseless/byparr:latest
-    container_name: brotracker-byparr
-    restart: unless-stopped
-    shm_size: 1gb
 
   app:
-    build:
-      context: ..
-      dockerfile: Dockerfile
+    image: brofrong/brotracker:latest
     container_name: brotracker-app
     restart: unless-stopped
     ports:
-      - "3101:3101"
+      - "${APP_PORT:-3101}:3101"
     environment:
       PORT: "3101"
-      DATABASE_URL: postgresql://brotracker:brotracker@postgres:5432/brotracker
-      CORS_ORIGIN: http://localhost:3101
+      DATABASE_URL: postgresql://${POSTGRES_USER:-brotracker}:${POSTGRES_PASSWORD:-brotracker}@postgres:5432/${POSTGRES_DB:-brotracker}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3101}
       S3_ENDPOINT: http://minio:9000
-      S3_ACCESS_KEY: minioadmin
-      S3_SECRET_KEY: minioadmin
-      S3_BUCKET: brotracker
-      S3_PUBLIC_URL: http://localhost:9000/brotracker
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-brotracker}
       BYPARR_URL: http://byparr:8191/v1
-      STATIC_DIR: /app/apps/backend/public
-      # Better Auth + Authentik OIDC — override for production deploys.
-      # Authentik is not bundled here; point DISCOVERY_URL at your external issuer.
-      # BETTER_AUTH_SECRET is generated into app_settings on first boot.
-      # Dummy client values below let the container start for local smoke tests;
-      # OIDC login requires real Authentik credentials (see docker/AUTHENTIK.md).
-      BETTER_AUTH_URL: "http://localhost:3101"
-      AUTHENTIK_CLIENT_ID: "change-me"
-      AUTHENTIK_CLIENT_SECRET: "change-me"
-      AUTHENTIK_DISCOVERY_URL: "http://host.docker.internal:9080/application/o/brotracker/.well-known/openid-configuration"
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3101}
+      AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID:-change-me}
+      AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET:-change-me}
+      AUTHENTIK_DISCOVERY_URL: ${AUTHENTIK_DISCOVERY_URL:-http://host.docker.internal:9080/application/o/brotracker/.well-known/openid-configuration}
+    networks:
+      - brotracker
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,6 +35,50 @@ services:
       byparr:
         condition: service_started
 
+  postgres:
+    image: postgres:latest
+    container_name: brotracker-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-brotracker}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-brotracker}
+      POSTGRES_DB: ${POSTGRES_DB:-brotracker}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - brotracker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: brotracker-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio_data:/data
+    networks:
+      - brotracker
+    command: server /data --console-address ":9001"
+
+  byparr:
+    image: ghcr.io/thephaseless/byparr:latest
+    container_name: brotracker-byparr
+    restart: unless-stopped
+    shm_size: 1gb
+    networks:
+      - brotracker
+  
 volumes:
   postgres_data:
   minio_data:
+
+networks:
+  brotracker:
+    name: brotracker
+    driver: bridge
