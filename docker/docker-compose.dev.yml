@@ -54,8 +54,6 @@ services:
     image: docker.io/library/postgres:16-alpine
     container_name: brotracker-authentik-postgres
     restart: unless-stopped
-    env_file:
-      - authentik.env
     environment:
       POSTGRES_USER: authentik
       POSTGRES_PASSWORD: authentik
