@@ -15,7 +15,7 @@ import {
 import { Thumbnail } from "@astryxdesign/core/Thumbnail";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import z from "zod";
 import { SearchBar } from "#/components/search/search-bar";
 import { formatBytes } from "#/utils/format";
@@ -162,8 +162,8 @@ function App() {
 		setForce(false);
 	}
 
-	const { data, isLoading, isError, error } = useQuery(
-		trpc.torrent.search.queryOptions({
+	const { data, isLoading, isError, error } = useQuery({
+		...trpc.torrent.search.queryOptions({
 			search,
 			force,
 			options: {
@@ -172,7 +172,14 @@ function App() {
 				sortOrder: "descending",
 			},
 		}),
-	);
+		refetchOnWindowFocus: false,
+	});
+
+	useEffect(() => {
+		if (force && !isLoading && data?.source === "tracker") {
+			setForce(false);
+		}
+	}, [force, isLoading, data?.source]);
 
 	const results = data?.results ?? [];
 	const source = data?.source;
@@ -204,7 +211,7 @@ function App() {
 					) : null}
 				</HStack>
 			) : null}
-			{!isLoading && !isError && rows.length === 0 ? (
+			{!isLoading && !isError && search && rows.length === 0 ? (
 				<EmptyState title="Ничего не найдено" />
 			) : null}
 			{!isLoading && !isError && rows.length > 0 ? (
