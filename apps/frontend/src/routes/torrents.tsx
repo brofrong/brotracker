@@ -30,7 +30,7 @@ import {
 	formatTorrentState,
 } from "#/utils/format";
 import { getTorrentStateVariant } from "#/utils/torrent-status";
-import { trpc } from "#/utils/trpc";
+import { handleTrpcUnauthorized, trpc } from "#/utils/trpc";
 import {
 	type QbittorentTorrent,
 	subscribeToTorrentUpdates,
@@ -126,6 +126,9 @@ function TorrentsPage() {
 				setError(null);
 			},
 			onError(err) {
+				if (handleTrpcUnauthorized(err)) {
+					return;
+				}
 				setIsLoading(false);
 				setIsConnected(false);
 				setError(err.message);

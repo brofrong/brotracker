@@ -58,6 +58,15 @@ services:
       S3_PUBLIC_URL: http://localhost:9000/brotracker
       BYPARR_URL: http://byparr:8191/v1
       STATIC_DIR: /app/apps/backend/public
+      # Better Auth + Authentik OIDC — override for production deploys.
+      # Authentik is not bundled here; point DISCOVERY_URL at your external issuer.
+      # Dummy values below let the container start for local smoke tests; OIDC login
+      # requires real Authentik client credentials (see docker/AUTHENTIK.md).
+      BETTER_AUTH_SECRET: "change-me-better-auth-secret-min-32-chars"
+      BETTER_AUTH_URL: "http://localhost:3101"
+      AUTHENTIK_CLIENT_ID: "change-me"
+      AUTHENTIK_CLIENT_SECRET: "change-me"
+      AUTHENTIK_DISCOVERY_URL: "http://host.docker.internal:9080/application/o/brotracker/.well-known/openid-configuration"
     depends_on:
       postgres:
         condition: service_healthy

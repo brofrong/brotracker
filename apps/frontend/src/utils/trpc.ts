@@ -15,6 +15,17 @@ function handleUnauthorized() {
 	void redirectToAuthentikSignIn();
 }
 
+export function handleTrpcUnauthorized(error: unknown): boolean {
+	if (
+		error instanceof TRPCClientError &&
+		error.data?.code === "UNAUTHORIZED"
+	) {
+		handleUnauthorized();
+		return true;
+	}
+	return false;
+}
+
 export const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: {
@@ -27,15 +38,11 @@ export const queryClient = new QueryClient({
 });
 
 queryClient.getQueryCache().config.onError = (error) => {
-	if (error instanceof TRPCClientError && error.data?.code === "UNAUTHORIZED") {
-		handleUnauthorized();
-	}
+	handleTrpcUnauthorized(error);
 };
 
 queryClient.getMutationCache().config.onError = (error) => {
-	if (error instanceof TRPCClientError && error.data?.code === "UNAUTHORIZED") {
-		handleUnauthorized();
-	}
+	handleTrpcUnauthorized(error);
 };
 
 function getBackendHttpUrl(): string {
