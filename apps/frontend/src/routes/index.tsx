@@ -4,6 +4,7 @@ import { AspectRatio } from "@astryxdesign/core/AspectRatio";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Button } from "@astryxdesign/core/Button";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
+import { Icon } from "@astryxdesign/core/Icon";
 import { Section } from "@astryxdesign/core/Section";
 import {
 	SegmentedControl,
@@ -19,14 +20,19 @@ import {
 } from "@astryxdesign/core/Table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import z from "zod";
+import {
+	DownloadTorrentDialog,
+	type DownloadTorrentItem,
+} from "#/components/search/download-torrent-dialog";
 import {
 	SearchBar,
 	type SearchSource,
 } from "#/components/search/search-bar";
 import {
 	SearchCardTags,
+	type SearchCardItem,
 	SearchResultsCards,
 } from "#/components/search/search-results-cards";
 import { formatBytes } from "#/utils/format";
@@ -58,6 +64,7 @@ interface SearchRow extends Record<string, unknown> {
 	date: string;
 	torrentFileUrl: string;
 	topicUrl: string;
+	forumId: string;
 }
 
 interface TorrentResult {
@@ -74,9 +81,10 @@ interface TorrentResult {
 	imageUrl: string | null;
 	hdr: "HDR" | "SDR" | null;
 	resolution: "4K" | "1080p" | "720p" | "SD" | null;
+	forumId: string;
 }
 
-const columns: TableColumn<SearchRow>[] = [
+const staticColumns: TableColumn<SearchRow>[] = [
 	{
 		key: "cover",
 		header: "",
@@ -128,20 +136,6 @@ const columns: TableColumn<SearchRow>[] = [
 		header: "Дата",
 		width: pixel(104),
 	},
-	{
-		key: "action",
-		header: "",
-		width: pixel(112),
-		renderCell: (item) => (
-			<Button
-				href={item.torrentFileUrl}
-				label="Скачать"
-				size="sm"
-				target="_blank"
-				rel="noopener noreferrer"
-			/>
-		),
-	},
 ];
 
 function formatDate(value: string | Date): string {
@@ -174,6 +168,7 @@ function toSearchRows(data: TorrentResult[] | undefined): SearchRow[] {
 		date: formatDate(torrent.date),
 		torrentFileUrl: torrent.torrentFileUrl,
 		topicUrl: torrent.topicUrl,
+		forumId: torrent.forumId,
 	}));
 }
 
@@ -185,6 +180,55 @@ function App() {
 	const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
 		{},
 	);
+	const [downloadItem, setDownloadItem] = useState<DownloadTorrentItem | null>(
+		null,
+	);
+	const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+
+	const openDownload = useCallback((row: SearchCardItem) => {
+		setDownloadItem({
+			title: row.title,
+			size: row.size,
+			seeds: row.seeds,
+			leeches: row.leeches,
+			resolution: row.resolution,
+			hdr: row.hdr,
+			torrentFileUrl: row.torrentFileUrl,
+			forumId: row.forumId,
+		});
+		setIsDownloadOpen(true);
+	}, []);
+
+	const columns = useMemo<TableColumn<SearchRow>[]>(
+		() => [
+			...staticColumns,
+			{
+				key: "action",
+				header: "",
+				width: pixel(208),
+				renderCell: (item) => (
+					<HStack gap={1}>
+						<Button
+							label="Скачать"
+							size="sm"
+							onClick={() => openDownload(item)}
+						/>
+						<Button
+							href={item.topicUrl}
+							icon={<Icon icon="externalLink" size="sm" />}
+							isExternalLink
+							label="На трекере"
+							size="sm"
+							target="_blank"
+							variant="secondary"
+						/>
+					</HStack>
+				),
+			},
+		],
+		[openDownload],
+	);
+
 	const columnResize = useTableColumnResize({
 		columnWidths,
 		columns,
@@ -279,9 +323,19 @@ function App() {
 			) : null}
 			{!isSearching && !isError && rows.length > 0 && viewMode === "cards" ? (
 				<Section padding={4} paddingBlock={0} variant="transparent">
-					<SearchResultsCards items={rows} />
+					<SearchResultsCards items={rows} onDownload={openDownload} />
 				</Section>
 			) : null}
+			<DownloadTorrentDialog
+				item={downloadItem}
+				isOpen={isDownloadOpen}
+				onOpenChange={(open) => {
+					setIsDownloadOpen(open);
+					if (!open) {
+						setDownloadItem(null);
+					}
+				}}
+			/>
 		</VStack>
 	);
 }

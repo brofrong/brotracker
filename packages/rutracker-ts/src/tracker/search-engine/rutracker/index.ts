@@ -1,5 +1,5 @@
-import { err } from "neverthrow";
 import type { CreateTracker, SearchOptions } from "../../tracker-interface";
+import { rutrackerGetTorrent } from "./get-torrent";
 import { rutrackerGetImage } from "./get-image";
 import { parseResponse } from "./parse";
 import { makeSearchRequest, rutrackerSearch } from "./search";
@@ -11,8 +11,8 @@ export const createRutracker: CreateTracker = async (_tracker, options) => {
 		search: async (query: string, queryOptions: Partial<SearchOptions>) => {
 			return rutrackerSearch(query, queryOptions, options);
 		},
-		getTorrent: async (_torrentFileUrl: string) => {
-			return err(new Error("Not implemented"));
+		getTorrent: async (torrentFileUrl: string) => {
+			return rutrackerGetTorrent(torrentFileUrl, options);
 		},
 		getImage: async (torrentId: string) => {
 			return rutrackerGetImage(torrentId, options);

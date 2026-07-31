@@ -51,7 +51,7 @@ export type TrackerInterface = {
 		options?: Partial<SearchOptions>,
 	): Promise<Result<string, Error>>;
 	_parseHTML(html: string): Promise<Result<SearchPage, Error>>;
-	getTorrent(torrentFileUrl: string): Promise<Result<void, Error>>;
+	getTorrent(torrentFileUrl: string): Promise<Result<Uint8Array, Error>>;
 	getImage(torrentId: string): Promise<Result<string, Error>>;
 };
 
