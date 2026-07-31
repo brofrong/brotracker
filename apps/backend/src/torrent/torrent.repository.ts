@@ -58,11 +58,12 @@ function mapRow(row: TorrentRow): LocalSearchResult {
 export async function searchLocal(
 	queryNorm: string,
 ): Promise<LocalSearchResult[]> {
+	// word_similarity: short user queries vs long torrent titles (full-string similarity is too low)
 	const rows = await db.execute<TorrentRow>(sql`
-		SELECT *, similarity(title_norm, ${queryNorm}) AS score
+		SELECT *, word_similarity(${queryNorm}, title_norm) AS score
 		FROM torrents
-		WHERE title_norm % ${queryNorm}
-		  AND similarity(title_norm, ${queryNorm}) >= ${TITLE_SIMILARITY_THRESHOLD}
+		WHERE ${queryNorm} <% title_norm
+		  AND word_similarity(${queryNorm}, title_norm) >= ${TITLE_SIMILARITY_THRESHOLD}
 		ORDER BY score DESC, seeds DESC
 		LIMIT 100
 	`);
