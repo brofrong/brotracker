@@ -3,8 +3,18 @@ import { createHTTPServer } from "@trpc/server/adapters/standalone";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { WebSocketServer } from "ws";
 import { appRouter } from "./appRouter";
+import { runMigrations } from "./db/migrate";
+import { ensureBucket } from "./storage/s3";
 import { env } from "./utils/env";
 import { logger } from "./utils/logger";
+
+await runMigrations();
+
+try {
+	await ensureBucket();
+} catch (err) {
+	logger.warn({ err }, "MinIO bucket bootstrap failed; continuing without S3");
+}
 
 function applyCorsHeaders(req: IncomingMessage, res: ServerResponse) {
 	res.setHeader("Access-Control-Allow-Origin", env.CORS_ORIGIN);
