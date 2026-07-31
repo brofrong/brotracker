@@ -41,7 +41,7 @@ export async function rutrackerGetImage(
 		options.auth.password,
 		options.fileStore,
 		options.proxyAgent,
-		options.cfHeadless,
+		options.cfSolverUrl,
 	);
 	if (!cookies.isOk()) {
 		return err(cookies.error);
@@ -58,9 +58,7 @@ export async function rutrackerGetImage(
 		if (isCloudflareChallenge(response)) {
 			const refreshed = await acquireCfClearance({
 				fileStore: options.fileStore,
-				...(options.cfHeadless !== undefined
-					? { headless: options.cfHeadless }
-					: {}),
+				solverUrl: options.cfSolverUrl,
 			});
 			if (refreshed.isErr()) {
 				return err(cloudflareBypassFailedError("getImage"));
@@ -71,7 +69,7 @@ export async function rutrackerGetImage(
 				options.auth.password,
 				options.fileStore,
 				options.proxyAgent,
-				options.cfHeadless,
+				options.cfSolverUrl,
 			);
 			if (again.isErr()) {
 				return err(again.error);

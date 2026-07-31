@@ -1,0 +1,15 @@
+.git
+.cursor
+.turbo
+.next
+coverage
+**/node_modules
+**/.data
+**/.env
+**/.env.*
+!**/.env.example
+docs
+agent-transcripts
+**/*.test.ts
+apps/frontend/dist
+apps/backend/public

@@ -1,5 +1,5 @@
 {
-	"name": "rutracker-ts",
+	"name": "@brotracker/rutracker-ts",
 	"version": "0.0.1",
 	"description": "Rutracker API for NodeJS with TypeScript",
 	"keywords": [
@@ -24,8 +24,8 @@
 	"scripts": {
 		"start": "bun run src/index.ts",
 		"build": "tsdown",
-		"test": "bun test",
-		"dev": "bun run --env-file=.env.test.local test/test.ts",
+		"test": "bun test test/unit",
+		"test:e2e": "bun test test/integration",
 		"lint": "biome check ."
 	},
 	"devDependencies": {

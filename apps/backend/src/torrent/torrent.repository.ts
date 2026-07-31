@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { db } from "../db/db";
 import { torrents } from "../db/torrent/torrent.schema";
 import { publicUrl } from "../storage/s3";
+import { compareTorrentQuality } from "./quality-score";
 import { normalizeTitle } from "./title-norm";
 
 export const TITLE_SIMILARITY_THRESHOLD = 0.3;
@@ -64,10 +65,34 @@ export async function searchLocal(
 		SELECT *, word_similarity(${queryNorm}, title_norm) AS score
 		FROM torrents
 		WHERE word_similarity(${queryNorm}, title_norm) >= ${TITLE_SIMILARITY_THRESHOLD}
-		ORDER BY score DESC, seeds DESC
+		ORDER BY score DESC
 		LIMIT 100
 	`);
-	return rows.map(mapRow);
+
+	return rows
+		.map((row) => ({
+			result: mapRow(row),
+			similarity: Number(row.score ?? 0),
+		}))
+		.sort((a, b) =>
+			compareTorrentQuality(
+				{
+					seeds: a.result.seeds,
+					size: a.result.size,
+					hdr: a.result.hdr,
+					resolution: a.result.resolution,
+					similarity: a.similarity,
+				},
+				{
+					seeds: b.result.seeds,
+					size: b.result.size,
+					hdr: b.result.hdr,
+					resolution: b.result.resolution,
+					similarity: b.similarity,
+				},
+			),
+		)
+		.map((item) => item.result);
 }
 
 export async function upsertFromTracker(

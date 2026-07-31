@@ -1,4 +1,4 @@
-import { createRutracker } from "./search-engine/rutracker/rutracker";
+import { createRutracker } from "./search-engine/rutracker";
 import type { CreateTracker, Tracker } from "./tracker-interface";
 
 const trackers: Record<Tracker, CreateTracker> = {

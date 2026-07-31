@@ -10,7 +10,7 @@ import { logger } from "../utils/logger";
 import { enqueueCoverFetch } from "./cover.queue";
 import { normalizeTitle } from "./title-norm";
 import { searchLocal, upsertFromTracker } from "./torrent.repository";
-import { tracker } from "./torrent.tracker";
+import { getTracker } from "./torrent.tracker";
 
 export type TorrentSearchResult = SearchResult & {
 	imageUrl: string | null;
@@ -26,17 +26,26 @@ export const torrentService = {
 	search: async (
 		query: string,
 		options: Partial<SearchOptions>,
-		{ force = false }: { force?: boolean } = {},
+		{ source }: { source: "local" | "tracker" },
 	): Promise<TorrentSearchResponse> => {
-		if (!force) {
+		if (source === "local") {
 			const local = await searchLocal(normalizeTitle(query));
-			if (local.length > 0) {
-				return {
-					source: "local",
-					results: local,
-					totalResults: local.length,
-				};
-			}
+			return {
+				source: "local",
+				results: local,
+				totalResults: local.length,
+			};
+		}
+
+		let tracker;
+		try {
+			tracker = await getTracker();
+		} catch (err) {
+			logger.error(
+				{ err: err instanceof Error ? err.message : String(err), query },
+				"torrent search: tracker not available",
+			);
+			return { source: "tracker", results: [], totalResults: null };
 		}
 
 		const page = await tracker.search(query, options);

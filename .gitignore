@@ -36,3 +36,11 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+apps/backend/public
+
+# Editor / agent local config
+.cursor/
+**/.cursor/
+
+# Runtime data (session cookies, local stores)
+**/.data/
