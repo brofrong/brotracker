@@ -5,16 +5,20 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import { WebSocketServer } from "ws";
-import { auth } from "./auth/auth";
+import { auth, initAuth } from "./auth/auth";
 import { appRouter } from "./appRouter";
 import { createContext } from "./trpc/context";
 import { runMigrations } from "./db/migrate";
 import { tryServeStatic } from "./http/static";
+import { ensureBetterAuthSecret } from "./settings/app-settings";
 import { ensureBucket } from "./storage/s3";
 import { env } from "./utils/env";
 import { logger } from "./utils/logger";
 
 await runMigrations();
+
+const betterAuthSecret = await ensureBetterAuthSecret();
+initAuth(betterAuthSecret);
 
 try {
 	await ensureBucket();

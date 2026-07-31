@@ -113,13 +113,12 @@ Compose uses demo credentials (`brotracker` / `minioadmin`). Change them before 
 | `S3_PUBLIC_URL` | `http://localhost:9000/brotracker` | Public URL prefix for covers |
 | `BYPARR_URL` | `http://localhost:8191/v1` | Cloudflare solver API |
 | `STATIC_DIR` | _(unset)_ | SPA assets dir (set in Docker) |
-| `BETTER_AUTH_SECRET` | _(required)_ | Session signing secret (≥ 32 chars) |
 | `BETTER_AUTH_URL` | `http://localhost:3101` | Public backend URL for auth callbacks |
 | `AUTHENTIK_CLIENT_ID` | _(required)_ | OIDC client ID from Authentik |
 | `AUTHENTIK_CLIENT_SECRET` | _(required)_ | OIDC client secret from Authentik |
 | `AUTHENTIK_DISCOVERY_URL` | see `.env.example` | Authentik OpenID discovery endpoint |
 
-RuTracker and qBittorrent credentials are stored in the database via the Settings UI, not via env. OIDC setup steps: [docker/AUTHENTIK.md](docker/AUTHENTIK.md).
+RuTracker and qBittorrent credentials are stored in the database via the Settings UI, not via env. The Better Auth signing secret is auto-generated into `app_settings` on first boot. OIDC setup steps: [docker/AUTHENTIK.md](docker/AUTHENTIK.md).
 
 ### Frontend (`apps/frontend`)
 
