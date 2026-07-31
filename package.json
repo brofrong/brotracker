@@ -8,7 +8,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "test": "bun test apps/backend/src && bun run --cwd packages/rutracker-ts test",
+    "test": "bun run --cwd apps/backend test && bun run --cwd packages/rutracker-ts test",
     "release": "bun scripts/release.ts"
   },
   "devDependencies": {
