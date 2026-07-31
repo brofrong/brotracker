@@ -15,7 +15,6 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     env:
-      BETTER_AUTH_SECRET: "ci-only-better-auth-secret-min-32-chars!!"
       AUTHENTIK_CLIENT_ID: "ci-client-id"
       AUTHENTIK_CLIENT_SECRET: "ci-client-secret"
       BETTER_AUTH_URL: "http://localhost:3101"

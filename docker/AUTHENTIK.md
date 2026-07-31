@@ -50,11 +50,12 @@ Copy `apps/backend/.env.example` to `apps/backend/.env` if needed, then set:
 
 | Variable | Example / notes |
 |----------|-----------------|
-| `BETTER_AUTH_SECRET` | Random string, at least 32 characters |
 | `BETTER_AUTH_URL` | `http://localhost:3101` |
 | `AUTHENTIK_CLIENT_ID` | From Authentik provider |
 | `AUTHENTIK_CLIENT_SECRET` | From Authentik provider |
 | `AUTHENTIK_DISCOVERY_URL` | `http://localhost:9080/application/o/brotracker/.well-known/openid-configuration` |
+
+The Better Auth signing secret is generated automatically and stored in the `app_settings` table (`better_auth_secret`) on first backend start — do not set it via env.
 
 Verify discovery responds after the app is created:
 
