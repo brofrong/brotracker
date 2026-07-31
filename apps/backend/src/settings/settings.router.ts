@@ -14,7 +14,7 @@ import {
 	rutrackerConfigSchema,
 	saveRutrackerConfig,
 } from "./rutracker-config";
-import { publicProcedure, router } from "../trpc";
+import { protectedProcedure, router } from "../trpc";
 import {
 	clearRutrackerSession,
 	getTracker,
@@ -40,7 +40,7 @@ const qbittorrentSetInputSchema = z.object({
 export const settingsRouter = router({
 	providers: router({
 		rutracker: router({
-			get: publicProcedure.query(async () => {
+			get: protectedProcedure.query(async () => {
 				const config = await loadRutrackerConfig();
 				if (!config) {
 					return {
@@ -58,7 +58,7 @@ export const settingsRouter = router({
 				};
 			}),
 
-			set: publicProcedure
+			set: protectedProcedure
 				.input(rutrackerSetInputSchema)
 				.mutation(async ({ input }) => {
 					const existing = await loadRutrackerConfig();
@@ -100,7 +100,7 @@ export const settingsRouter = router({
 					};
 				}),
 
-			test: publicProcedure.mutation(async () => {
+			test: protectedProcedure.mutation(async () => {
 				try {
 					const tracker = await getTracker();
 					const result = await tracker._getHTML("test", {});
@@ -131,7 +131,7 @@ export const settingsRouter = router({
 		}),
 
 		qbittorrent: router({
-			get: publicProcedure.query(async () => {
+			get: protectedProcedure.query(async () => {
 				const config = await loadQbittorrentConfig();
 				if (!config) {
 					return {
@@ -153,7 +153,7 @@ export const settingsRouter = router({
 				};
 			}),
 
-			set: publicProcedure
+			set: protectedProcedure
 				.input(qbittorrentSetInputSchema)
 				.mutation(async ({ input }) => {
 					const existing = await loadQbittorrentConfig();
@@ -188,7 +188,7 @@ export const settingsRouter = router({
 					};
 				}),
 
-			test: publicProcedure.mutation(async () => {
+			test: protectedProcedure.mutation(async () => {
 				try {
 					return await testQbittorrentConnection();
 				} catch (error) {

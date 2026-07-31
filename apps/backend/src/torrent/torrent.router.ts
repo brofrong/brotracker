@@ -1,9 +1,9 @@
 import z from "zod";
-import { publicProcedure, router } from "../trpc";
+import { protectedProcedure, router } from "../trpc";
 import { torrentService } from "./torrent.service";
 
 export const torrentRouter = router({
-	search: publicProcedure
+	search: protectedProcedure
 		.input(
 			z.object({
 				search: z.string().optional(),

@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { publicProcedure, router } from "../trpc";
+import { protectedProcedure, router } from "../trpc";
 import { iterateTorrentUpdates } from "./qbittorent.poller";
 import {
 	AddFromTrackerGatewayError,
@@ -9,15 +9,15 @@ import {
 } from "./qbittorent.service";
 
 export const qbittorentRouter = router({
-	list: publicProcedure.query(async () => {
+	list: protectedProcedure.query(async () => {
 		return qbittorentService.getTorrents();
 	}),
 
-	listUpdates: publicProcedure.subscription(async function* (opts) {
+	listUpdates: protectedProcedure.subscription(async function* (opts) {
 		yield* iterateTorrentUpdates(opts.signal);
 	}),
 
-	add: publicProcedure
+	add: protectedProcedure
 		.input(
 			z.object({
 				torrentFileUrl: z.string().url(),
