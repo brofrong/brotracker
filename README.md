@@ -122,12 +122,47 @@ RuTracker and qBittorrent credentials are stored in the database via the Setting
 |----------|---------|-------------|
 | `VITE_BACKEND_URL` | `""` | Backend host for tRPC/WS. Empty = same origin (production). Dev: `http://localhost:3101` |
 
+## CI / Docker Hub
+
+GitHub Actions (`.github/workflows/ci.yml`):
+
+| Event | What runs |
+|-------|-----------|
+| PR / push to `main` | Unit tests + Docker image **build** (no push) |
+| Tag `v*` (e.g. `v1.0.0`) | Unit tests + build + **push** to Docker Hub |
+
+Image: `brofrong/brotracker` (`:1.0.0`, `:1.0`, `:1`, `:latest`).
+
+Add repository secrets:
+
+| Secret | Value |
+|--------|-------|
+| `DOCKERHUB_USERNAME` | Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub [access token](https://hub.docker.com/settings/security) |
+
+### Release
+
+Version lives in the root `package.json` and is baked into the frontend at build time (`VITE_APP_VERSION`).
+
+```bash
+bun run release              # interactive patch/minor/major
+bun run release patch        # 0.1.0 → 0.1.1
+bun run release minor        # 0.1.0 → 0.2.0
+bun run release 1.0.0        # set exact version
+bun run release patch --yes  # skip confirmation
+bun run release patch --dry-run
+```
+
+The script bumps the version, commits, creates annotated tag `vX.Y.Z`, pushes branch + tag (CI publishes the Docker image).
+
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
 | `bun run dev` | Start all apps in watch mode |
 | `bun run build` | Build all packages/apps |
+| `bun run test` | Backend + rutracker-ts unit tests |
+| `bun run release` | Bump version, tag, and push a release |
 | `bun run lint` | Lint via Turbo |
 | `bun run check-types` | Typecheck via Turbo |
 

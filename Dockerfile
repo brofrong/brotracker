@@ -18,9 +18,15 @@ WORKDIR /app
 COPY apps/frontend apps/frontend
 COPY apps/backend apps/backend
 COPY packages packages
+# Root package.json already copied in deps; refresh after workspace copy so
+# vite can read the release version for VITE_APP_VERSION.
+COPY package.json ./
 
-# Empty = same-origin /trpc when backend serves the SPA
+# Empty = same-origin /trpc when backend serves the SPA.
+# Version defaults from root package.json (override with --build-arg APP_VERSION=…).
+ARG APP_VERSION=
 ENV VITE_BACKEND_URL=
+ENV VITE_APP_VERSION=$APP_VERSION
 
 WORKDIR /app/apps/frontend
 RUN bun run build
