@@ -3,7 +3,9 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import Navigation from "#/components/navigation/navigation";
+import Navigation, {
+	MobileNavigation,
+} from "#/components/navigation/navigation";
 import { ThemeProvider } from "#/components/theme-provider";
 import { queryClient } from "#/utils/trpc";
 import appCss from "../styles.css?url";
@@ -44,7 +46,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<body className="bg-body text-primary antialiased">
 				<ThemeProvider>
 					<QueryClientProvider client={queryClient}>
-						<AppShell height="fill" contentPadding={0} sideNav={<Navigation />}>
+						<AppShell
+							height="fill"
+							contentPadding={0}
+							sideNav={<Navigation />}
+							mobileNav={{ content: <MobileNavigation /> }}
+						>
 							{children}
 						</AppShell>
 					</QueryClientProvider>

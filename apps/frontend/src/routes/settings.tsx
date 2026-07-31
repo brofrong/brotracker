@@ -18,11 +18,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import z from "zod";
+import { ThemeToggle } from "#/components/ThemeToggle";
 import { env } from "#/utils/env";
 import { trpc } from "#/utils/trpc";
 
 const settingsSearchSchema = z.object({
-	section: z.enum(["rutracker", "qbittorrent"]).optional(),
+	section: z.enum(["appearance", "rutracker", "qbittorrent"]).optional(),
 });
 
 export const Route = createFileRoute("/settings")({
@@ -51,6 +52,7 @@ function SettingsPage() {
 							Версия сборки {env.VITE_APP_VERSION}
 						</Text>
 					</VStack>
+					<AppearanceSettings highlighted={section === "appearance"} />
 					<RutrackerSettingsForm highlighted={section === "rutracker"} />
 					<QbittorrentSettingsForm
 						highlighted={section === "qbittorrent"}
@@ -58,6 +60,28 @@ function SettingsPage() {
 				</VStack>
 			</Center>
 		</Section>
+	);
+}
+
+function AppearanceSettings({ highlighted }: { highlighted: boolean }) {
+	return (
+		<form id="settings-appearance">
+			<Card
+				elevation={highlighted ? "med" : "low"}
+				padding={5}
+				width="100%"
+			>
+				<VStack gap={4} width="100%">
+					<VStack gap={1}>
+						<Heading level={2}>Оформление</Heading>
+						<Text type="supporting">
+							Тема интерфейса: светлая, тёмная или как в системе
+						</Text>
+					</VStack>
+					<ThemeToggle />
+				</VStack>
+			</Card>
+		</form>
 	);
 }
 

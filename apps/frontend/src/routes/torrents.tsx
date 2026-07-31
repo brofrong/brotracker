@@ -14,7 +14,7 @@ import {
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { Section } from "@astryxdesign/core/Section";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
-import { HStack } from "@astryxdesign/core/Stack";
+import { HStack, StackItem } from "@astryxdesign/core/Stack";
 import {
 	pixel,
 	Table,
@@ -97,6 +97,37 @@ interface SkeletonRow extends Record<string, unknown> {
 }
 
 const SKELETON_ROW_COUNT = 10;
+/** Compact table body content height for skeleton rows. */
+const ROW_CONTENT_HEIGHT = 20;
+
+function TorrentProgressCell({
+	name,
+	progress,
+}: {
+	name: string;
+	progress: number;
+}) {
+	const pct = Math.min(100, Math.max(0, progress * 100));
+	const label = formatProgress(progress);
+	const isComplete = pct >= 100;
+
+	return (
+		<HStack gap={2} vAlign="center" width="100%">
+			<StackItem size="fill">
+				<ProgressBar
+					isLabelHidden
+					label={name}
+					max={100}
+					value={pct}
+					variant={isComplete ? "success" : "accent"}
+				/>
+			</StackItem>
+			<Text hasTabularNumbers size="xsm" type="supporting">
+				{label}
+			</Text>
+		</HStack>
+	);
+}
 
 function TorrentsTableSkeleton() {
 	const data = useMemo(
@@ -113,11 +144,15 @@ function TorrentsTableSkeleton() {
 			index: number,
 			offset: number,
 			width: number | string,
-			options?: { radius?: "rounded"; center?: boolean },
+			options?: {
+				radius?: "rounded";
+				center?: boolean;
+				height?: number;
+			},
 		) => {
 			const skeleton = (
 				<Skeleton
-					height={16}
+					height={options?.height ?? ROW_CONTENT_HEIGHT}
 					index={index * 8 + offset}
 					radius={options?.radius}
 					width={width}
@@ -145,13 +180,16 @@ function TorrentsTableSkeleton() {
 				width: pixel(72),
 				align: "center",
 				renderCell: ({ index }) =>
-					cell(index, 1, 16, { radius: "rounded", center: true }),
+					cell(index, 1, ROW_CONTENT_HEIGHT, {
+						radius: "rounded",
+						center: true,
+					}),
 			},
 			{
 				key: "progress",
 				header: sortLabels.progress,
 				width: pixel(180),
-				renderCell: ({ index }) => cell(index, 2, "90%"),
+				renderCell: ({ index }) => cell(index, 2, "90%", { radius: "rounded" }),
 			},
 			{
 				key: "size",
@@ -380,6 +418,25 @@ function TorrentsPage() {
 				key: "name",
 				header: sortableHeader("name"),
 				width: pixel(320),
+				renderCell: (item) => (
+					<Tooltip
+						content={
+							<Text
+								as="div"
+								className="max-w-sm whitespace-normal break-all text-surface"
+								color="inherit"
+								type="inherit"
+							>
+								{item.name}
+							</Text>
+						}
+						placement="above"
+					>
+						<Text hasTruncateTooltip={false} maxLines={1} type="body">
+							{item.name}
+						</Text>
+					</Tooltip>
+				),
 			},
 			{
 				key: "state",
@@ -403,13 +460,7 @@ function TorrentsPage() {
 				header: sortableHeader("progress"),
 				width: pixel(180),
 				renderCell: (item) => (
-					<ProgressBar
-						formatValueLabel={(value, max) => formatProgress(value / max)}
-						hasValueLabel
-						isLabelHidden
-						label={item.name}
-						value={item.progress * 100}
-					/>
+					<TorrentProgressCell name={item.name} progress={item.progress} />
 				),
 			},
 			{
