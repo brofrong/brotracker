@@ -1,6 +1,7 @@
 import {
 	CreateBucketCommand,
 	HeadBucketCommand,
+	PutBucketPolicyCommand,
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3";
@@ -29,10 +30,34 @@ function isAlreadyOwned(err: unknown): boolean {
 	);
 }
 
+/** Allow anonymous GetObject (MinIO-compatible). Errors ignored if already set. */
+async function ensurePublicRead(bucket: string): Promise<void> {
+	const policy = JSON.stringify({
+		Version: "2012-10-17",
+		Statement: [
+			{
+				Effect: "Allow",
+				Principal: { AWS: ["*"] },
+				Action: ["s3:GetObject"],
+				Resource: [`arn:aws:s3:::${bucket}/*`],
+			},
+		],
+	});
+	try {
+		await s3.send(
+			new PutBucketPolicyCommand({ Bucket: bucket, Policy: policy }),
+		);
+	} catch {
+		// already set / unsupported — covers still uploaded; public URL may 403
+	}
+}
+
 /** Ensure the configured bucket exists. Returns false on connection failure. */
 export async function ensureBucket(): Promise<boolean> {
+	const bucket = env.S3_BUCKET;
 	try {
-		await s3.send(new HeadBucketCommand({ Bucket: env.S3_BUCKET }));
+		await s3.send(new HeadBucketCommand({ Bucket: bucket }));
+		await ensurePublicRead(bucket);
 		return true;
 	} catch (err) {
 		if (!isNotFound(err)) {
@@ -41,10 +66,12 @@ export async function ensureBucket(): Promise<boolean> {
 	}
 
 	try {
-		await s3.send(new CreateBucketCommand({ Bucket: env.S3_BUCKET }));
+		await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+		await ensurePublicRead(bucket);
 		return true;
 	} catch (err) {
 		if (isAlreadyOwned(err)) {
+			await ensurePublicRead(bucket);
 			return true;
 		}
 		throw err;
