@@ -18,6 +18,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import z from "zod";
+import { env } from "#/utils/env";
 import { trpc } from "#/utils/trpc";
 
 const settingsSearchSchema = z.object({
@@ -44,7 +45,12 @@ function SettingsPage() {
 		<Section padding={4} variant="transparent" height="100%">
 			<Center axis="horizontal" height="100%" width="100%">
 				<VStack gap={6} maxWidth={520} width="100%">
-					<Heading level={1}>Настройки</Heading>
+					<VStack gap={1} width="100%">
+						<Heading level={1}>Настройки</Heading>
+						<Text type="supporting">
+							Версия сборки {env.VITE_APP_VERSION}
+						</Text>
+					</VStack>
 					<RutrackerSettingsForm highlighted={section === "rutracker"} />
 					<QbittorrentSettingsForm
 						highlighted={section === "qbittorrent"}
