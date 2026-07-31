@@ -1,11 +1,12 @@
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
+import type { Context } from "./trpc/context";
 import { logger } from "./utils/logger";
 
 /**
  * Initialization of tRPC backend
  * Should be done only once per backend!
  */
-const t = initTRPC.create();
+const t = initTRPC.context<Context>().create();
 
 const loggingMiddleware = t.middleware(async (opts) => {
 	const start = Date.now();
@@ -38,3 +39,16 @@ const loggingMiddleware = t.middleware(async (opts) => {
  */
 export const router = t.router;
 export const publicProcedure = t.procedure.use(loggingMiddleware);
+export const protectedProcedure = t.procedure
+	.use(loggingMiddleware)
+	.use(({ ctx, next }) => {
+		if (!ctx.session?.user) {
+			throw new TRPCError({ code: "UNAUTHORIZED" });
+		}
+		return next({
+			ctx: {
+				session: ctx.session,
+				user: ctx.session.user,
+			},
+		});
+	});
