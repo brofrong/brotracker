@@ -1,12 +1,12 @@
 import { defineRelations } from "drizzle-orm";
-import { userTable } from "./user/user.schema";
+import * as schema from "./schema";
 
-export const relations = defineRelations({ user: userTable }, (r) => ({
-	// user: {
+export const relations = defineRelations(schema, () => ({
+	// Example (RQB v2):
+	// users: {
 	// 	invitee: r.one.users({
 	// 		from: r.users.invitedBy,
 	// 		to: r.users.id,
 	// 	}),
-	// 	posts: r.many.posts(),
-	// }
+	// },
 }));

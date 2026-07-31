@@ -1,11 +1,10 @@
-import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-export const userTable = sqliteTable("users", {
-	id: integer({ mode: "number" }).primaryKey(),
+export const users = pgTable("users", {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	email: text().notNull(),
 	password: text().notNull(),
-	createdAt: integer("created_at", { mode: "timestamp" }).default(
-		sql`(CURRENT_TIMESTAMP)`,
-	),
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
 });
