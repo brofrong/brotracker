@@ -50,6 +50,73 @@ services:
     # environment:
     #   PROXY_SERVER: http://user:pass@host:port
 
+  authentik-postgres:
+    image: docker.io/library/postgres:16-alpine
+    container_name: brotracker-authentik-postgres
+    restart: unless-stopped
+    env_file:
+      - authentik.env
+    environment:
+      POSTGRES_USER: authentik
+      POSTGRES_PASSWORD: authentik
+      POSTGRES_DB: authentik
+    volumes:
+      - authentik_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d authentik -U authentik"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2026.5.6
+    container_name: brotracker-authentik-server
+    restart: unless-stopped
+    command: server
+    env_file:
+      - authentik.env
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: authentik
+    ports:
+      - "9080:9000"
+      - "9443:9443"
+    volumes:
+      - authentik_data:/data
+      - authentik_templates:/templates
+    depends_on:
+      authentik-postgres:
+        condition: service_healthy
+    shm_size: 512mb
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2026.5.6
+    container_name: brotracker-authentik-worker
+    restart: unless-stopped
+    command: worker
+    env_file:
+      - authentik.env
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: authentik
+    volumes:
+      - authentik_data:/data
+      - authentik_templates:/templates
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      authentik-postgres:
+        condition: service_healthy
+    shm_size: 512mb
+    user: root
+
 volumes:
   postgres_data:
   minio_data:
+  authentik_postgres_data:
+  authentik_data:
+  authentik_templates:
