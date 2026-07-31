@@ -3,6 +3,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { AuthGate } from "#/components/AuthGate";
 import Navigation, {
 	MobileNavigation,
 } from "#/components/navigation/navigation";
@@ -46,14 +47,16 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<body className="bg-body text-primary antialiased">
 				<ThemeProvider>
 					<QueryClientProvider client={queryClient}>
-						<AppShell
-							height="fill"
-							contentPadding={0}
-							sideNav={<Navigation />}
-							mobileNav={{ content: <MobileNavigation /> }}
-						>
-							{children}
-						</AppShell>
+						<AuthGate>
+							<AppShell
+								height="fill"
+								contentPadding={0}
+								sideNav={<Navigation />}
+								mobileNav={{ content: <MobileNavigation /> }}
+							>
+								{children}
+							</AppShell>
+						</AuthGate>
 					</QueryClientProvider>
 				</ThemeProvider>
 				<TanStackDevtools

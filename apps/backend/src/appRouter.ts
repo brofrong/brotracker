@@ -1,10 +1,10 @@
 import { qbittorentRouter } from "./qbittorent/qbittorent.router";
 import { settingsRouter } from "./settings/settings.router";
 import { torrentRouter } from "./torrent/torrent.router";
-import { publicProcedure, router } from "./trpc";
+import { protectedProcedure, router } from "./trpc";
 
 export const appRouter = router({
-	hello: publicProcedure.query(() => "Hello, World!"),
+	hello: protectedProcedure.query(() => "Hello, World!"),
 	torrent: torrentRouter,
 	qbittorent: qbittorentRouter,
 	settings: settingsRouter,
