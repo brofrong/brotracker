@@ -66,7 +66,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 		<Center height="100dvh" width="100%">
 			<VStack gap={8} hAlign="center" maxWidth={280} padding={6} width="100%">
 				<Heading justify="center" level={1} type="display-3">
-					BroTracker
+					torrent-manager
 				</Heading>
 
 				<Spinner
