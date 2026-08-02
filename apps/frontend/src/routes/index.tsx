@@ -18,6 +18,7 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import z from "zod";
 import { formatBytes, formatSpeed } from "#/utils/format";
 import { trpc } from "#/utils/trpc";
+import { TmdbAttribution } from "#/components/tmdb-attribution";
 
 /** Legacy search params lived on `/` — keep bookmarks working. */
 const legacySearchSchema = z.object({
@@ -149,6 +150,7 @@ function DiscoverWidget({ items }: { items: DiscoverCardData[] }) {
 					</ClickableCard>
 				))}
 			</Grid>
+			<TmdbAttribution compact />
 		</VStack>
 	);
 }

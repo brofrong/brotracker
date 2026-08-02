@@ -22,6 +22,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import z from "zod";
 import { ThemeToggle } from "#/components/ThemeToggle";
+import { TmdbAttribution } from "#/components/tmdb-attribution";
 import { env } from "#/utils/env";
 import { trpc } from "#/utils/trpc";
 
@@ -570,6 +571,8 @@ function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
 					{message ? (
 						<Banner status={message.status} title={message.text} />
 					) : null}
+
+					<TmdbAttribution />
 
 					<HStack gap={2} wrap="wrap">
 						<Button
