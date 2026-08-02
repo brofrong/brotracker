@@ -2,6 +2,7 @@ import { z } from "zod";
 import type {
 	QbittorrentProviderConfig,
 	RutrackerProviderConfig,
+	TmdbProviderConfig,
 } from "../db/settings/provider-settings.schema";
 import {
 	proxyUrlSchema,
@@ -11,6 +12,7 @@ import { qbittorrentConfigSchema } from "./qbittorrent-config";
 
 export const RUTRACKER_PROVIDER = "rutracker";
 export const QBITTORRENT_PROVIDER = "qbittorrent";
+export const TMDB_PROVIDER = "tmdb";
 
 export class MissingSecretError extends Error {
 	constructor(message: string) {
@@ -26,15 +28,20 @@ export type ProviderStore = {
 
 export type RutrackerPublic = {
 	login: string;
-	hasPassword: boolean;
+	password: string;
 	proxyUrl: string | null;
 };
 
 export type QbittorrentPublic = {
 	url: string;
-	hasApiKey: boolean;
+	apiKey: string;
 	filmsPath: string;
 	seriesPath: string;
+	isConfigured: boolean;
+};
+
+export type TmdbPublic = {
+	apiKey: string;
 	isConfigured: boolean;
 };
 
@@ -56,6 +63,14 @@ const qbittorrentStoredSchema = z.object({
 	seriesPath: z.string().optional().default(""),
 });
 
+const tmdbStoredSchema = z.object({
+	apiKey: z.string(),
+});
+
+const tmdbConfigSchema = z.object({
+	apiKey: z.string().min(1, "API key is required"),
+});
+
 function normalizePath(value: string): string {
 	return value.replace(/\/+$/, "");
 }
@@ -64,11 +79,11 @@ function toRutrackerPublic(
 	config: RutrackerProviderConfig | null,
 ): RutrackerPublic {
 	if (!config) {
-		return { login: "", hasPassword: false, proxyUrl: null };
+		return { login: "", password: "", proxyUrl: null };
 	}
 	return {
 		login: config.login,
-		hasPassword: config.password.length > 0,
+		password: config.password,
 		proxyUrl: config.proxyUrl,
 	};
 }
@@ -79,7 +94,7 @@ function toQbittorrentPublic(
 	if (!config) {
 		return {
 			url: "",
-			hasApiKey: false,
+			apiKey: "",
 			filmsPath: "",
 			seriesPath: "",
 			isConfigured: false,
@@ -87,11 +102,18 @@ function toQbittorrentPublic(
 	}
 	return {
 		url: config.url,
-		hasApiKey: config.apiKey.length > 0,
+		apiKey: config.apiKey,
 		filmsPath: config.filmsPath,
 		seriesPath: config.seriesPath,
 		isConfigured: true,
 	};
+}
+
+function toTmdbPublic(config: TmdbProviderConfig | null): TmdbPublic {
+	if (!config) {
+		return { apiKey: "", isConfigured: false };
+	}
+	return { apiKey: config.apiKey, isConfigured: true };
 }
 
 function parseRutracker(raw: unknown): RutrackerProviderConfig | null {
@@ -125,6 +147,14 @@ function parseQbittorrent(raw: unknown): QbittorrentProviderConfig | null {
 	};
 }
 
+function parseTmdb(raw: unknown): TmdbProviderConfig | null {
+	const parsed = tmdbStoredSchema.safeParse(raw);
+	if (!parsed.success || !parsed.data.apiKey) {
+		return null;
+	}
+	return { apiKey: parsed.data.apiKey };
+}
+
 export function createProviderConfig(store: ProviderStore) {
 	async function loadRutracker(): Promise<RutrackerProviderConfig | null> {
 		return parseRutracker(await store.load(RUTRACKER_PROVIDER));
@@ -134,15 +164,23 @@ export function createProviderConfig(store: ProviderStore) {
 		return parseQbittorrent(await store.load(QBITTORRENT_PROVIDER));
 	}
 
+	async function loadTmdb(): Promise<TmdbProviderConfig | null> {
+		return parseTmdb(await store.load(TMDB_PROVIDER));
+	}
+
 	return {
 		loadRutracker,
 		loadQbittorrent,
+		loadTmdb,
 
 		getRutracker: async (): Promise<RutrackerPublic> =>
 			toRutrackerPublic(await loadRutracker()),
 
 		getQbittorrent: async (): Promise<QbittorrentPublic> =>
 			toQbittorrentPublic(await loadQbittorrent()),
+
+		getTmdb: async (): Promise<TmdbPublic> =>
+			toTmdbPublic(await loadTmdb()),
 
 		saveRutracker: async (input: {
 			login: string;
@@ -225,6 +263,33 @@ export function createProviderConfig(store: ProviderStore) {
 			return {
 				config,
 				public: toQbittorrentPublic(config),
+				effects: {},
+			};
+		},
+
+		saveTmdb: async (input: {
+			apiKey: string;
+		}): Promise<{
+			config: TmdbProviderConfig;
+			public: TmdbPublic;
+			effects: Record<string, never>;
+		}> => {
+			const existing = await loadTmdb();
+			const apiKey =
+				input.apiKey.length > 0
+					? input.apiKey
+					: (existing?.apiKey ?? "");
+
+			if (!apiKey) {
+				throw new MissingSecretError("API key is required");
+			}
+
+			const config = tmdbConfigSchema.parse({ apiKey });
+			await store.save(TMDB_PROVIDER, config);
+
+			return {
+				config,
+				public: toTmdbPublic(config),
 				effects: {},
 			};
 		},

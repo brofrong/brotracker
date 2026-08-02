@@ -5,12 +5,15 @@ import {
 	getTracker,
 	RutrackerNotConfiguredError,
 } from "../torrent/torrent.tracker";
+import { logger } from "../utils/logger";
 import { protectedProcedure, router } from "../trpc";
 import { MissingSecretError, proxyUrlSchema } from "./provider-config";
 import { providerConfig } from "./provider-config.live";
 import {
+	resolveTmdbApiKey,
 	saveQbittorrentSettings,
 	saveRutrackerSettings,
+	saveTmdbSettings,
 } from "./provider-settings";
 
 const rutrackerSetInputSchema = z.object({
@@ -28,6 +31,11 @@ const qbittorrentSetInputSchema = z.object({
 	seriesPath: z.string(),
 });
 
+const tmdbSetInputSchema = z.object({
+	/** Empty string keeps the existing API key. */
+	apiKey: z.string(),
+});
+
 function mapSecretError(error: unknown): never {
 	if (error instanceof MissingSecretError) {
 		throw new TRPCError({
@@ -36,6 +44,43 @@ function mapSecretError(error: unknown): never {
 		});
 	}
 	throw error;
+}
+
+async function testTmdbConnection(): Promise<{ ok: true }> {
+	const apiKey = await resolveTmdbApiKey();
+	if (!apiKey) {
+		throw new TRPCError({
+			code: "PRECONDITION_FAILED",
+			message: "TMDB API key is not configured. Set it in Settings.",
+		});
+	}
+
+	const url = `https://api.themoviedb.org/3/configuration?api_key=${encodeURIComponent(apiKey)}`;
+	try {
+		const response = await fetch(url, {
+			headers: { Accept: "application/json" },
+		});
+		if (!response.ok) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message: `TMDB ответил ${response.status}`,
+			});
+		}
+		return { ok: true as const };
+	} catch (error) {
+		if (error instanceof TRPCError) {
+			throw error;
+		}
+		logger.warn(
+			{ err: error instanceof Error ? error.message : String(error) },
+			"tmdb connection test failed",
+		);
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message:
+				error instanceof Error ? error.message : "TMDB connection failed",
+		});
+	}
 }
 
 export const settingsRouter = router({
@@ -109,6 +154,22 @@ export const settingsRouter = router({
 					});
 				}
 			}),
+		}),
+
+		tmdb: router({
+			get: protectedProcedure.query(async () => providerConfig.getTmdb()),
+
+			set: protectedProcedure
+				.input(tmdbSetInputSchema)
+				.mutation(async ({ input }) => {
+					try {
+						return await saveTmdbSettings(input);
+					} catch (error) {
+						mapSecretError(error);
+					}
+				}),
+
+			test: protectedProcedure.mutation(async () => testTmdbConnection()),
 		}),
 	}),
 });

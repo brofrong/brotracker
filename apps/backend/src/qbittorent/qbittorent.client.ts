@@ -187,18 +187,18 @@ function torrentHashesBody(hash: string, extra?: Record<string, string>): string
 	return params.toString();
 }
 
-/** Pause a torrent (download or seeding). */
+/** Stop a torrent (download or seeding). qBittorrent 5+ uses /stop (was /pause). */
 export async function pauseTorrent(hash: string): Promise<void> {
-	await qbittorentRequest("/torrents/pause", {
+	await qbittorentRequest("/torrents/stop", {
 		method: "POST",
 		headers: { "Content-Type": "application/x-www-form-urlencoded" },
 		body: torrentHashesBody(hash),
 	});
 }
 
-/** Resume a paused torrent. */
+/** Start a stopped torrent. qBittorrent 5+ uses /start (was /resume). */
 export async function resumeTorrent(hash: string): Promise<void> {
-	await qbittorentRequest("/torrents/resume", {
+	await qbittorentRequest("/torrents/start", {
 		method: "POST",
 		headers: { "Content-Type": "application/x-www-form-urlencoded" },
 		body: torrentHashesBody(hash),

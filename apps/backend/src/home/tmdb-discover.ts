@@ -56,9 +56,10 @@ export function mapTrendingItem(
 }
 
 export function createFetchDiscoverFeed(
-	apiKey: string | undefined,
+	resolveApiKey: () => Promise<string | undefined>,
 ): () => Promise<DiscoverCard[] | null> {
 	return async () => {
+		const apiKey = await resolveApiKey();
 		if (!apiKey) {
 			return null;
 		}

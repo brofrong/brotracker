@@ -7,7 +7,10 @@ import { Center } from "@astryxdesign/core/Center";
 import { FormLayout } from "@astryxdesign/core/FormLayout";
 import { Heading } from "@astryxdesign/core/Heading";
 import { IconButton } from "@astryxdesign/core/IconButton";
-import { InputGroup } from "@astryxdesign/core/InputGroup";
+import {
+	InputGroup,
+	InputGroupText,
+} from "@astryxdesign/core/InputGroup";
 import { Section } from "@astryxdesign/core/Section";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
@@ -23,7 +26,9 @@ import { env } from "#/utils/env";
 import { trpc } from "#/utils/trpc";
 
 const settingsSearchSchema = z.object({
-	section: z.enum(["appearance", "rutracker", "qbittorrent"]).optional(),
+	section: z
+		.enum(["appearance", "rutracker", "qbittorrent", "tmdb"])
+		.optional(),
 });
 
 export const Route = createFileRoute("/settings")({
@@ -57,6 +62,7 @@ function SettingsPage() {
 					<QbittorrentSettingsForm
 						highlighted={section === "qbittorrent"}
 					/>
+					<TmdbSettingsForm highlighted={section === "tmdb"} />
 				</VStack>
 			</Center>
 		</Section>
@@ -90,6 +96,52 @@ type StatusMessage = {
 	text: string;
 } | null;
 
+function SecretInput({
+	label,
+	value,
+	onChange,
+	placeholder,
+	isRequired,
+	revealLabel,
+	hideLabel,
+}: {
+	label: string;
+	value: string;
+	onChange: (value: string) => void;
+	placeholder?: string;
+	isRequired?: boolean;
+	revealLabel: string;
+	hideLabel: string;
+}) {
+	const [isVisible, setIsVisible] = useState(false);
+	const toggleLabel = isVisible ? hideLabel : revealLabel;
+
+	return (
+		<InputGroup label={label} isRequired={isRequired} width="100%">
+			<TextInput
+				label={label}
+				isLabelHidden
+				type={isVisible ? "text" : "password"}
+				value={value}
+				onChange={onChange}
+				placeholder={placeholder}
+				width="100%"
+			/>
+			<InputGroupText>
+				<IconButton
+					label={toggleLabel}
+					tooltip={toggleLabel}
+					icon={isVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+					variant="ghost"
+					size="sm"
+					type="button"
+					onClick={() => setIsVisible((visible) => !visible)}
+				/>
+			</InputGroupText>
+		</InputGroup>
+	);
+}
+
 function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 	const queryClient = useQueryClient();
 	const settingsQuery = useQuery(
@@ -98,7 +150,6 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 
 	const [login, setLogin] = useState("");
 	const [password, setPassword] = useState("");
-	const [showPassword, setShowPassword] = useState(false);
 	const [proxyUrl, setProxyUrl] = useState("");
 	const [message, setMessage] = useState<StatusMessage>(null);
 
@@ -107,7 +158,7 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 			return;
 		}
 		setLogin(settingsQuery.data.login);
-		setPassword("");
+		setPassword(settingsQuery.data.password);
 		setProxyUrl(settingsQuery.data.proxyUrl ?? "");
 	}, [settingsQuery.data]);
 
@@ -118,7 +169,7 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 				queryKey: trpc.settings.providers.rutracker.get.queryKey(),
 			});
 			setLogin(data.login);
-			setPassword("");
+			setPassword(data.password);
 			setProxyUrl(data.proxyUrl ?? "");
 			setMessage({ status: "success", text: "Сохранено" });
 		},
@@ -167,11 +218,9 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 		);
 	}
 
-	const canTest = Boolean(settingsQuery.data?.hasPassword);
+	const canTest = Boolean(settingsQuery.data?.password);
 	const isBusy = saveMutation.isPending || testMutation.isPending;
-	const canSave =
-		Boolean(login.trim()) &&
-		(Boolean(password.trim()) || Boolean(settingsQuery.data?.hasPassword));
+	const canSave = Boolean(login.trim()) && Boolean(password.trim());
 
 	return (
 		<form id="settings-rutracker" onSubmit={onSubmit}>
@@ -196,28 +245,14 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 							isRequired
 							width="100%"
 						/>
-						<InputGroup label="Password" isRequired>
-							<TextInput
-								label="Password"
-								isLabelHidden
-								type={showPassword ? "text" : "password"}
-								value={password}
-								onChange={setPassword}
-								placeholder={
-									settingsQuery.data?.hasPassword
-										? "Оставьте пустым, чтобы не менять"
-										: undefined
-								}
-								width="100%"
-							/>
-							<IconButton
-								label={showPassword ? "Скрыть пароль" : "Показать пароль"}
-								icon={showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-								variant="ghost"
-								type="button"
-								onClick={() => setShowPassword((visible) => !visible)}
-							/>
-						</InputGroup>
+						<SecretInput
+							label="Password"
+							value={password}
+							onChange={setPassword}
+							isRequired
+							revealLabel="Показать пароль"
+							hideLabel="Скрыть пароль"
+						/>
 						<TextInput
 							label="Proxy"
 							value={proxyUrl}
@@ -267,7 +302,6 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 
 	const [url, setUrl] = useState("");
 	const [apiKey, setApiKey] = useState("");
-	const [showApiKey, setShowApiKey] = useState(false);
 	const [filmsPath, setFilmsPath] = useState("");
 	const [seriesPath, setSeriesPath] = useState("");
 	const [message, setMessage] = useState<StatusMessage>(null);
@@ -277,7 +311,7 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 			return;
 		}
 		setUrl(settingsQuery.data.url);
-		setApiKey("");
+		setApiKey(settingsQuery.data.apiKey);
 		setFilmsPath(settingsQuery.data.filmsPath);
 		setSeriesPath(settingsQuery.data.seriesPath);
 	}, [settingsQuery.data]);
@@ -289,7 +323,7 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 				queryKey: trpc.settings.providers.qbittorrent.get.queryKey(),
 			});
 			setUrl(data.url);
-			setApiKey("");
+			setApiKey(data.apiKey);
 			setFilmsPath(data.filmsPath);
 			setSeriesPath(data.seriesPath);
 			setMessage({ status: "success", text: "Сохранено" });
@@ -345,9 +379,7 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 
 	const canTest = Boolean(settingsQuery.data?.isConfigured);
 	const isBusy = saveMutation.isPending || testMutation.isPending;
-	const canSave =
-		Boolean(url.trim()) &&
-		(Boolean(apiKey.trim()) || Boolean(settingsQuery.data?.hasApiKey));
+	const canSave = Boolean(url.trim()) && Boolean(apiKey.trim());
 
 	return (
 		<form id="settings-qbittorrent" onSubmit={onSubmit}>
@@ -374,28 +406,14 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 							description="Базовый URL WebUI без /api/v2"
 							width="100%"
 						/>
-						<InputGroup label="API key" isRequired>
-							<TextInput
-								label="API key"
-								isLabelHidden
-								type={showApiKey ? "text" : "password"}
-								value={apiKey}
-								onChange={setApiKey}
-								placeholder={
-									settingsQuery.data?.hasApiKey
-										? "Оставьте пустым, чтобы не менять"
-										: undefined
-								}
-								width="100%"
-							/>
-							<IconButton
-								label={showApiKey ? "Скрыть ключ" : "Показать ключ"}
-								icon={showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-								variant="ghost"
-								type="button"
-								onClick={() => setShowApiKey((visible) => !visible)}
-							/>
-						</InputGroup>
+						<SecretInput
+							label="API key"
+							value={apiKey}
+							onChange={setApiKey}
+							isRequired
+							revealLabel="Показать ключ"
+							hideLabel="Скрыть ключ"
+						/>
 						<TextInput
 							label="Путь для фильмов"
 							value={filmsPath}
@@ -411,6 +429,141 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 							placeholder="/data/media/tv"
 							description="Куда qBittorrent будет сохранять сериалы"
 							width="100%"
+						/>
+					</FormLayout>
+
+					{message ? (
+						<Banner status={message.status} title={message.text} />
+					) : null}
+
+					<HStack gap={2} wrap="wrap">
+						<Button
+							label="Сохранить"
+							type="submit"
+							variant="primary"
+							isLoading={saveMutation.isPending}
+							isDisabled={!canSave || isBusy}
+						/>
+						<Button
+							label="Проверить"
+							type="button"
+							variant="secondary"
+							isLoading={testMutation.isPending}
+							isDisabled={!canTest || isBusy}
+							onClick={() => {
+								setMessage(null);
+								testMutation.mutate();
+							}}
+						/>
+					</HStack>
+				</VStack>
+			</Card>
+		</form>
+	);
+}
+
+function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
+	const queryClient = useQueryClient();
+	const settingsQuery = useQuery(
+		trpc.settings.providers.tmdb.get.queryOptions(),
+	);
+
+	const [apiKey, setApiKey] = useState("");
+	const [message, setMessage] = useState<StatusMessage>(null);
+
+	useEffect(() => {
+		if (!settingsQuery.data) {
+			return;
+		}
+		setApiKey(settingsQuery.data.apiKey);
+	}, [settingsQuery.data]);
+
+	const saveMutation = useMutation({
+		...trpc.settings.providers.tmdb.set.mutationOptions(),
+		onSuccess: async (data) => {
+			await queryClient.invalidateQueries({
+				queryKey: trpc.settings.providers.tmdb.get.queryKey(),
+			});
+			setApiKey(data.apiKey);
+			setMessage({ status: "success", text: "Сохранено" });
+		},
+		onError: (error) => {
+			setMessage({
+				status: "error",
+				text: error.message || "Не удалось сохранить",
+			});
+		},
+	});
+
+	const testMutation = useMutation({
+		...trpc.settings.providers.tmdb.test.mutationOptions(),
+		onSuccess: () => {
+			setMessage({
+				status: "success",
+				text: "Подключение к TMDB успешно",
+			});
+		},
+		onError: (error) => {
+			setMessage({
+				status: "error",
+				text: error.message || "Проверка не удалась",
+			});
+		},
+	});
+
+	const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		setMessage(null);
+		saveMutation.mutate({ apiKey });
+	};
+
+	if (settingsQuery.isLoading) {
+		return <Spinner label="Загрузка" />;
+	}
+
+	if (settingsQuery.isError) {
+		return (
+			<Banner
+				status="error"
+				title="Не удалось загрузить настройки TMDB"
+				description={settingsQuery.error.message}
+			/>
+		);
+	}
+
+	const canTest = Boolean(settingsQuery.data?.isConfigured);
+	const isBusy = saveMutation.isPending || testMutation.isPending;
+	const canSave =
+		Boolean(apiKey.trim()) || Boolean(settingsQuery.data?.isConfigured);
+
+	return (
+		<form id="settings-tmdb" onSubmit={onSubmit}>
+			<Card
+				elevation={highlighted ? "med" : "low"}
+				padding={5}
+				width="100%"
+			>
+				<VStack gap={4} width="100%">
+					<VStack gap={1}>
+						<Heading level={2}>TMDB</Heading>
+						<Text type="supporting">
+							API key для метаданных Title и виджета Discover на главной
+						</Text>
+					</VStack>
+
+					<FormLayout>
+						<SecretInput
+							label="API key"
+							value={apiKey}
+							onChange={setApiKey}
+							isRequired={!settingsQuery.data?.isConfigured}
+							revealLabel="Показать ключ"
+							hideLabel="Скрыть ключ"
+							placeholder={
+								settingsQuery.data?.isConfigured
+									? "Оставьте пустым, чтобы не менять"
+									: undefined
+							}
 						/>
 					</FormLayout>
 

@@ -5,10 +5,16 @@ import {
 import {
 	loadQbittorrentConfig,
 	loadRutrackerConfig,
+	loadTmdbConfig,
 	providerConfig,
 } from "./provider-config.live";
 
-export { loadQbittorrentConfig, loadRutrackerConfig, providerConfig };
+export {
+	loadQbittorrentConfig,
+	loadRutrackerConfig,
+	loadTmdbConfig,
+	providerConfig,
+};
 
 /** Settings mutations: persist + apply provider side effects. */
 export async function saveRutrackerSettings(input: {
@@ -34,4 +40,15 @@ export async function saveQbittorrentSettings(input: {
 }) {
 	const result = await providerConfig.saveQbittorrent(input);
 	return result.public;
+}
+
+export async function saveTmdbSettings(input: { apiKey: string }) {
+	const result = await providerConfig.saveTmdb(input);
+	return result.public;
+}
+
+/** Resolve TMDB API key from provider settings. */
+export async function resolveTmdbApiKey(): Promise<string | undefined> {
+	const stored = await loadTmdbConfig();
+	return stored?.apiKey || undefined;
 }

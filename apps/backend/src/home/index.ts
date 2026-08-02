@@ -2,7 +2,7 @@ import {
 	getTransferStats,
 	QbittorrentNotConfiguredError,
 } from "../qbittorent/qbittorent.client";
-import { env } from "../utils/env";
+import { resolveTmdbApiKey } from "../settings/provider-settings";
 import { createHome } from "./home";
 import { createFetchDiscoverFeed } from "./tmdb-discover";
 
@@ -17,7 +17,7 @@ export const home = createHome({
 			throw error;
 		}
 	},
-	getDiscoverFeed: createFetchDiscoverFeed(env.TMDB_API_KEY),
+	getDiscoverFeed: createFetchDiscoverFeed(resolveTmdbApiKey),
 });
 
 export type {

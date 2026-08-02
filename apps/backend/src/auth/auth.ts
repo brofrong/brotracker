@@ -10,6 +10,10 @@ export function createAuth(secret: string) {
 		baseURL: env.BETTER_AUTH_URL,
 		secret,
 		trustedOrigins: [env.CORS_ORIGIN],
+		session: {
+			expiresIn: 60 * 60 * 24 * 365, // 1 year
+			updateAge: 60 * 60 * 24 * 7, // refresh expiry every 7 days of use
+		},
 		database: drizzleAdapter(db, {
 			provider: "pg",
 			schema: authSchema,

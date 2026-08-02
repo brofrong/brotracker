@@ -27,8 +27,6 @@ const envSchema = z.object({
 	 * Default: `apps/backend/public` (populated by Docker build).
 	 */
 	STATIC_DIR: z.string().optional(),
-	/** TMDB API key (v3) for title metadata and ratings. */
-	TMDB_API_KEY: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

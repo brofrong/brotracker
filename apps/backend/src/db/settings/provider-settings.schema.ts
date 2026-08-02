@@ -15,7 +15,11 @@ export type QbittorrentProviderConfig = {
 	seriesPath: string;
 };
 
-/** Per-provider app settings (rutracker, qbittorrent, later kinopoisk, …). */
+export type TmdbProviderConfig = {
+	apiKey: string;
+};
+
+/** Per-provider app settings (rutracker, qbittorrent, tmdb, later kinopoisk, …). */
 export const providerSettings = pgTable("provider_settings", {
 	provider: text("provider").primaryKey(),
 	config: jsonb("config").notNull(),
