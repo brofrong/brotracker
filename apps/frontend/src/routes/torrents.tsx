@@ -311,8 +311,14 @@ function TorrentsPage() {
 	const pauseMutation = useMutation({
 		...trpc.qbittorent.pause.mutationOptions(),
 	});
+	const pauseAllMutation = useMutation({
+		...trpc.qbittorent.pauseAll.mutationOptions(),
+	});
 	const resumeMutation = useMutation({
 		...trpc.qbittorent.resume.mutationOptions(),
+	});
+	const resumeAllMutation = useMutation({
+		...trpc.qbittorent.resumeAll.mutationOptions(),
 	});
 	const deleteMutation = useMutation({
 		...trpc.qbittorent.delete.mutationOptions(),
@@ -501,6 +507,62 @@ function TorrentsPage() {
 		}
 	};
 
+	const handlePauseAll = async () => {
+		const snapshot = torrents;
+		setTorrents((current) =>
+			current.map((torrent) => {
+				const next = getOptimisticStoppedState(torrent);
+				return {
+					...torrent,
+					stateKind: next.stateKind as LiveTorrent["stateKind"],
+					stateLabel: next.stateLabel,
+					downloadSpeed: 0,
+					uploadSpeed: 0,
+				};
+			}),
+		);
+
+		try {
+			await pauseAllMutation.mutateAsync();
+		} catch (err) {
+			setTorrents(snapshot);
+			toast({
+				type: "error",
+				body:
+					err instanceof Error
+						? err.message
+						: "Не удалось остановить все торренты",
+			});
+		}
+	};
+
+	const handleResumeAll = async () => {
+		const snapshot = torrents;
+		setTorrents((current) =>
+			current.map((torrent) => {
+				const next = getOptimisticStartedState(torrent);
+				return {
+					...torrent,
+					stateKind: next.stateKind as LiveTorrent["stateKind"],
+					stateLabel: next.stateLabel,
+				};
+			}),
+		);
+
+		try {
+			await resumeAllMutation.mutateAsync();
+		} catch (err) {
+			setTorrents(snapshot);
+			toast({
+				type: "error",
+				body:
+					err instanceof Error
+						? err.message
+						: "Не удалось продолжить все торренты",
+			});
+		}
+	};
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: sortKey/sortDirection drive header icons; action handlers stay current via closure
 	const columns = useMemo((): TableColumn<TorrentRow>[] => {
 		const sortableHeader = (key: SortKey) => (
@@ -634,19 +696,27 @@ function TorrentsPage() {
 				align: "center",
 				renderCell: (item) => {
 					const paused = isTorrentPaused(item.stateKind);
-					const pauseLabel = paused ? "Продолжить" : "Пауза";
+					const actionLabel = paused
+						? "Продолжить скачивание"
+						: "Перевести на паузу";
 					return (
 						<HStack gap={1} hAlign="center" width="100%">
 							<IconButton
 								clickAction={() => handleTogglePause(item)}
-								icon={paused ? <Play size={16} /> : <Pause size={16} />}
-								label={pauseLabel}
+								icon={
+									paused ? (
+										<Icon color="warning" icon={Pause} size="sm" />
+									) : (
+										<Icon color="success" icon={Play} size="sm" />
+									)
+								}
+								label={actionLabel}
 								size="sm"
-								tooltip={pauseLabel}
+								tooltip={actionLabel}
 								variant="ghost"
 							/>
 							<IconButton
-								icon={<Trash2 size={16} />}
+								icon={<Icon color="error" icon={Trash2} size="sm" />}
 								label="Удалить"
 								onClick={() => setPendingDelete(item)}
 								size="sm"
@@ -724,33 +794,58 @@ function TorrentsPage() {
 	const pageFooter = (
 		<LayoutFooter className="bg-body" hasDivider padding={4}>
 			<HStack gap={4} hAlign="between" vAlign="center" wrap="wrap">
-				{freeSpaceOnDisk != null ? (
-					<Tooltip content={diskFreeTooltip(freeSpaceOnDisk)} placement="above">
-						<HStack gap={1.5} vAlign="center">
+				<HStack gap={3} vAlign="center">
+					{freeSpaceOnDisk != null ? (
+						<Tooltip
+							content={diskFreeTooltip(freeSpaceOnDisk)}
+							placement="above"
+						>
+							<HStack gap={1.5} vAlign="center">
+								<Icon
+									color={diskFreeIconColor(freeSpaceOnDisk)}
+									icon={HardDrive}
+									label={diskFreeTooltip(freeSpaceOnDisk)}
+									size="sm"
+								/>
+								<Text hasTabularNumbers type="supporting">
+									{formatBytes(freeSpaceOnDisk)}
+								</Text>
+							</HStack>
+						</Tooltip>
+					) : (
+						<Tooltip
+							content="Свободное место на диске неизвестно"
+							placement="above"
+						>
 							<Icon
-								color={diskFreeIconColor(freeSpaceOnDisk)}
+								color="tertiary"
 								icon={HardDrive}
-								label={diskFreeTooltip(freeSpaceOnDisk)}
+								label="Свободное место на диске неизвестно"
 								size="sm"
 							/>
-							<Text hasTabularNumbers type="supporting">
-								{formatBytes(freeSpaceOnDisk)}
-							</Text>
+						</Tooltip>
+					)}
+					{isConfigured ? (
+						<HStack gap={1} vAlign="center">
+							<IconButton
+								clickAction={handlePauseAll}
+								icon={<Icon color="warning" icon={Pause} size="sm" />}
+								label="Остановить все торренты"
+								size="sm"
+								tooltip="Остановить все торренты"
+								variant="ghost"
+							/>
+							<IconButton
+								clickAction={handleResumeAll}
+								icon={<Icon color="success" icon={Play} size="sm" />}
+								label="Продолжить все торренты"
+								size="sm"
+								tooltip="Продолжить все торренты"
+								variant="ghost"
+							/>
 						</HStack>
-					</Tooltip>
-				) : (
-					<Tooltip
-						content="Свободное место на диске неизвестно"
-						placement="above"
-					>
-						<Icon
-							color="tertiary"
-							icon={HardDrive}
-							label="Свободное место на диске неизвестно"
-							size="sm"
-						/>
-					</Tooltip>
-				)}
+					) : null}
+				</HStack>
 				<Tooltip content={connectionTooltip} placement="above">
 					<Icon
 						color={connectionIconColor}

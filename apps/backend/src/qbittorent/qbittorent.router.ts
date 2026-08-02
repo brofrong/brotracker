@@ -42,6 +42,12 @@ export const qbittorentRouter = router({
 		return { ok: true as const };
 	}),
 
+	pauseAll: protectedProcedure.mutation(async () => {
+		await pauseTorrent("all");
+		await refreshTorrentUpdates();
+		return { ok: true as const };
+	}),
+
 	resume: protectedProcedure
 		.input(torrentIdInput)
 		.mutation(async ({ input }) => {
@@ -49,6 +55,12 @@ export const qbittorentRouter = router({
 			await refreshTorrentUpdates();
 			return { ok: true as const };
 		}),
+
+	resumeAll: protectedProcedure.mutation(async () => {
+		await resumeTorrent("all");
+		await refreshTorrentUpdates();
+		return { ok: true as const };
+	}),
 
 	delete: protectedProcedure
 		.input(torrentIdInput)
