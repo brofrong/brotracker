@@ -2,7 +2,7 @@ import {
 	getTransferStats,
 	QbittorrentNotConfiguredError,
 } from "../qbittorent/qbittorent.client";
-import { resolveTmdbApiKey } from "../settings/provider-settings";
+import { resolveTmdbCredentials } from "../settings/provider-settings";
 import { listRecentWatchEvents } from "../title/title-watch-event.repository";
 import { logger } from "../utils/logger";
 import { createHome } from "./home";
@@ -36,7 +36,7 @@ export const home = createHome({
 	},
 	getTransferHistory,
 	getRecentSpeeds,
-	getDiscoverFeed: createFetchDiscoverFeed(resolveTmdbApiKey),
+	getDiscoverFeed: createFetchDiscoverFeed(resolveTmdbCredentials),
 	getTitleWatchEvents: () => listRecentWatchEvents(TITLE_WATCH_FEED_LIMIT),
 });
 

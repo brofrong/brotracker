@@ -159,7 +159,23 @@ describe("provider-config qbittorrent", () => {
 });
 
 describe("provider-config tmdb", () => {
-	test("get returns stored apiKey", async () => {
+	test("get returns stored apiKey and proxyUrl", async () => {
+		const store = memoryStore({
+			tmdb: {
+				apiKey: "tmdb-key",
+				proxyUrl: "socks5://127.0.0.1:1080",
+			},
+		});
+		const providers = createProviderConfig(store);
+
+		await expect(providers.getTmdb()).resolves.toEqual({
+			apiKey: "tmdb-key",
+			proxyUrl: "socks5://127.0.0.1:1080",
+			isConfigured: true,
+		});
+	});
+
+	test("get defaults missing proxyUrl to null for legacy rows", async () => {
 		const store = memoryStore({
 			tmdb: { apiKey: "tmdb-key" },
 		});
@@ -167,30 +183,59 @@ describe("provider-config tmdb", () => {
 
 		await expect(providers.getTmdb()).resolves.toEqual({
 			apiKey: "tmdb-key",
+			proxyUrl: null,
 			isConfigured: true,
 		});
 	});
 
 	test("save keeps existing apiKey when incoming is empty", async () => {
 		const store = memoryStore({
-			tmdb: { apiKey: "old-tmdb" },
+			tmdb: { apiKey: "old-tmdb", proxyUrl: null },
 		});
 		const providers = createProviderConfig(store);
 
-		const result = await providers.saveTmdb({ apiKey: "" });
+		const result = await providers.saveTmdb({
+			apiKey: "",
+			proxyUrl: "http://proxy:8080",
+		});
 
 		expect(result.public).toEqual({
 			apiKey: "old-tmdb",
+			proxyUrl: "http://proxy:8080",
 			isConfigured: true,
 		});
-		expect(store.data.tmdb).toEqual({ apiKey: "old-tmdb" });
+		expect(store.data.tmdb).toEqual({
+			apiKey: "old-tmdb",
+			proxyUrl: "http://proxy:8080",
+		});
+	});
+
+	test("save clears proxy when empty", async () => {
+		const store = memoryStore({
+			tmdb: {
+				apiKey: "tmdb-key",
+				proxyUrl: "socks5://127.0.0.1:1080",
+			},
+		});
+		const providers = createProviderConfig(store);
+
+		const result = await providers.saveTmdb({
+			apiKey: "",
+			proxyUrl: "",
+		});
+
+		expect(result.public.proxyUrl).toBeNull();
+		expect(store.data.tmdb).toEqual({
+			apiKey: "tmdb-key",
+			proxyUrl: null,
+		});
 	});
 
 	test("save rejects first-time empty apiKey", async () => {
 		const providers = createProviderConfig(memoryStore());
 
-		await expect(providers.saveTmdb({ apiKey: "" })).rejects.toBeInstanceOf(
-			MissingSecretError,
-		);
+		await expect(
+			providers.saveTmdb({ apiKey: "", proxyUrl: null }),
+		).rejects.toBeInstanceOf(MissingSecretError);
 	});
 });
