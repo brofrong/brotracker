@@ -86,12 +86,16 @@ export async function syncWatchesFromQb(
 			continue;
 		}
 
+		const justCompleted = deps.isCompletePack(torrent.name);
 		await deps.saveWatch({
 			...existing,
 			qbHash: torrent.hash,
 			size: existing.size ?? torrent.size,
+			watch: justCompleted ? "completed" : existing.watch,
 		});
-		upserted += 1;
+		if (!justCompleted) {
+			upserted += 1;
+		}
 	}
 
 	return { upserted };

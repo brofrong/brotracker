@@ -16,6 +16,7 @@ import {
 } from "@astryxdesign/core/SegmentedControl";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Text } from "@astryxdesign/core/Text";
 import { useToast } from "@astryxdesign/core/Toast";
 import { detectMediaType } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/media-type";
@@ -267,7 +268,24 @@ type TitleWatchView = {
 	lastCheckedAt: string | null;
 	lastChangedAt: string | null;
 	lastError: string | null;
+	progress: { have: number; total: number } | null;
 };
+
+function episodeProgressLabel(watch: TitleWatchView | null): string {
+	if (!watch?.progress) {
+		return "Прогресс серий неизвестен";
+	}
+	return `Серии: ${watch.progress.have} из ${watch.progress.total}`;
+}
+
+function episodeProgressVariant(
+	watch: TitleWatchView | null,
+): "success" | "accent" | "neutral" {
+	if (!watch?.progress) {
+		return "neutral";
+	}
+	return watch.progress.have >= watch.progress.total ? "success" : "accent";
+}
 
 function TitleWatchPanel({
 	titleId,
@@ -487,6 +505,15 @@ function TitlePage() {
 									<Text type="supporting">
 										Сезонов: {meta.seasons}
 									</Text>
+								) : null}
+								{facet === "tv" ? (
+									<HStack gap={1} vAlign="center">
+										<StatusDot
+											label={episodeProgressLabel(watch)}
+											variant={episodeProgressVariant(watch)}
+										/>
+										<Text type="supporting">{episodeProgressLabel(watch)}</Text>
+									</HStack>
 								) : null}
 							</HStack>
 						</VStack>

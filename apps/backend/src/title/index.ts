@@ -17,6 +17,7 @@ import { getTracker } from "../torrent/torrent.tracker";
 import { logger } from "../utils/logger";
 import { checkTopicNow } from "./check-topic-now";
 import { enqueueNightlyWatchTasks } from "./enqueue-nightly-tasks";
+import { isCompletePack } from "./episode-progress";
 import { createNightlyWorker } from "./nightly-worker";
 import { processWatchTask } from "./process-watch-task";
 import { createDefaultRatingsPort } from "./ratings-port";
@@ -281,9 +282,6 @@ const replaceInQb = createReplaceTorrentInQb({
 const ratingsPort = createDefaultRatingsPort();
 
 const now = () => new Date().toISOString();
-
-/** #12 will provide real N/M parsing; default false until then. */
-const isCompletePack = () => false;
 
 async function checkTopicNowBound(input: { topicUrl: string }) {
 	return checkTopicNow(input, {

@@ -115,4 +115,90 @@ describe("syncWatchesFromQb", () => {
 		expect(result.upserted).toBe(0);
 		expect(store.size).toBe(0);
 	});
+
+	test("flips a tracking watch to completed once the name reports a full pack", async () => {
+		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=100";
+		const store = new Map<string, TitleWatchRecord>([
+			[
+				topicUrl,
+				{
+					topicUrl,
+					titleId: "tmdb:tv:1",
+					watch: "tracking",
+					source: "auto-qb",
+					size: 1000,
+					registeredAt: null,
+					contentHash: null,
+					qbHash: "h1",
+					lastCheckedAt: null,
+					lastChangedAt: null,
+					lastError: null,
+				},
+			],
+		]);
+
+		await syncWatchesFromQb({
+			listTorrents: async () => [
+				{
+					hash: "h1",
+					name: "Show 10 из 10",
+					savePath: "/data/tv",
+					tags: "brotracker:topic:100",
+					size: 1000,
+				},
+			],
+			getSeriesPath: async () => "/data/tv",
+			loadWatch: async (url) => store.get(url) ?? null,
+			saveWatch: async (record) => {
+				store.set(record.topicUrl, record);
+			},
+			isCompletePack: (name) => name.includes("10 из 10"),
+			now: () => "2026-08-02T13:00:00.000Z",
+		});
+
+		expect(store.get(topicUrl)?.watch).toBe("completed");
+	});
+
+	test("leaves an incomplete tracking watch alone", async () => {
+		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=100";
+		const store = new Map<string, TitleWatchRecord>([
+			[
+				topicUrl,
+				{
+					topicUrl,
+					titleId: "tmdb:tv:1",
+					watch: "tracking",
+					source: "auto-qb",
+					size: 1000,
+					registeredAt: null,
+					contentHash: null,
+					qbHash: "h1",
+					lastCheckedAt: null,
+					lastChangedAt: null,
+					lastError: null,
+				},
+			],
+		]);
+
+		await syncWatchesFromQb({
+			listTorrents: async () => [
+				{
+					hash: "h1",
+					name: "Show 1-8 из 10",
+					savePath: "/data/tv",
+					tags: "brotracker:topic:100",
+					size: 1000,
+				},
+			],
+			getSeriesPath: async () => "/data/tv",
+			loadWatch: async (url) => store.get(url) ?? null,
+			saveWatch: async (record) => {
+				store.set(record.topicUrl, record);
+			},
+			isCompletePack: (name) => name.includes("10 из 10"),
+			now: () => "2026-08-02T13:00:00.000Z",
+		});
+
+		expect(store.get(topicUrl)?.watch).toBe("tracking");
+	});
 });
