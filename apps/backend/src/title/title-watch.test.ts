@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import { checkTopicNow } from "./check-topic-now";
 import type { CheckResult, TitleWatchRecord } from "./check-topic-now";
+import { processWatchTask } from "./process-watch-task";
+import type { WatchTask } from "./process-watch-task";
 import { createTitleModule, type TitleDeps } from "./title";
 import type { TitleRating, TmdbMeta } from "./title.types";
 
@@ -27,8 +30,9 @@ const tvMeta = (): TmdbMeta => ({
 
 function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 	const store = new Map<string, TitleWatchRecord>();
+	const tasks = new Map<string, WatchTask>();
 
-	const base: TitleDeps = {
+	const deps: TitleDeps = {
 		fetchTmdbMeta: async () => ({ status: "ok", meta: tvMeta() }),
 		getRatings: async () => stubRatings(),
 		searchLocal: async () => [],
@@ -58,10 +62,49 @@ function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 		replaceInQb: async () => {},
 		isCompletePack: () => false,
 		now: () => "2026-08-02T14:00:00.000Z",
+		// Mirrors the real bootstrap in title/index.ts: checkNow enqueues a
+		// WatchTask and drains it through the same processWatchTask path the
+		// nightly worker uses, backed here by an in-memory task store.
+		enqueueWatchTask: async (input) => {
+			const id = `task-${tasks.size + 1}`;
+			const created: WatchTask = {
+				id,
+				topicUrl: input.topicUrl,
+				titleId: input.titleId,
+				trigger: input.trigger,
+				status: "pending",
+				error: null,
+				createdAt: deps.now(),
+				startedAt: null,
+				finishedAt: null,
+			};
+			tasks.set(id, created);
+			return created;
+		},
+		processWatchTask: (taskId) =>
+			processWatchTask(
+				{ taskId },
+				{
+					loadTask: async (id) => tasks.get(id) ?? null,
+					saveTask: async (updated) => {
+						tasks.set(updated.id, updated);
+					},
+					checkTopicNow: (input) =>
+						checkTopicNow(input, {
+							loadWatch: deps.loadWatchByTopicUrl,
+							saveWatch: deps.saveWatch,
+							fetchTorrentBytes: deps.fetchTorrentBytes,
+							fetchTopicMeta: deps.fetchTopicMeta,
+							replaceInQb: deps.replaceInQb,
+							now: deps.now,
+						}),
+					now: deps.now,
+				},
+			),
 		...overrides,
 	};
 
-	return { module: createTitleModule(base), store, deps: base };
+	return { module: createTitleModule(deps), store, deps };
 }
 
 describe("title.setWatch", () => {
@@ -160,6 +203,43 @@ describe("title.checkNow", () => {
 			expect(result.message).toBe("boom");
 		}
 		expect(store.get(topicUrl)?.lastError).toBe("boom");
+	});
+
+	test("enqueues a manual WatchTask and processes it via processWatchTask (not an ad-hoc check)", async () => {
+		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=55";
+		const enqueueCalls: { topicUrl: string; trigger: string }[] = [];
+		const processedTaskIds: string[] = [];
+		const { module, store, deps } = createWatchDeps();
+		store.set(topicUrl, {
+			topicUrl,
+			titleId: "tmdb:tv:1",
+			watch: "tracking",
+			source: "manual",
+			size: 4,
+			registeredAt: "2024-01-01T00:00:00.000Z",
+			contentHash: "9f64a747e1b97f131fabb6b447296c9b6f0201e79fb3c5356e6c77e89b6a806a",
+			qbHash: "h1",
+			lastCheckedAt: null,
+			lastChangedAt: null,
+			lastError: null,
+		});
+
+		const originalEnqueue = deps.enqueueWatchTask;
+		const originalProcess = deps.processWatchTask;
+		deps.enqueueWatchTask = async (input) => {
+			enqueueCalls.push({ topicUrl: input.topicUrl, trigger: input.trigger });
+			return originalEnqueue(input);
+		};
+		deps.processWatchTask = async (taskId) => {
+			processedTaskIds.push(taskId);
+			return originalProcess(taskId);
+		};
+
+		const result = await module.checkNow({ id: "tmdb:tv:1" });
+
+		expect(enqueueCalls).toEqual([{ topicUrl, trigger: "manual" }]);
+		expect(processedTaskIds).toEqual(["task-1"]);
+		expect(result.status).toBe("unchanged");
 	});
 });
 

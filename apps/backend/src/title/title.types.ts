@@ -1,4 +1,9 @@
 import type { TitleWatchRecord, TopicMeta } from "./check-topic-now";
+import type {
+	ProcessWatchTaskResult,
+	WatchTask,
+	WatchTaskTrigger,
+} from "./process-watch-task";
 import type { SyncQbTorrent } from "./sync-watches-from-qb";
 
 /** Matches RuTracker MediaType / app domain: films | tv. */
@@ -203,4 +208,12 @@ export type TitleDeps = {
 	}) => Promise<void>;
 	isCompletePack: (torrentName: string) => boolean;
 	now: () => string;
+	/** Enqueues a WatchTask row (manual trigger, always fresh — no dedup). */
+	enqueueWatchTask: (input: {
+		topicUrl: string;
+		titleId: string | null;
+		trigger: WatchTaskTrigger;
+	}) => Promise<WatchTask>;
+	/** Same path the nightly worker uses to drain pending tasks. */
+	processWatchTask: (taskId: string) => Promise<ProcessWatchTaskResult>;
 };
