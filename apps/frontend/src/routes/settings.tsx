@@ -107,7 +107,7 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 			return;
 		}
 		setLogin(settingsQuery.data.login);
-		setPassword(settingsQuery.data.password);
+		setPassword("");
 		setProxyUrl(settingsQuery.data.proxyUrl ?? "");
 	}, [settingsQuery.data]);
 
@@ -118,6 +118,7 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 				queryKey: trpc.settings.providers.rutracker.get.queryKey(),
 			});
 			setLogin(data.login);
+			setPassword("");
 			setProxyUrl(data.proxyUrl ?? "");
 			setMessage({ status: "success", text: "Сохранено" });
 		},
@@ -168,6 +169,9 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 
 	const canTest = Boolean(settingsQuery.data?.hasPassword);
 	const isBusy = saveMutation.isPending || testMutation.isPending;
+	const canSave =
+		Boolean(login.trim()) &&
+		(Boolean(password.trim()) || Boolean(settingsQuery.data?.hasPassword));
 
 	return (
 		<form id="settings-rutracker" onSubmit={onSubmit}>
@@ -199,6 +203,11 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 								type={showPassword ? "text" : "password"}
 								value={password}
 								onChange={setPassword}
+								placeholder={
+									settingsQuery.data?.hasPassword
+										? "Оставьте пустым, чтобы не менять"
+										: undefined
+								}
 								width="100%"
 							/>
 							<IconButton
@@ -230,7 +239,7 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 							type="submit"
 							variant="primary"
 							isLoading={saveMutation.isPending}
-							isDisabled={!login.trim() || !password.trim() || isBusy}
+							isDisabled={!canSave || isBusy}
 						/>
 						<Button
 							label="Проверить"
@@ -268,7 +277,7 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 			return;
 		}
 		setUrl(settingsQuery.data.url);
-		setApiKey(settingsQuery.data.apiKey);
+		setApiKey("");
 		setFilmsPath(settingsQuery.data.filmsPath);
 		setSeriesPath(settingsQuery.data.seriesPath);
 	}, [settingsQuery.data]);
@@ -280,7 +289,7 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 				queryKey: trpc.settings.providers.qbittorrent.get.queryKey(),
 			});
 			setUrl(data.url);
-			setApiKey(data.apiKey);
+			setApiKey("");
 			setFilmsPath(data.filmsPath);
 			setSeriesPath(data.seriesPath);
 			setMessage({ status: "success", text: "Сохранено" });
@@ -336,6 +345,9 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 
 	const canTest = Boolean(settingsQuery.data?.isConfigured);
 	const isBusy = saveMutation.isPending || testMutation.isPending;
+	const canSave =
+		Boolean(url.trim()) &&
+		(Boolean(apiKey.trim()) || Boolean(settingsQuery.data?.hasApiKey));
 
 	return (
 		<form id="settings-qbittorrent" onSubmit={onSubmit}>
@@ -369,6 +381,11 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 								type={showApiKey ? "text" : "password"}
 								value={apiKey}
 								onChange={setApiKey}
+								placeholder={
+									settingsQuery.data?.hasApiKey
+										? "Оставьте пустым, чтобы не менять"
+										: undefined
+								}
 								width="100%"
 							/>
 							<IconButton
@@ -407,7 +424,7 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 							type="submit"
 							variant="primary"
 							isLoading={saveMutation.isPending}
-							isDisabled={!url.trim() || !apiKey.trim() || isBusy}
+							isDisabled={!canSave || isBusy}
 						/>
 						<Button
 							label="Проверить"

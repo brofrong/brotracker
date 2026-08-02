@@ -7,7 +7,7 @@ import type { AppRouter } from "@brotracker/backend/appRouter";
 import type { inferRouterOutputs } from "@trpc/server";
 import { env } from "./env";
 
-export type QbittorentTorrent =
+export type LiveTorrent =
 	inferRouterOutputs<AppRouter>["qbittorent"]["list"][number];
 
 function getBackendWsUrl(): string {
@@ -52,7 +52,7 @@ function getSubscriptionClient() {
 }
 
 export function subscribeToTorrentUpdates(handlers: {
-	onData: (torrents: QbittorentTorrent[]) => void;
+	onData: (torrents: LiveTorrent[]) => void;
 	onError: (error: Error) => void;
 }) {
 	return getSubscriptionClient().qbittorent.listUpdates.subscribe(undefined, {

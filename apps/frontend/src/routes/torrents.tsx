@@ -33,12 +33,11 @@ import {
 	formatEta,
 	formatProgress,
 	formatSpeed,
-	formatTorrentState,
 } from "#/utils/format";
 import { getTorrentStateVisual } from "#/utils/torrent-status";
 import { handleTrpcUnauthorized, trpc } from "#/utils/trpc";
 import {
-	type QbittorentTorrent,
+	type LiveTorrent,
 	subscribeToTorrentUpdates,
 } from "#/utils/trpc-subscription";
 
@@ -47,23 +46,24 @@ type SortKey =
 	| "state"
 	| "progress"
 	| "size"
-	| "dlspeed"
-	| "upspeed"
+	| "downloadSpeed"
+	| "uploadSpeed"
 	| "eta"
-	| "save_path";
+	| "savePath";
 
 type SortDirection = "asc" | "desc";
 
 interface TorrentRow extends Record<string, unknown> {
-	hash: string;
+	id: string;
 	name: string;
-	state: string;
+	stateKind: string;
+	stateLabel: string;
 	progress: number;
 	size: number;
-	dlspeed: number;
-	upspeed: number;
-	eta: number;
-	save_path: string;
+	downloadSpeed: number;
+	uploadSpeed: number;
+	etaSeconds: number;
+	savePath: string;
 }
 
 const sortLabels: Record<SortKey, string> = {
@@ -71,23 +71,24 @@ const sortLabels: Record<SortKey, string> = {
 	state: "Статус",
 	progress: "Прогресс",
 	size: "Размер",
-	dlspeed: "Скорость ↓",
-	upspeed: "Скорость ↑",
+	downloadSpeed: "Скорость ↓",
+	uploadSpeed: "Скорость ↑",
 	eta: "ETA",
-	save_path: "Путь сохранения",
+	savePath: "Путь сохранения",
 };
 
-function toTorrentRow(torrent: QbittorentTorrent): TorrentRow {
+function toTorrentRow(torrent: LiveTorrent): TorrentRow {
 	return {
-		hash: torrent.hash,
+		id: torrent.id,
 		name: torrent.name,
-		state: torrent.state,
+		stateKind: torrent.stateKind,
+		stateLabel: torrent.stateLabel,
 		progress: torrent.progress,
 		size: torrent.size,
-		dlspeed: torrent.dlspeed,
-		upspeed: torrent.upspeed,
-		eta: torrent.eta,
-		save_path: torrent.save_path,
+		downloadSpeed: torrent.downloadSpeed,
+		uploadSpeed: torrent.uploadSpeed,
+		etaSeconds: torrent.etaSeconds,
+		savePath: torrent.savePath,
 	};
 }
 
@@ -199,15 +200,15 @@ function TorrentsTableSkeleton() {
 				renderCell: ({ index }) => cell(index, 3, 64),
 			},
 			{
-				key: "dlspeed",
-				header: sortLabels.dlspeed,
+				key: "downloadSpeed",
+				header: sortLabels.downloadSpeed,
 				width: pixel(110),
 				align: "end",
 				renderCell: ({ index }) => cell(index, 4, 72),
 			},
 			{
-				key: "upspeed",
-				header: sortLabels.upspeed,
+				key: "uploadSpeed",
+				header: sortLabels.uploadSpeed,
 				width: pixel(110),
 				align: "end",
 				renderCell: ({ index }) => cell(index, 5, 72),
@@ -220,8 +221,8 @@ function TorrentsTableSkeleton() {
 				renderCell: ({ index }) => cell(index, 6, 40),
 			},
 			{
-				key: "save_path",
-				header: sortLabels.save_path,
+				key: "savePath",
+				header: sortLabels.savePath,
 				width: pixel(240),
 				renderCell: ({ index }) => cell(index, 7, "70%"),
 			},
@@ -279,7 +280,7 @@ function TorrentsPage() {
 		refetchInterval: isConfigured ? 5000 : false,
 	});
 
-	const [torrents, setTorrents] = useState<QbittorentTorrent[]>([]);
+	const [torrents, setTorrents] = useState<LiveTorrent[]>([]);
 	const [search, setSearch] = useState("");
 	const [sortKey, setSortKey] = useState<SortKey>("name");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -330,11 +331,10 @@ function TorrentsPage() {
 		const query = search.trim().toLowerCase();
 		const filtered = query
 			? torrents.filter((torrent) => {
-					const stateLabel = formatTorrentState(torrent.state).toLowerCase();
 					return (
 						torrent.name.toLowerCase().includes(query) ||
-						torrent.save_path.toLowerCase().includes(query) ||
-						stateLabel.includes(query)
+						torrent.savePath.toLowerCase().includes(query) ||
+						torrent.stateLabel.toLowerCase().includes(query)
 					);
 				})
 			: torrents;
@@ -347,10 +347,7 @@ function TorrentsPage() {
 					comparison = left.name.localeCompare(right.name, "ru");
 					break;
 				case "state":
-					comparison = formatTorrentState(left.state).localeCompare(
-						formatTorrentState(right.state),
-						"ru",
-					);
+					comparison = left.stateLabel.localeCompare(right.stateLabel, "ru");
 					break;
 				case "progress":
 					comparison = left.progress - right.progress;
@@ -358,17 +355,17 @@ function TorrentsPage() {
 				case "size":
 					comparison = left.size - right.size;
 					break;
-				case "dlspeed":
-					comparison = left.dlspeed - right.dlspeed;
+				case "downloadSpeed":
+					comparison = left.downloadSpeed - right.downloadSpeed;
 					break;
-				case "upspeed":
-					comparison = left.upspeed - right.upspeed;
+				case "uploadSpeed":
+					comparison = left.uploadSpeed - right.uploadSpeed;
 					break;
 				case "eta":
-					comparison = left.eta - right.eta;
+					comparison = left.etaSeconds - right.etaSeconds;
 					break;
-				case "save_path":
-					comparison = left.save_path.localeCompare(right.save_path, "ru");
+				case "savePath":
+					comparison = left.savePath.localeCompare(right.savePath, "ru");
 					break;
 			}
 
@@ -389,7 +386,7 @@ function TorrentsPage() {
 
 		setSortKey(key);
 		setSortDirection(
-			key === "name" || key === "state" || key === "save_path" ? "asc" : "desc",
+			key === "name" || key === "state" || key === "savePath" ? "asc" : "desc",
 		);
 	};
 
@@ -447,12 +444,16 @@ function TorrentsPage() {
 				width: pixel(72),
 				align: "center",
 				renderCell: (item) => {
-					const label = formatTorrentState(item.state);
-					const { icon, color } = getTorrentStateVisual(item.state);
+					const { icon, color } = getTorrentStateVisual(item.stateKind);
 					return (
 						<HStack hAlign="center" width="100%">
-							<Tooltip content={label} placement="above">
-								<Icon color={color} icon={icon} label={label} size="sm" />
+							<Tooltip content={item.stateLabel} placement="above">
+								<Icon
+									color={color}
+									icon={icon}
+									label={item.stateLabel}
+									size="sm"
+								/>
 							</Tooltip>
 						</HStack>
 					);
@@ -478,24 +479,24 @@ function TorrentsPage() {
 				),
 			},
 			{
-				key: "dlspeed",
-				header: sortableHeader("dlspeed"),
+				key: "downloadSpeed",
+				header: sortableHeader("downloadSpeed"),
 				width: pixel(110),
 				align: "end",
 				renderCell: (item) => (
 					<Text hasTabularNumbers type="body">
-						{formatSpeed(item.dlspeed)}
+						{formatSpeed(item.downloadSpeed)}
 					</Text>
 				),
 			},
 			{
-				key: "upspeed",
-				header: sortableHeader("upspeed"),
+				key: "uploadSpeed",
+				header: sortableHeader("uploadSpeed"),
 				width: pixel(110),
 				align: "end",
 				renderCell: (item) => (
 					<Text hasTabularNumbers type="body">
-						{formatSpeed(item.upspeed)}
+						{formatSpeed(item.uploadSpeed)}
 					</Text>
 				),
 			},
@@ -506,13 +507,13 @@ function TorrentsPage() {
 				align: "end",
 				renderCell: (item) => (
 					<Text hasTabularNumbers type="body">
-						{formatEta(item.eta)}
+						{formatEta(item.etaSeconds)}
 					</Text>
 				),
 			},
 			{
-				key: "save_path",
-				header: sortableHeader("save_path"),
+				key: "savePath",
+				header: sortableHeader("savePath"),
 				width: pixel(240),
 			},
 		];
@@ -705,7 +706,7 @@ function TorrentsPage() {
 							data={rows}
 							density="compact"
 							hasHover
-							idKey="hash"
+							idKey="id"
 							plugins={{ columnResize }}
 							textOverflow="truncate"
 						/>

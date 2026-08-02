@@ -1,29 +1,12 @@
 import type { AppRouter } from "@brotracker/backend/appRouter";
 import { QueryClient } from "@tanstack/react-query";
-import { createTRPCClient, httpBatchLink, TRPCClientError } from "@trpc/client";
+import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
-import { redirectToAuthentikSignIn } from "./auth-client";
 import { env } from "./env";
-
-let unauthorizedRedirectPending = false;
-
-function handleUnauthorized() {
-	if (unauthorizedRedirectPending || typeof window === "undefined") {
-		return;
-	}
-	unauthorizedRedirectPending = true;
-	void redirectToAuthentikSignIn();
-}
+import { unauthorizedRedirect } from "./unauthorized-redirect";
 
 export function handleTrpcUnauthorized(error: unknown): boolean {
-	if (
-		error instanceof TRPCClientError &&
-		error.data?.code === "UNAUTHORIZED"
-	) {
-		handleUnauthorized();
-		return true;
-	}
-	return false;
+	return unauthorizedRedirect.handleTrpcUnauthorized(error);
 }
 
 export const queryClient = new QueryClient({
