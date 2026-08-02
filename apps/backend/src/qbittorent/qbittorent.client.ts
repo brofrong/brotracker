@@ -50,12 +50,79 @@ export async function getTorrents(): Promise<QbittorentTorrent[]> {
 	return response.json() as Promise<QbittorentTorrent[]>;
 }
 
+type MainDataServerState = {
+	alltime_dl?: number;
+	alltime_ul?: number;
+	dl_info_data?: number;
+	up_info_data?: number;
+	dl_info_speed?: number;
+	up_info_speed?: number;
+	free_space_on_disk?: number;
+};
+
+type MainDataResponse = {
+	server_state?: MainDataServerState;
+};
+
+async function fetchMainData(): Promise<MainDataResponse> {
+	const response = await qbittorentRequest("/sync/maindata?rid=0");
+	return response.json() as Promise<MainDataResponse>;
+}
+
+export type TransferStats = {
+	downloadedBytes: number;
+	uploadedBytes: number;
+	downloadSpeed?: number;
+	uploadSpeed?: number;
+	freeSpaceBytes?: number;
+	ratio?: number;
+};
+
+function parseTransferStats(state: MainDataServerState): TransferStats {
+	const downloadedBytes = state.alltime_dl ?? state.dl_info_data ?? 0;
+	const uploadedBytes = state.alltime_ul ?? state.up_info_data ?? 0;
+
+	const stats: TransferStats = {
+		downloadedBytes,
+		uploadedBytes,
+	};
+
+	if (
+		typeof state.dl_info_speed === "number" &&
+		Number.isFinite(state.dl_info_speed)
+	) {
+		stats.downloadSpeed = state.dl_info_speed;
+	}
+	if (
+		typeof state.up_info_speed === "number" &&
+		Number.isFinite(state.up_info_speed)
+	) {
+		stats.uploadSpeed = state.up_info_speed;
+	}
+	if (
+		typeof state.free_space_on_disk === "number" &&
+		Number.isFinite(state.free_space_on_disk)
+	) {
+		stats.freeSpaceBytes = state.free_space_on_disk;
+	}
+
+	if (downloadedBytes > 0) {
+		stats.ratio = uploadedBytes / downloadedBytes;
+	}
+
+	return stats;
+}
+
+/** Aggregate transfer stats from qBittorrent server state. */
+export async function getTransferStats(): Promise<TransferStats> {
+	const data = await fetchMainData();
+	const state = data.server_state ?? {};
+	return parseTransferStats(state);
+}
+
 /** Free space on qBittorrent's default save path (bytes). */
 export async function getFreeSpaceOnDisk(): Promise<number | null> {
-	const response = await qbittorentRequest("/sync/maindata?rid=0");
-	const data = (await response.json()) as {
-		server_state?: { free_space_on_disk?: number };
-	};
+	const data = await fetchMainData();
 	const free = data.server_state?.free_space_on_disk;
 	return typeof free === "number" && Number.isFinite(free) ? free : null;
 }

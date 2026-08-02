@@ -13,7 +13,7 @@ import {
 } from "@astryxdesign/core/SideNav";
 import { HStack } from "@astryxdesign/core/Stack";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Download, LogOut, Search, Settings } from "lucide-react";
+import { Download, Home, LogOut, Search, Settings } from "lucide-react";
 import {
 	type ComponentPropsWithoutRef,
 	forwardRef,
@@ -57,10 +57,17 @@ export function NavItems({ includeSignOut = false }: { includeSignOut?: boolean 
 		<SideNavSection title="Действия">
 			<SideNavItem
 				as={SideNavLink}
-				label="Поиск"
+				label="Главная"
 				href="/"
-				icon={Search}
+				icon={Home}
 				isSelected={pathname === "/"}
+			/>
+			<SideNavItem
+				as={SideNavLink}
+				label="Поиск"
+				href="/search"
+				icon={Search}
+				isSelected={pathname === "/search"}
 			/>
 			<SideNavItem
 				as={SideNavLink}

@@ -1,341 +1,158 @@
 "use client";
 
-import { AspectRatio } from "@astryxdesign/core/AspectRatio";
-import { Badge } from "@astryxdesign/core/Badge";
+import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
-import { Icon } from "@astryxdesign/core/Icon";
+import { Heading } from "@astryxdesign/core/Heading";
 import { Section } from "@astryxdesign/core/Section";
-import {
-	SegmentedControl,
-	SegmentedControlItem,
-} from "@astryxdesign/core/SegmentedControl";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
-import {
-	pixel,
-	Table,
-	type TableColumn,
-	useTableColumnResize,
-} from "@astryxdesign/core/Table";
+import { Text } from "@astryxdesign/core/Text";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useMemo, useState } from "react";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import z from "zod";
-import {
-	DownloadTorrentDialog,
-	type DownloadTorrentItem,
-} from "#/components/search/download-torrent-dialog";
-import {
-	SearchBar,
-	type SearchSource,
-} from "#/components/search/search-bar";
-import {
-	SearchCardTags,
-	type SearchCardItem,
-	SearchResultsCards,
-} from "#/components/search/search-results-cards";
-import { formatBytes } from "#/utils/format";
+import { formatBytes, formatSpeed } from "#/utils/format";
 import { trpc } from "#/utils/trpc";
 
-const searchSchema = z.object({
+/** Legacy search params lived on `/` — keep bookmarks working. */
+const legacySearchSchema = z.object({
 	search: z.string().optional(),
 	source: z.enum(["local", "tracker"]).optional(),
 });
 
 export const Route = createFileRoute("/")({
-	component: App,
-	validateSearch: searchSchema,
+	component: HomePage,
+	validateSearch: legacySearchSchema,
+	beforeLoad: ({ search }) => {
+		if (search.search?.trim() || search.source) {
+			throw redirect({
+				to: "/search",
+				search: {
+					search: search.search,
+					source: search.source,
+				},
+			});
+		}
+	},
 });
 
-type ViewMode = "table" | "cards";
+type TransferStatsData = {
+	downloadedBytes: number;
+	uploadedBytes: number;
+	downloadSpeed?: number;
+	uploadSpeed?: number;
+	freeSpaceBytes?: number;
+	ratio?: number;
+};
 
-interface SearchRow extends Record<string, unknown> {
-	id: string;
-	cover: string | null;
-	title: string;
-	author: string;
-	resolution: "4K" | "1080p" | "720p" | "SD" | null;
-	hdr: "HDR" | "SDR" | null;
-	size: string;
-	seeds: number | string;
-	leeches: number | string;
-	downloads: number | string;
-	date: string;
-	torrentFileUrl: string;
-	topicUrl: string;
-	forumId: string;
-}
-
-interface TorrentResult {
-	torrentId: string;
-	title: string;
-	authorId: string;
-	size: number;
-	seeds: number;
-	leeches: number;
-	downloads: number;
-	date: string | Date;
-	torrentFileUrl: string;
-	topicUrl: string;
-	imageUrl: string | null;
-	hdr: "HDR" | "SDR" | null;
-	resolution: "4K" | "1080p" | "720p" | "SD" | null;
-	forumId: string;
-}
-
-const staticColumns: TableColumn<SearchRow>[] = [
-	{
-		key: "cover",
-		header: "",
-		width: pixel(72),
-		resizable: false,
-		renderCell: (item) =>
-			item.cover ? (
-				<AspectRatio ratio={2 / 3} fit="contain">
-					<img src={item.cover} alt={item.title} />
-				</AspectRatio>
-			) : null,
-	},
-	{
-		key: "title",
-		header: "Название",
-		width: pixel(480),
-	},
-	{
-		key: "tags",
-		header: "Теги",
-		width: pixel(148),
-		renderCell: (item) => <SearchCardTags item={item} />,
-	},
-	{
-		key: "size",
-		header: "Размер",
-		width: pixel(88),
-	},
-	{
-		key: "seeds",
-		header: "Сиды",
-		width: pixel(64),
-		align: "end",
-	},
-	{
-		key: "leeches",
-		header: "Личи",
-		width: pixel(64),
-		align: "end",
-	},
-	{
-		key: "downloads",
-		header: "Скачивания",
-		width: pixel(96),
-		align: "end",
-	},
-	{
-		key: "date",
-		header: "Дата",
-		width: pixel(104),
-	},
-];
-
-function formatDate(value: string | Date): string {
-	if (value instanceof Date) {
-		return Number.isNaN(value.getTime())
-			? "—"
-			: value.toLocaleDateString("ru-RU");
-	}
-	if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
-		const date = new Date(value);
-		return Number.isNaN(date.getTime())
-			? value
-			: date.toLocaleDateString("ru-RU");
-	}
-	return value;
-}
-
-function toSearchRows(data: TorrentResult[] | undefined): SearchRow[] {
-	return (data ?? []).map((torrent) => ({
-		id: torrent.torrentId || torrent.torrentFileUrl,
-		cover: torrent.imageUrl,
-		title: torrent.title,
-		author: torrent.authorId,
-		resolution: torrent.resolution ?? null,
-		hdr: torrent.hdr ?? null,
-		size: formatBytes(torrent.size),
-		seeds: torrent.seeds,
-		leeches: torrent.leeches,
-		downloads: torrent.downloads,
-		date: formatDate(torrent.date),
-		torrentFileUrl: torrent.torrentFileUrl,
-		topicUrl: torrent.topicUrl,
-		forumId: torrent.forumId,
-	}));
-}
-
-function App() {
-	const navigate = useNavigate({ from: "/" });
-	const { search, source } = Route.useSearch();
-	const hasActiveSearch = Boolean(search?.trim() && source);
-	const [viewMode, setViewMode] = useState<ViewMode>("table");
-	const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
-		{},
+function TransferStatsWidget({ stats }: { stats: TransferStatsData }) {
+	return (
+		<Card elevation="low" padding={5} width="100%">
+			<VStack gap={4} width="100%">
+				<Heading level={2}>Статистика передачи</Heading>
+				<HStack gap={6} wrap="wrap">
+					<VStack gap={1}>
+						<Text type="supporting">↓ Скачано</Text>
+						<Text hasTabularNumbers size="lg" type="body">
+							{formatBytes(stats.downloadedBytes)}
+						</Text>
+						{stats.downloadSpeed != null ? (
+							<Text hasTabularNumbers type="supporting">
+								{formatSpeed(stats.downloadSpeed)}
+							</Text>
+						) : null}
+					</VStack>
+					<VStack gap={1}>
+						<Text type="supporting">↑ Отдано</Text>
+						<Text hasTabularNumbers size="lg" type="body">
+							{formatBytes(stats.uploadedBytes)}
+						</Text>
+						{stats.uploadSpeed != null ? (
+							<Text hasTabularNumbers type="supporting">
+								{formatSpeed(stats.uploadSpeed)}
+							</Text>
+						) : null}
+					</VStack>
+					{stats.ratio != null ? (
+						<VStack gap={1}>
+							<Text type="supporting">Ratio</Text>
+							<Text hasTabularNumbers size="lg" type="body">
+								{stats.ratio.toFixed(2)}
+							</Text>
+						</VStack>
+					) : null}
+					{stats.freeSpaceBytes != null ? (
+						<VStack gap={1}>
+							<Text type="supporting">Свободно на диске</Text>
+							<Text hasTabularNumbers size="lg" type="body">
+								{formatBytes(stats.freeSpaceBytes)}
+							</Text>
+						</VStack>
+					) : null}
+				</HStack>
+			</VStack>
+		</Card>
 	);
-	const [downloadItem, setDownloadItem] = useState<DownloadTorrentItem | null>(
-		null,
-	);
-	const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+}
 
-	const openDownload = useCallback((row: SearchCardItem) => {
-		setDownloadItem({
-			title: row.title,
-			size: row.size,
-			seeds: row.seeds,
-			leeches: row.leeches,
-			resolution: row.resolution,
-			hdr: row.hdr,
-			torrentFileUrl: row.torrentFileUrl,
-			forumId: row.forumId,
-		});
-		setIsDownloadOpen(true);
-	}, []);
-
-	const columns = useMemo<TableColumn<SearchRow>[]>(
-		() => [
-			...staticColumns,
-			{
-				key: "action",
-				header: "",
-				width: pixel(208),
-				renderCell: (item) => (
-					<HStack gap={1}>
-						<Button
-							label="Скачать"
-							size="sm"
-							onClick={() => openDownload(item)}
-						/>
-						<Button
-							href={item.topicUrl}
-							icon={<Icon icon="externalLink" size="sm" />}
-							isExternalLink
-							label="На трекере"
-							size="sm"
-							target="_blank"
-							variant="secondary"
-						/>
-					</HStack>
-				),
-			},
-		],
-		[openDownload],
-	);
-
-	const columnResize = useTableColumnResize({
-		columnWidths,
-		columns,
-		minWidth: 64,
-		onColumnResizeEnd: (updates) => {
-			setColumnWidths((prev) => ({ ...prev, ...updates }));
-		},
-	});
-
-	const { data, isLoading, isError, error, isFetching } = useQuery({
-		...trpc.torrent.search.queryOptions({
-			search,
-			source,
-			options: {
-				sortType: "leechesCount",
-				sortOrder: "descending",
-			},
+function HomePage() {
+	const navigate = useNavigate();
+	const { data, isLoading, isError, error } = useQuery({
+		...trpc.home.compose.queryOptions({
+			widgets: [{ key: "transfer", widget: "transferStats" }],
 		}),
-		enabled: hasActiveSearch,
 		refetchOnWindowFocus: false,
 	});
 
-	const results = data?.results ?? [];
-	const resultSource = data?.source;
-	const rows = useMemo(() => toSearchRows(results), [results]);
-	const isSearching = hasActiveSearch && (isLoading || isFetching);
-
-	const handleSearch = (query: string, nextSource: SearchSource) => {
-		void navigate({
-			search: { search: query, source: nextSource },
-			replace: true,
-		});
-	};
+	const transfer = data?.widgets.transfer;
 
 	return (
-		<VStack gap={3} width="100%">
-			<Section padding={4} variant="transparent">
-				<SearchBar
-					initialQuery={search ?? ""}
-					isSearching={isSearching}
-					searchingSource={source}
-					onSearch={handleSearch}
-				/>
-			</Section>
-			{isSearching ? <Spinner label="Загрузка" /> : null}
-			{isError ? (
-				<EmptyState description={error.message} title="Ошибка поиска" />
-			) : null}
-			{!isSearching && !isError && hasActiveSearch ? (
-				<HStack
-					gap={3}
-					hAlign="between"
-					paddingInline={4}
-					vAlign="center"
-					wrap="wrap"
-				>
-					<Badge
-						label={
-							resultSource === "local"
-								? "Найдено локально"
-								: "С трекера"
-						}
-						variant={resultSource === "local" ? "teal" : "blue"}
+		<Section padding={4} variant="transparent">
+			<VStack gap={4} width="100%">
+				<Heading level={1}>Главная</Heading>
+
+				{isLoading ? <Spinner label="Загрузка" /> : null}
+
+				{isError ? (
+					<EmptyState
+						description={error.message}
+						title="Не удалось загрузить главную"
 					/>
-					{rows.length > 0 ? (
-						<SegmentedControl
-							label="Вид результатов"
-							onChange={(value) => setViewMode(value as ViewMode)}
-							size="sm"
-							value={viewMode}
-						>
-							<SegmentedControlItem label="Таблица" value="table" />
-							<SegmentedControlItem label="Карточки" value="cards" />
-						</SegmentedControl>
-					) : null}
-				</HStack>
-			) : null}
-			{!isSearching && !isError && hasActiveSearch && rows.length === 0 ? (
-				<EmptyState title="Ничего не найдено" />
-			) : null}
-			{!isSearching && !isError && rows.length > 0 && viewMode === "table" ? (
-				<Table
-					columns={columns}
-					data={rows}
-					density="balanced"
-					dividers="columns"
-					hasHover
-					idKey="id"
-					plugins={{ columnResize }}
-					textOverflow="wrap"
-				/>
-			) : null}
-			{!isSearching && !isError && rows.length > 0 && viewMode === "cards" ? (
-				<Section padding={4} paddingBlock={0} variant="transparent">
-					<SearchResultsCards items={rows} onDownload={openDownload} />
-				</Section>
-			) : null}
-			<DownloadTorrentDialog
-				item={downloadItem}
-				isOpen={isDownloadOpen}
-				onOpenChange={(open) => {
-					setIsDownloadOpen(open);
-					if (!open) {
-						setDownloadItem(null);
-					}
-				}}
-			/>
-		</VStack>
+				) : null}
+
+				{!isLoading && !isError && transfer?.status === "unavailable" ? (
+					<Banner
+						container="section"
+						description="Укажите URL и API key qBittorrent в настройках, чтобы видеть статистику."
+						endContent={
+							<Button
+								label="Открыть настройки"
+								onClick={() =>
+									void navigate({
+										to: "/settings",
+										search: { section: "qbittorrent" },
+									})
+								}
+								variant="secondary"
+							/>
+						}
+						status="warning"
+						title="qBittorrent недоступен"
+					/>
+				) : null}
+
+				{!isLoading && !isError && transfer?.status === "empty" ? (
+					<EmptyState
+						description="Статистика появится после первой передачи данных."
+						title="Нет данных о передаче"
+					/>
+				) : null}
+
+				{!isLoading && !isError && transfer?.status === "ok" ? (
+					<TransferStatsWidget stats={transfer.data} />
+				) : null}
+			</VStack>
+		</Section>
 	);
 }
