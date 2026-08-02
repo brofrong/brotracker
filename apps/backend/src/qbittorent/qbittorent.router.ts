@@ -13,7 +13,7 @@ import {
 	pauseTorrent,
 	resumeTorrent,
 } from "./qbittorent.client";
-import { iterateTorrentUpdates } from "./qbittorent.poller";
+import { iterateTorrentUpdates, refreshTorrentUpdates } from "./qbittorent.poller";
 import { toLiveTorrents } from "./live-torrent";
 
 const torrentIdInput = z.object({
@@ -38,6 +38,7 @@ export const qbittorentRouter = router({
 
 	pause: protectedProcedure.input(torrentIdInput).mutation(async ({ input }) => {
 		await pauseTorrent(input.id);
+		await refreshTorrentUpdates();
 		return { ok: true as const };
 	}),
 
@@ -45,6 +46,7 @@ export const qbittorentRouter = router({
 		.input(torrentIdInput)
 		.mutation(async ({ input }) => {
 			await resumeTorrent(input.id);
+			await refreshTorrentUpdates();
 			return { ok: true as const };
 		}),
 
@@ -52,6 +54,7 @@ export const qbittorentRouter = router({
 		.input(torrentIdInput)
 		.mutation(async ({ input }) => {
 			await deleteTorrent(input.id);
+			await refreshTorrentUpdates();
 			return { ok: true as const };
 		}),
 

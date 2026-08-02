@@ -21,6 +21,11 @@ async function pollTorrents() {
 	}
 }
 
+/** Push a fresh torrent snapshot to live subscribers immediately. */
+export async function refreshTorrentUpdates(): Promise<void> {
+	await pollTorrents();
+}
+
 function startPolling() {
 	void pollTorrents();
 	pollInterval = setInterval(() => {

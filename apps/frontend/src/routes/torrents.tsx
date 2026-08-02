@@ -38,7 +38,12 @@ import {
 	formatProgress,
 	formatSpeed,
 } from "#/utils/format";
-import { getTorrentStateVisual, isTorrentPaused } from "#/utils/torrent-status";
+import {
+	getOptimisticStartedState,
+	getOptimisticStoppedState,
+	getTorrentStateVisual,
+	isTorrentPaused,
+} from "#/utils/torrent-status";
 import { handleTrpcUnauthorized, trpc } from "#/utils/trpc";
 import {
 	type LiveTorrent,
@@ -432,6 +437,26 @@ function TorrentsPage() {
 
 	const handleTogglePause = async (item: TorrentRow) => {
 		const paused = isTorrentPaused(item.stateKind);
+		const snapshot = torrents;
+		const next = paused
+			? getOptimisticStartedState(item)
+			: getOptimisticStoppedState(item);
+
+		setTorrents((current) =>
+			current.map((torrent) => {
+				if (torrent.id !== item.id) {
+					return torrent;
+				}
+				return {
+					...torrent,
+					stateKind: next.stateKind as LiveTorrent["stateKind"],
+					stateLabel: next.stateLabel,
+					downloadSpeed: paused ? torrent.downloadSpeed : 0,
+					uploadSpeed: paused ? torrent.uploadSpeed : 0,
+				};
+			}),
+		);
+
 		try {
 			if (paused) {
 				await resumeMutation.mutateAsync({ id: item.id });
@@ -439,6 +464,7 @@ function TorrentsPage() {
 				await pauseMutation.mutateAsync({ id: item.id });
 			}
 		} catch (err) {
+			setTorrents(snapshot);
 			toast({
 				type: "error",
 				body:
@@ -456,11 +482,18 @@ function TorrentsPage() {
 			return;
 		}
 
+		const snapshot = torrents;
+		const deletingId = pendingDelete.id;
+		setTorrents((current) =>
+			current.filter((torrent) => torrent.id !== deletingId),
+		);
+		setPendingDelete(null);
+
 		try {
-			await deleteMutation.mutateAsync({ id: pendingDelete.id });
+			await deleteMutation.mutateAsync({ id: deletingId });
 			toast({ body: "Торрент и файлы удалены" });
-			setPendingDelete(null);
 		} catch (err) {
+			setTorrents(snapshot);
 			toast({
 				type: "error",
 				body: err instanceof Error ? err.message : "Не удалось удалить торрент",
