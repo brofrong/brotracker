@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createHome } from "./home";
+import { averageSpeedsByDay, buildTransferDays, createHome } from "./home";
 
 describe("home.compose", () => {
 	test("returns transferStats ok when qB provides data", async () => {
@@ -150,5 +150,179 @@ describe("home.compose", () => {
 			},
 		});
 		expect(response.widgets.mystery).toBeUndefined();
+	});
+
+	test("attaches history to transferStats when provided", async () => {
+		const history = [
+			{ date: "2026-08-01", downloadedBytes: 10, uploadedBytes: 20 },
+			{ date: "2026-08-02", downloadedBytes: null, uploadedBytes: null },
+		];
+		const home = createHome({
+			getTransferStats: async () => ({
+				downloadedBytes: 100,
+				uploadedBytes: 50,
+			}),
+			getTransferHistory: async () => history,
+			getDiscoverFeed: async () => [],
+		});
+
+		const response = await home.compose({
+			widgets: [{ key: "transfer", widget: "transferStats" }],
+		});
+
+		expect(response.widgets.transfer).toEqual({
+			status: "ok",
+			data: {
+				downloadedBytes: 100,
+				uploadedBytes: 50,
+				history,
+			},
+		});
+	});
+
+	test("keeps transferStats ok when history lookup fails", async () => {
+		const home = createHome({
+			getTransferStats: async () => ({
+				downloadedBytes: 100,
+				uploadedBytes: 50,
+			}),
+			getTransferHistory: async () => {
+				throw new Error("db down");
+			},
+			getDiscoverFeed: async () => [],
+		});
+
+		const response = await home.compose({
+			widgets: [{ key: "transfer", widget: "transferStats" }],
+		});
+
+		expect(response.widgets.transfer).toEqual({
+			status: "ok",
+			data: {
+				downloadedBytes: 100,
+				uploadedBytes: 50,
+			},
+		});
+	});
+
+	test("attaches recentSpeeds when provided", async () => {
+		const recentSpeeds = [
+			{ t: "2026-08-02T11:00:00.000Z", downloadSpeed: 10, uploadSpeed: 20 },
+			{ t: "2026-08-02T11:00:15.000Z", downloadSpeed: 30, uploadSpeed: 40 },
+		];
+		const home = createHome({
+			getTransferStats: async () => ({
+				downloadedBytes: 100,
+				uploadedBytes: 50,
+			}),
+			getRecentSpeeds: async () => recentSpeeds,
+			getDiscoverFeed: async () => [],
+		});
+
+		const response = await home.compose({
+			widgets: [{ key: "transfer", widget: "transferStats" }],
+		});
+
+		expect(response.widgets.transfer).toEqual({
+			status: "ok",
+			data: {
+				downloadedBytes: 100,
+				uploadedBytes: 50,
+				recentSpeeds,
+			},
+		});
+	});
+});
+
+describe("buildTransferDays", () => {
+	const today = "2026-08-05";
+
+	test("computes per-day diffs from consecutive snapshots", () => {
+		const days = buildTransferDays(
+			[
+				{ day: "2026-08-03", downloadedBytes: 100, uploadedBytes: 200 },
+				{ day: "2026-08-04", downloadedBytes: 150, uploadedBytes: 330 },
+				{ day: "2026-08-05", downloadedBytes: 150, uploadedBytes: 400 },
+			],
+			2,
+			today,
+		);
+
+		expect(days).toEqual([
+			{ date: "2026-08-04", downloadedBytes: 50, uploadedBytes: 130 },
+			{ date: "2026-08-05", downloadedBytes: 0, uploadedBytes: 70 },
+		]);
+	});
+
+	test("fills the full range and marks days without snapshots as unknown", () => {
+		const days = buildTransferDays(
+			[
+				{ day: "2026-08-02", downloadedBytes: 100, uploadedBytes: 100 },
+				{ day: "2026-08-03", downloadedBytes: 110, uploadedBytes: 140 },
+				// 2026-08-04 missing — backend was off
+				{ day: "2026-08-05", downloadedBytes: 200, uploadedBytes: 300 },
+			],
+			4,
+			today,
+		);
+
+		expect(days).toEqual([
+			{ date: "2026-08-02", downloadedBytes: null, uploadedBytes: null },
+			{ date: "2026-08-03", downloadedBytes: 10, uploadedBytes: 40 },
+			{ date: "2026-08-04", downloadedBytes: null, uploadedBytes: null },
+			// The diff across the gap stays unknown instead of spiking one day.
+			{ date: "2026-08-05", downloadedBytes: null, uploadedBytes: null },
+		]);
+	});
+
+	test("treats decreasing counters (qBittorrent reset) as unknown", () => {
+		const days = buildTransferDays(
+			[
+				{ day: "2026-08-04", downloadedBytes: 500, uploadedBytes: 500 },
+				{ day: "2026-08-05", downloadedBytes: 20, uploadedBytes: 30 },
+			],
+			1,
+			today,
+		);
+
+		expect(days).toEqual([
+			{ date: "2026-08-05", downloadedBytes: null, uploadedBytes: null },
+		]);
+	});
+});
+
+describe("averageSpeedsByDay", () => {
+	test("averages samples per UTC day and rounds", () => {
+		const avg = averageSpeedsByDay([
+			{
+				sampledAt: new Date("2026-08-04T10:00:00Z"),
+				downloadSpeed: 100,
+				uploadSpeed: 300,
+			},
+			{
+				sampledAt: new Date("2026-08-04T22:00:00Z"),
+				downloadSpeed: 201,
+				uploadSpeed: 100,
+			},
+			{
+				sampledAt: new Date("2026-08-05T08:00:00Z"),
+				downloadSpeed: 50,
+				uploadSpeed: 25,
+			},
+		]);
+
+		expect(avg.get("2026-08-04")).toEqual({
+			avgDownloadSpeed: 151, // (100 + 201) / 2 = 150.5 → 151
+			avgUploadSpeed: 200,
+		});
+		expect(avg.get("2026-08-05")).toEqual({
+			avgDownloadSpeed: 50,
+			avgUploadSpeed: 25,
+		});
+		expect(avg.size).toBe(2);
+	});
+
+	test("returns empty map for no samples", () => {
+		expect(averageSpeedsByDay([]).size).toBe(0);
 	});
 });

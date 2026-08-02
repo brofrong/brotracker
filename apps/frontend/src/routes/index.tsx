@@ -3,7 +3,6 @@
 import { AspectRatio } from "@astryxdesign/core/AspectRatio";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
-import { Card } from "@astryxdesign/core/Card";
 import { ClickableCard } from "@astryxdesign/core/ClickableCard";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Grid } from "@astryxdesign/core/Grid";
@@ -11,14 +10,17 @@ import { Heading } from "@astryxdesign/core/Heading";
 import { Section } from "@astryxdesign/core/Section";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { Spinner } from "@astryxdesign/core/Spinner";
-import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import z from "zod";
-import { formatBytes, formatSpeed } from "#/utils/format";
-import { trpc } from "#/utils/trpc";
+import {
+	type TransferStatsData,
+	TransferStatsWidget,
+} from "#/components/home/transfer-stats-widget";
 import { TmdbAttribution } from "#/components/tmdb-attribution";
+import { trpc } from "#/utils/trpc";
 
 /** Legacy search params lived on `/` — keep bookmarks working. */
 const legacySearchSchema = z.object({
@@ -42,15 +44,6 @@ export const Route = createFileRoute("/")({
 	},
 });
 
-type TransferStatsData = {
-	downloadedBytes: number;
-	uploadedBytes: number;
-	downloadSpeed?: number;
-	uploadSpeed?: number;
-	freeSpaceBytes?: number;
-	ratio?: number;
-};
-
 type DiscoverCardData = {
 	titleId: string;
 	name: string;
@@ -58,56 +51,6 @@ type DiscoverCardData = {
 	year: number | null;
 	kind: "films" | "tv";
 };
-
-function TransferStatsWidget({ stats }: { stats: TransferStatsData }) {
-	return (
-		<Card elevation="low" padding={5} width="100%">
-			<VStack gap={4} width="100%">
-				<Heading level={2}>Статистика передачи</Heading>
-				<HStack gap={6} wrap="wrap">
-					<VStack gap={1}>
-						<Text type="supporting">↓ Скачано</Text>
-						<Text hasTabularNumbers size="lg" type="body">
-							{formatBytes(stats.downloadedBytes)}
-						</Text>
-						{stats.downloadSpeed != null ? (
-							<Text hasTabularNumbers type="supporting">
-								{formatSpeed(stats.downloadSpeed)}
-							</Text>
-						) : null}
-					</VStack>
-					<VStack gap={1}>
-						<Text type="supporting">↑ Отдано</Text>
-						<Text hasTabularNumbers size="lg" type="body">
-							{formatBytes(stats.uploadedBytes)}
-						</Text>
-						{stats.uploadSpeed != null ? (
-							<Text hasTabularNumbers type="supporting">
-								{formatSpeed(stats.uploadSpeed)}
-							</Text>
-						) : null}
-					</VStack>
-					{stats.ratio != null ? (
-						<VStack gap={1}>
-							<Text type="supporting">Ratio</Text>
-							<Text hasTabularNumbers size="lg" type="body">
-								{stats.ratio.toFixed(2)}
-							</Text>
-						</VStack>
-					) : null}
-					{stats.freeSpaceBytes != null ? (
-						<VStack gap={1}>
-							<Text type="supporting">Свободно на диске</Text>
-							<Text hasTabularNumbers size="lg" type="body">
-								{formatBytes(stats.freeSpaceBytes)}
-							</Text>
-						</VStack>
-					) : null}
-				</HStack>
-			</VStack>
-		</Card>
-	);
-}
 
 function DiscoverWidget({ items }: { items: DiscoverCardData[] }) {
 	const navigate = useNavigate();
@@ -174,6 +117,7 @@ function HomePage() {
 			widgets: [{ key: "transfer", widget: "transferStats" }],
 		}),
 		refetchOnWindowFocus: false,
+		refetchInterval: 5000,
 	});
 	const discoverQuery = useQuery({
 		...trpc.home.compose.queryOptions({
@@ -190,7 +134,9 @@ function HomePage() {
 			<VStack gap={6} width="100%">
 				<Heading level={1}>Главная</Heading>
 
-				{transferQuery.isLoading ? <Spinner label="Загрузка статистики" /> : null}
+				{transferQuery.isLoading ? (
+					<Spinner label="Загрузка статистики" />
+				) : null}
 
 				{transferQuery.isError ? (
 					<EmptyState
@@ -235,7 +181,10 @@ function HomePage() {
 				!transferQuery.isError &&
 				transfer?.status === "ok" &&
 				isTransferStats(transfer.data) ? (
-					<TransferStatsWidget stats={transfer.data} />
+					<TransferStatsWidget
+						stats={transfer.data}
+						updatedAt={transferQuery.dataUpdatedAt}
+					/>
 				) : null}
 
 				{discoverQuery.isLoading ? <Spinner label="Загрузка Discover" /> : null}

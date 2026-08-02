@@ -1,22 +1,25 @@
-import { applyWSSHandler } from "@trpc/server/adapters/ws";
-import { createHTTPServer } from "@trpc/server/adapters/standalone";
-import { toNodeHandler } from "better-auth/node";
+import { existsSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
-import { existsSync } from "node:fs";
+import { createHTTPServer } from "@trpc/server/adapters/standalone";
+import { applyWSSHandler } from "@trpc/server/adapters/ws";
+import { toNodeHandler } from "better-auth/node";
 import { WebSocketServer } from "ws";
-import { auth, initAuth } from "./auth/auth";
 import { appRouter } from "./appRouter";
-import { createContext } from "./trpc/context";
+import { auth, initAuth } from "./auth/auth";
 import { runMigrations } from "./db/migrate";
+import { startTransferSnapshotScheduler } from "./home/transfer-history";
 import { tryServeMedia } from "./http/media-proxy";
 import { tryServeStatic } from "./http/static";
 import { ensureBetterAuthSecret } from "./settings/app-settings";
 import { ensureBucket } from "./storage/s3";
+import { createContext } from "./trpc/context";
 import { env } from "./utils/env";
 import { logger } from "./utils/logger";
 
 await runMigrations();
+
+startTransferSnapshotScheduler();
 
 const betterAuthSecret = await ensureBetterAuthSecret();
 initAuth(betterAuthSecret);
