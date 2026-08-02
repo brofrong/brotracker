@@ -3,8 +3,11 @@ import {
 	QbittorrentNotConfiguredError,
 } from "../qbittorent/qbittorent.client";
 import { resolveTmdbApiKey } from "../settings/provider-settings";
+import { listRecentWatchEvents } from "../title/title-watch-event.repository";
 import { createHome } from "./home";
 import { createFetchDiscoverFeed } from "./tmdb-discover";
+
+const TITLE_WATCH_FEED_LIMIT = 20;
 
 export const home = createHome({
 	getTransferStats: async () => {
@@ -18,6 +21,7 @@ export const home = createHome({
 		}
 	},
 	getDiscoverFeed: createFetchDiscoverFeed(resolveTmdbApiKey),
+	getTitleWatchEvents: () => listRecentWatchEvents(TITLE_WATCH_FEED_LIMIT),
 });
 
 export type {
@@ -26,6 +30,8 @@ export type {
 	DiscoverCard,
 	DiscoverFeed,
 	Home,
+	TitleWatchFeed,
+	TitleWatchFeedItem,
 	TransferStats,
 	WidgetEnvelope,
 } from "./home";
