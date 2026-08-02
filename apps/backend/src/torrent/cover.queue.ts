@@ -4,106 +4,13 @@ import { torrents } from "../db/torrent/torrent.schema";
 import { optimizeCover } from "../storage/cover-image";
 import { putCover } from "../storage/s3";
 import { logger } from "../utils/logger";
+import {
+	createCoverFetchQueue,
+	type CoverPipelineDeps,
+} from "./cover-pipeline";
 import { getTracker } from "./torrent.tracker";
 
-const CONCURRENCY = 3;
 const FETCH_TIMEOUT_MS = 15_000;
-
-const inFlight = new Set<string>();
-const pending: string[] = [];
-let active = 0;
-
-/** Fire-and-forget: enqueue cover fetches; returns immediately. Dedupes in-flight ids. */
-export function enqueueCoverFetch(torrentIds: string[]): void {
-	for (const id of torrentIds) {
-		if (!id || inFlight.has(id)) {
-			continue;
-		}
-		inFlight.add(id);
-		pending.push(id);
-	}
-	pump();
-}
-
-function pump(): void {
-	while (active < CONCURRENCY && pending.length > 0) {
-		const id = pending.shift();
-		if (!id) {
-			break;
-		}
-		active += 1;
-		void processOne(id).finally(() => {
-			inFlight.delete(id);
-			active -= 1;
-			pump();
-		});
-	}
-}
-
-async function processOne(torrentId: string): Promise<void> {
-	try {
-		const rows = await db
-			.select({ imageKey: torrents.imageKey })
-			.from(torrents)
-			.where(eq(torrents.torrentId, torrentId))
-			.limit(1);
-
-		const row = rows[0];
-		if (!row) {
-			logger.warn({ torrentId }, "cover fetch: torrent row missing");
-			return;
-		}
-		if (row.imageKey) {
-			return;
-		}
-
-		const tracker = await getTracker();
-		const imageResult = await tracker.getImage(torrentId);
-		if (imageResult.isErr()) {
-			logger.warn(
-				{ torrentId, err: imageResult.error.message },
-				"cover fetch: getImage failed",
-			);
-			return;
-		}
-
-		const remoteUrl = imageResult.value.trim();
-		if (!remoteUrl) {
-			return;
-		}
-
-		const bytesResult = await fetchCoverBytes(remoteUrl);
-		if (!bytesResult) {
-			return;
-		}
-
-		let webp: Uint8Array;
-		try {
-			webp = await optimizeCover(bytesResult.bytes);
-		} catch (err) {
-			logger.warn(
-				{
-					torrentId,
-					err: err instanceof Error ? err.message : String(err),
-				},
-				"cover fetch: image optimize failed",
-			);
-			return;
-		}
-
-		const key = await putCover(torrentId, webp);
-
-		await db
-			.update(torrents)
-			.set({ imageKey: key })
-			.where(eq(torrents.torrentId, torrentId));
-	} catch (err) {
-		logger.error(
-			{ torrentId, err: err instanceof Error ? err.message : String(err) },
-			"cover fetch: unexpected failure",
-		);
-	}
-}
 
 const COVER_FETCH_HEADERS = {
 	// Image hosts (e.g. fastpic) often 404 hotlinks without a forum Referer.
@@ -112,9 +19,7 @@ const COVER_FETCH_HEADERS = {
 		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
 } as const;
 
-async function fetchCoverBytes(
-	url: string,
-): Promise<{ bytes: Uint8Array; contentType: string } | null> {
+async function fetchCoverBytes(url: string): Promise<Uint8Array | null> {
 	try {
 		const response = await fetch(url, {
 			redirect: "follow",
@@ -143,7 +48,7 @@ async function fetchCoverBytes(
 			logger.warn({ url }, "cover fetch: empty image body");
 			return null;
 		}
-		return { bytes, contentType };
+		return bytes;
 	} catch (err) {
 		logger.warn(
 			{ url, err: err instanceof Error ? err.message : String(err) },
@@ -151,4 +56,54 @@ async function fetchCoverBytes(
 		);
 		return null;
 	}
+}
+
+export const liveCoverPipelineDeps: CoverPipelineDeps = {
+	getImageKey: async (torrentId) => {
+		const rows = await db
+			.select({ imageKey: torrents.imageKey })
+			.from(torrents)
+			.where(eq(torrents.torrentId, torrentId))
+			.limit(1);
+		const row = rows[0];
+		if (!row) {
+			return undefined;
+		}
+		return row.imageKey;
+	},
+	resolveImageUrl: async (torrentId) => {
+		const tracker = await getTracker();
+		const imageResult = await tracker.getImage(torrentId);
+		if (imageResult.isErr()) {
+			logger.warn(
+				{ torrentId, err: imageResult.error.message },
+				"cover fetch: getImage failed",
+			);
+			return null;
+		}
+		const remoteUrl = imageResult.value.trim();
+		return remoteUrl || null;
+	},
+	downloadBytes: fetchCoverBytes,
+	optimize: optimizeCover,
+	putCover,
+	persistImageKey: async (torrentId, key) => {
+		await db
+			.update(torrents)
+			.set({ imageKey: key })
+			.where(eq(torrents.torrentId, torrentId));
+	},
+	onWarn: (message, context) => {
+		logger.warn(context, message);
+	},
+	onError: (message, context) => {
+		logger.error(context, message);
+	},
+};
+
+const liveQueue = createCoverFetchQueue(liveCoverPipelineDeps);
+
+/** Fire-and-forget: enqueue cover fetches; returns immediately. Dedupes in-flight ids. */
+export function enqueueCoverFetch(torrentIds: string[]): void {
+	liveQueue.enqueue(torrentIds);
 }
