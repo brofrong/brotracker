@@ -5,7 +5,7 @@ import {
 	AddFromTrackerPreconditionError,
 } from "../qbittorent/qbittorent.service";
 import { protectedProcedure, router } from "../trpc";
-import { TitleAddError, titleModule } from "./index";
+import { TitleAddError, TitleWatchError, titleModule } from "./index";
 
 const titleRefSchema = z.discriminatedUnion("type", [
 	z.object({
@@ -61,6 +61,7 @@ export const titleRouter = router({
 				torrentFileUrl: z.string().url(),
 				kind: z.enum(["films", "tv"]),
 				topicUrl: z.string().url(),
+				titleId: z.string().min(1).optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -87,5 +88,35 @@ export const titleRouter = router({
 				}
 				throw error;
 			}
+		}),
+
+	setWatch: protectedProcedure
+		.input(
+			z.object({
+				id: z.string().min(1),
+				watch: z.enum(["tracking", "paused"]),
+				topicUrl: z.string().url().optional(),
+			}),
+		)
+		.mutation(async ({ input }) => {
+			assertTitleId(input.id);
+			try {
+				return await titleModule.setWatch(input);
+			} catch (error) {
+				if (error instanceof TitleWatchError) {
+					throw new TRPCError({
+						code: "PRECONDITION_FAILED",
+						message: error.message,
+					});
+				}
+				throw error;
+			}
+		}),
+
+	checkNow: protectedProcedure
+		.input(z.object({ id: z.string().min(1) }))
+		.mutation(async ({ input }) => {
+			assertTitleId(input.id);
+			return titleModule.checkNow(input);
 		}),
 });

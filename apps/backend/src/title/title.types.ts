@@ -1,3 +1,6 @@
+import type { TitleWatchRecord, TopicMeta } from "./check-topic-now";
+import type { SyncQbTorrent } from "./sync-watches-from-qb";
+
 /** Matches RuTracker MediaType / app domain: films | tv. */
 export type TitleKind = "films" | "tv";
 
@@ -63,12 +66,25 @@ export type TitleRating =
 	| ImdbRatingStub
 	| KinopoiskRatingStub;
 
+export type TitleWatchState = "tracking" | "paused" | "completed" | "off";
+
+export type TitleWatchView = {
+	topicUrl: string;
+	watch: TitleWatchState;
+	source: "auto-qb" | "manual";
+	lastCheckedAt: string | null;
+	lastChangedAt: string | null;
+	lastError: string | null;
+};
+
 export type Title = {
 	id: string;
 	facet: TitleKind | null;
 	meta: TitleMeta;
 	metaStatus: TitleMetaStatus;
 	ratings: TitleRating[];
+	/** TV follow state when linked to this title; null for films / no follow. */
+	watch: TitleWatchView | null;
 };
 
 export type TmdbMeta = {
@@ -173,4 +189,18 @@ export type TitleDeps = {
 		kind: TitleKind,
 		tags: string[],
 	) => Promise<void>;
+	loadWatchByTopicUrl: (topicUrl: string) => Promise<TitleWatchRecord | null>;
+	loadWatchByTitleId: (titleId: string) => Promise<TitleWatchRecord | null>;
+	saveWatch: (record: TitleWatchRecord) => Promise<void>;
+	listQbTorrents: () => Promise<SyncQbTorrent[]>;
+	getSeriesPath: () => Promise<string | null>;
+	fetchTorrentBytes: (torrentFileUrl: string) => Promise<Uint8Array>;
+	fetchTopicMeta: (topicUrl: string) => Promise<TopicMeta>;
+	replaceInQb: (input: {
+		topicId: string;
+		torrentBytes: Uint8Array;
+		tags: string[];
+	}) => Promise<void>;
+	isCompletePack: (torrentName: string) => boolean;
+	now: () => string;
 };

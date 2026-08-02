@@ -1,16 +1,27 @@
 import { toLiveTorrent } from "../qbittorent/live-torrent";
 import {
+	addTorrent,
+	deleteTorrent,
 	getTorrents,
 	QbittorrentNotConfiguredError,
 } from "../qbittorent/qbittorent.client";
 import { addFromTracker } from "../qbittorent/qbittorent.service";
+import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
 import { resolveTmdbApiKey } from "../settings/provider-settings";
+import { eq } from "drizzle-orm";
+import { db } from "../db/db";
+import { torrents } from "../db/torrent/torrent.schema";
 import { normalizeTitle } from "../torrent/title-norm";
 import { searchLocal, upsertFromTracker } from "../torrent/torrent.repository";
 import { getTracker } from "../torrent/torrent.tracker";
 import { logger } from "../utils/logger";
 import { createDefaultRatingsPort } from "./ratings-port";
-import { createTitleModule, TitleAddError } from "./title";
+import { createReplaceTorrentInQb } from "./replace-torrent-in-qb";
+import {
+	createTitleModule,
+	TitleAddError,
+	TitleWatchError,
+} from "./title";
 import type {
 	FetchTmdbMetaOutcome,
 	TitleKind,
@@ -18,12 +29,18 @@ import type {
 	TrackerSearchForTitle,
 } from "./title.types";
 import {
+	loadWatchByTitleId,
+	loadWatchByTopicUrl,
+	saveWatch,
+} from "./title-watch.repository";
+import {
 	parseMovieDetails,
 	parseTvDetails,
 	type TmdbCredits,
 	type TmdbMovieDetails,
 	type TmdbTvDetails,
 } from "./tmdb-meta";
+import { extractTopicId, torrentFileUrlFromId } from "./topic-tag";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 
@@ -158,6 +175,96 @@ async function searchTrackerForTitle(
 	};
 }
 
+async function listTaggedTorrents() {
+	try {
+		const qbTorrents = await getTorrents();
+		return qbTorrents.map((torrent) => {
+			const live = toLiveTorrent(torrent);
+			return {
+				hash: live.id,
+				progress: live.progress,
+				stateKind: live.stateKind,
+				stateLabel: live.stateLabel,
+				downloadSpeed: live.downloadSpeed,
+				etaSeconds: live.etaSeconds,
+				tags: live.tags,
+			};
+		});
+	} catch (error) {
+		if (error instanceof QbittorrentNotConfiguredError) {
+			return [];
+		}
+		throw error;
+	}
+}
+
+async function listQbTorrents() {
+	try {
+		const qbTorrents = await getTorrents();
+		return qbTorrents.map((torrent) => ({
+			hash: torrent.hash,
+			name: torrent.name,
+			savePath: torrent.save_path,
+			tags: torrent.tags,
+			size: torrent.size,
+		}));
+	} catch (error) {
+		if (error instanceof QbittorrentNotConfiguredError) {
+			return [];
+		}
+		throw error;
+	}
+}
+
+async function getSeriesPath(): Promise<string | null> {
+	const config = await loadQbittorrentConfig();
+	const path = config?.seriesPath?.trim();
+	return path ? path : null;
+}
+
+async function fetchTorrentBytes(torrentFileUrl: string): Promise<Uint8Array> {
+	const tracker = await getTracker();
+	const file = await tracker.getTorrent(torrentFileUrl);
+	if (file.isErr()) {
+		throw file.error;
+	}
+	return file.value;
+}
+
+async function fetchTopicMeta(topicUrl: string) {
+	const topicId = extractTopicId(topicUrl);
+	if (!topicId) {
+		throw new Error("Некорректный topic URL");
+	}
+
+	const rows = await db
+		.select()
+		.from(torrents)
+		.where(eq(torrents.torrentId, topicId))
+		.limit(1);
+	const row = rows[0];
+
+	return {
+		size: row?.size ?? 0,
+		registeredAt: row?.registeredAt?.toISOString() ?? null,
+		torrentFileUrl: row?.torrentFileUrl ?? torrentFileUrlFromId(topicId),
+	};
+}
+
+const replaceInQb = createReplaceTorrentInQb({
+	listTorrents: async () => {
+		const qbTorrents = await getTorrents();
+		return qbTorrents.map((torrent) => ({
+			hash: torrent.hash,
+			savePath: torrent.save_path,
+			tags: torrent.tags,
+		}));
+	},
+	deleteTorrent: (hash, options) => deleteTorrent(hash, options),
+	addTorrent: (bytes, options) => addTorrent(bytes, options),
+	getSeriesPath,
+});
+
 const ratingsPort = createDefaultRatingsPort();
 
 export const titleModule = createTitleModule({
@@ -165,31 +272,20 @@ export const titleModule = createTitleModule({
 	getRatings: ratingsPort.getRatings,
 	searchLocal: searchLocalForTitle,
 	searchTracker: searchTrackerForTitle,
-	listTaggedTorrents: async () => {
-		try {
-			const torrents = await getTorrents();
-			return torrents.map((torrent) => {
-				const live = toLiveTorrent(torrent);
-				return {
-					hash: live.id,
-					progress: live.progress,
-					stateKind: live.stateKind,
-					stateLabel: live.stateLabel,
-					downloadSpeed: live.downloadSpeed,
-					etaSeconds: live.etaSeconds,
-					tags: live.tags,
-				};
-			});
-		} catch (error) {
-			if (error instanceof QbittorrentNotConfiguredError) {
-				return [];
-			}
-			throw error;
-		}
-	},
+	listTaggedTorrents,
 	addFromTracker: async (torrentFileUrl, kind, tags) => {
 		await addFromTracker(torrentFileUrl, kind, tags);
 	},
+	loadWatchByTopicUrl,
+	loadWatchByTitleId,
+	saveWatch,
+	listQbTorrents,
+	getSeriesPath,
+	fetchTorrentBytes,
+	fetchTopicMeta,
+	replaceInQb,
+	isCompletePack: () => false,
+	now: () => new Date().toISOString(),
 });
 
-export { createTitleModule, TitleAddError };
+export { createTitleModule, TitleAddError, TitleWatchError };

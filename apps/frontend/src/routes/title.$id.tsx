@@ -10,6 +10,10 @@ import { Heading } from "@astryxdesign/core/Heading";
 import { List, ListItem } from "@astryxdesign/core/List";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { Section } from "@astryxdesign/core/Section";
+import {
+	SegmentedControl,
+	SegmentedControlItem,
+} from "@astryxdesign/core/SegmentedControl";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
@@ -17,6 +21,7 @@ import { useToast } from "@astryxdesign/core/Toast";
 import { detectMediaType } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/media-type";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { TmdbAttribution } from "#/components/tmdb-attribution";
 import {
 	formatBytes,
 	formatEta,
@@ -24,7 +29,6 @@ import {
 	formatSpeed,
 } from "#/utils/format";
 import { trpc } from "#/utils/trpc";
-import { TmdbAttribution } from "#/components/tmdb-attribution";
 
 export const Route = createFileRoute("/title/$id")({
 	component: TitlePage,
@@ -113,6 +117,9 @@ function TitleTorrentsList({
 			await queryClient.invalidateQueries({
 				queryKey: trpc.title.torrents.queryKey({ id: titleId }),
 			});
+			await queryClient.invalidateQueries({
+				queryKey: trpc.title.get.queryKey({ id: titleId }),
+			});
 		},
 		onError: (error) => {
 			toast({
@@ -135,6 +142,7 @@ function TitleTorrentsList({
 			torrentFileUrl: item.torrentFileUrl,
 			kind,
 			topicUrl: item.topicUrl,
+			titleId,
 		});
 	};
 
@@ -252,6 +260,141 @@ function TitleTorrentsList({
 	);
 }
 
+type TitleWatchView = {
+	topicUrl: string;
+	watch: "tracking" | "paused" | "completed" | "off";
+	source: "auto-qb" | "manual";
+	lastCheckedAt: string | null;
+	lastChangedAt: string | null;
+	lastError: string | null;
+};
+
+function TitleWatchPanel({
+	titleId,
+	watch,
+}: {
+	titleId: string;
+	watch: TitleWatchView | null;
+}) {
+	const toast = useToast();
+	const queryClient = useQueryClient();
+
+	const setWatchMutation = useMutation({
+		...trpc.title.setWatch.mutationOptions(),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: trpc.title.get.queryKey({ id: titleId }),
+			});
+		},
+		onError: (error) => {
+			toast({
+				type: "error",
+				body: error.message || "Не удалось изменить follow",
+			});
+		},
+	});
+
+	const checkNowMutation = useMutation({
+		...trpc.title.checkNow.mutationOptions(),
+		onSuccess: async (result) => {
+			await queryClient.invalidateQueries({
+				queryKey: trpc.title.get.queryKey({ id: titleId }),
+			});
+			await queryClient.invalidateQueries({
+				queryKey: trpc.title.torrents.queryKey({ id: titleId }),
+			});
+
+			if (result.status === "unchanged") {
+				toast({ body: "Раздача не изменилась" });
+			} else if (result.status === "updated") {
+				toast({
+					body: result.applied
+						? "Раздача обновлена и подменена в qBittorrent"
+						: "Раздача обновилась",
+				});
+			} else {
+				toast({
+					type: "error",
+					body: result.message || "Не удалось проверить обновление",
+				});
+			}
+		},
+		onError: (error) => {
+			toast({
+				type: "error",
+				body: error.message || "Не удалось проверить обновление",
+			});
+		},
+	});
+
+	const segmentValue =
+		watch?.watch === "paused"
+			? "paused"
+			: watch?.watch === "tracking"
+				? "tracking"
+				: "off";
+
+	return (
+		<VStack gap={2} width="100%">
+			<Heading level={2}>Follow</Heading>
+			<HStack gap={3} vAlign="center" wrap="wrap">
+				{segmentValue === "off" ? (
+					<Button
+						isLoading={setWatchMutation.isPending}
+						label="Следить"
+						onClick={() =>
+							setWatchMutation.mutate({
+								id: titleId,
+								watch: "tracking",
+							})
+						}
+						variant="secondary"
+					/>
+				) : (
+					<SegmentedControl
+						isDisabled={setWatchMutation.isPending}
+						label="Статус follow"
+						onChange={(value) => {
+							if (value !== "tracking" && value !== "paused") {
+								return;
+							}
+							setWatchMutation.mutate({
+								id: titleId,
+								watch: value,
+							});
+						}}
+						size="sm"
+						value={segmentValue}
+					>
+						<SegmentedControlItem label="Слежу" value="tracking" />
+						<SegmentedControlItem label="Пауза" value="paused" />
+					</SegmentedControl>
+				)}
+				<Button
+					isLoading={checkNowMutation.isPending}
+					label="Проверить обновление"
+					onClick={() => checkNowMutation.mutate({ id: titleId })}
+					variant="ghost"
+				/>
+			</HStack>
+			{watch?.lastError ? (
+				<Banner
+					container="section"
+					description={watch.lastError}
+					status="error"
+					title="Ошибка проверки"
+				/>
+			) : null}
+			{watch?.lastCheckedAt ? (
+				<Text type="supporting">
+					Проверено:{" "}
+					{new Date(watch.lastCheckedAt).toLocaleString("ru-RU")}
+				</Text>
+			) : null}
+		</VStack>
+	);
+}
+
 function TitlePage() {
 	const { id } = Route.useParams();
 	const { data, isLoading, isError, error } = useQuery({
@@ -286,7 +429,7 @@ function TitlePage() {
 		return null;
 	}
 
-	const { meta, metaStatus, facet, ratings } = data;
+	const { meta, metaStatus, facet, ratings, watch } = data;
 	const titleName = meta.name ?? "Без названия";
 
 	return (
@@ -383,6 +526,10 @@ function TitlePage() {
 								</VStack>
 							))}
 						</HStack>
+
+						{facet === "tv" ? (
+							<TitleWatchPanel titleId={id} watch={watch} />
+						) : null}
 					</VStack>
 				</HStack>
 
