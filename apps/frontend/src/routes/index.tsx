@@ -3,19 +3,22 @@
 import { AspectRatio } from "@astryxdesign/core/AspectRatio";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
+import { Carousel } from "@astryxdesign/core/Carousel";
+import { Center } from "@astryxdesign/core/Center";
 import { ClickableCard } from "@astryxdesign/core/ClickableCard";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
-import { Grid } from "@astryxdesign/core/Grid";
 import { Heading } from "@astryxdesign/core/Heading";
+import { Icon } from "@astryxdesign/core/Icon";
 import { List, ListItem } from "@astryxdesign/core/List";
 import { Section } from "@astryxdesign/core/Section";
-import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { Spinner } from "@astryxdesign/core/Spinner";
-import { VStack } from "@astryxdesign/core/Stack";
+import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Text } from "@astryxdesign/core/Text";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { ImageOff, Star } from "lucide-react";
+import type { SVGProps } from "react";
 import z from "zod";
 import {
 	type TransferStatsData,
@@ -52,6 +55,7 @@ type DiscoverCardData = {
 	poster: string | null;
 	year: number | null;
 	kind: "films" | "tv";
+	rating: number | null;
 };
 
 type TitleWatchEventKind =
@@ -130,48 +134,82 @@ function TitleWatchFeedWidget({ items }: { items: TitleWatchFeedItemData[] }) {
 	);
 }
 
+const DISCOVER_KIND_LABELS: Record<DiscoverCardData["kind"], string> = {
+	films: "Фильм",
+	tv: "Сериал",
+};
 
-function DiscoverWidget({ items }: { items: DiscoverCardData[] }) {
+function formatRating(rating: number): string {
+	return rating.toLocaleString("ru-RU", {
+		minimumFractionDigits: 1,
+		maximumFractionDigits: 1,
+	});
+}
+
+function FilledStarIcon(props: SVGProps<SVGSVGElement>) {
+	return <Star {...props} fill="currentColor" />;
+}
+
+function DiscoverCard({ item }: { item: DiscoverCardData }) {
 	const navigate = useNavigate();
 
 	return (
+		<ClickableCard
+			className="w-44 shrink-0 overflow-hidden"
+			elevation="low"
+			label={item.name}
+			padding={0}
+			onClick={() =>
+				void navigate({
+					to: "/title/$id",
+					params: { id: item.titleId },
+				})
+			}
+		>
+			<VStack gap={0} width="100%">
+				<AspectRatio fit="cover" ratio={2 / 3}>
+					{item.poster ? (
+						<img alt={item.name} src={item.poster} />
+					) : (
+						<Center height="100%" width="100%">
+							<ImageOff aria-hidden size={32} strokeWidth={1.5} />
+						</Center>
+					)}
+				</AspectRatio>
+				<VStack gap={1} padding={2} width="100%">
+					<Text display="block" maxLines={2} type="body">
+						{item.name}
+					</Text>
+					<HStack gap={1} vAlign="center">
+						{item.rating != null ? (
+							<>
+								<Icon color="warning" icon={FilledStarIcon} size="xsm" />
+								<Text hasTabularNumbers type="supporting">
+									{formatRating(item.rating)}
+								</Text>
+								<Text type="supporting">·</Text>
+							</>
+						) : null}
+						<Text type="supporting">
+							{DISCOVER_KIND_LABELS[item.kind]}
+							{item.year != null ? ` · ${item.year}` : ""}
+						</Text>
+					</HStack>
+				</VStack>
+			</VStack>
+		</ClickableCard>
+	);
+}
+
+function DiscoverWidget({ items }: { items: DiscoverCardData[] }) {
+	return (
 		<VStack gap={3} width="100%">
 			<Heading level={2}>Discover</Heading>
-			<Grid columns={{ minWidth: 140, max: 6 }} gap={3} width="100%">
+			<Carousel aria-label="Тренды дня" gap={3} hasSnap>
 				{items.map((item) => (
-					<ClickableCard
-						key={item.titleId}
-						elevation="low"
-						label={item.name}
-						padding={0}
-						width="100%"
-						onClick={() =>
-							void navigate({
-								to: "/title/$id",
-								params: { id: item.titleId },
-							})
-						}
-					>
-						<VStack gap={2} width="100%">
-							<AspectRatio fit="cover" ratio={2 / 3}>
-								{item.poster ? (
-									<img alt={item.name} src={item.poster} />
-								) : (
-									<Skeleton height="100%" width="100%" />
-								)}
-							</AspectRatio>
-							<VStack gap={0} width="100%">
-								<Text display="block" type="body" wordBreak="break-word">
-									{item.name}
-								</Text>
-								{item.year != null ? (
-									<Text type="supporting">{item.year}</Text>
-								) : null}
-							</VStack>
-						</VStack>
-					</ClickableCard>
+					<DiscoverCard key={item.titleId} item={item} />
 				))}
-			</Grid>
+			</Carousel>
 			<TmdbAttribution compact />
 		</VStack>
 	);
@@ -200,8 +238,7 @@ function isTitleWatchFeed(
 	data: ComposeWidgetDataUnion,
 ): data is { items: TitleWatchFeedItemData[] } {
 	return (
-		"items" in data &&
-		(data.items.length === 0 || "kind" in data.items[0])
+		"items" in data && (data.items.length === 0 || "kind" in data.items[0])
 	);
 }
 

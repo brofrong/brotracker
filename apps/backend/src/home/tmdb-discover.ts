@@ -16,24 +16,29 @@ type TmdbTrendingItem = {
 	poster_path?: string | null;
 	release_date?: string;
 	first_air_date?: string;
+	vote_average?: number;
 };
 
 type TmdbTrendingResponse = {
 	results?: TmdbTrendingItem[];
 };
 
-function discoverPoster(
-	posterPath: string | null | undefined,
-): string | null {
+function discoverPoster(posterPath: string | null | undefined): string | null {
 	if (!posterPath) {
 		return null;
 	}
 	return `${DISCOVER_POSTER_BASE}${posterPath}`;
 }
 
-export function mapTrendingItem(
-	item: TmdbTrendingItem,
-): DiscoverCard | null {
+/** TMDB returns 0 for unrated titles — treat that as "no rating". */
+function discoverRating(voteAverage: number | undefined): number | null {
+	if (!voteAverage || voteAverage <= 0) {
+		return null;
+	}
+	return Math.round(voteAverage * 10) / 10;
+}
+
+export function mapTrendingItem(item: TmdbTrendingItem): DiscoverCard | null {
 	if (item.media_type === "movie") {
 		return {
 			titleId: `tmdb:films:${item.id}`,
@@ -41,6 +46,7 @@ export function mapTrendingItem(
 			poster: discoverPoster(item.poster_path),
 			year: yearFromDate(item.release_date),
 			kind: "films",
+			rating: discoverRating(item.vote_average),
 		};
 	}
 
@@ -51,6 +57,7 @@ export function mapTrendingItem(
 			poster: discoverPoster(item.poster_path),
 			year: yearFromDate(item.first_air_date),
 			kind: "tv",
+			rating: discoverRating(item.vote_average),
 		};
 	}
 
