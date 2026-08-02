@@ -58,6 +58,20 @@ function deps(
 		searchTracker: async () => ({ status: "unavailable" }),
 		listTaggedTorrents: async () => [],
 		addFromTracker: async () => {},
+		loadWatchByTopicUrl: async () => null,
+		loadWatchByTitleId: async () => null,
+		saveWatch: async () => {},
+		listQbTorrents: async () => [],
+		getSeriesPath: async () => null,
+		fetchTorrentBytes: async () => new Uint8Array(),
+		fetchTopicMeta: async () => ({
+			size: 0,
+			registeredAt: null,
+			torrentFileUrl: "https://rutracker.org/forum/dl.php?t=1",
+		}),
+		replaceInQb: async () => {},
+		isCompletePack: () => false,
+		now: () => "2026-08-02T00:00:00.000Z",
 		...overrides,
 	};
 }
@@ -154,6 +168,7 @@ describe("title.get", () => {
 				{ source: "imdb", status: "unconfigured" },
 				{ source: "kinopoisk", status: "unconfigured" },
 			],
+			watch: null,
 		});
 	});
 
@@ -205,6 +220,7 @@ describe("title.get", () => {
 			metaStatus: "degraded",
 			meta: emptyMeta(),
 			ratings: stubRatings(),
+			watch: null,
 		});
 	});
 
@@ -225,6 +241,7 @@ describe("title.get", () => {
 			metaStatus: "empty",
 			meta: emptyMeta(),
 			ratings: stubRatings(),
+			watch: null,
 		});
 		await expect(fetchTmdbMeta()).rejects.toThrow();
 	});
@@ -240,6 +257,7 @@ describe("title.get", () => {
 			metaStatus: "empty",
 			meta: emptyMeta(),
 			ratings: stubRatings(),
+			watch: null,
 		});
 	});
 

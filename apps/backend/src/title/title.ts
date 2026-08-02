@@ -1,4 +1,10 @@
 import { scoreTorrentQuality } from "../torrent/quality-score";
+import {
+	checkTopicNow,
+	type CheckResult,
+	type TitleWatchRecord,
+} from "./check-topic-now";
+import { syncWatchesFromQb } from "./sync-watches-from-qb";
 import type {
 	Title,
 	TitleDeps,
@@ -10,6 +16,7 @@ import type {
 	TitleTorrentBadge,
 	TitleTorrentCandidate,
 	TitleTorrentsResult,
+	TitleWatchView,
 	TmdbMeta,
 } from "./title.types";
 import {
@@ -148,6 +155,17 @@ function toTitleTorrent(
 	};
 }
 
+function toWatchView(record: TitleWatchRecord): TitleWatchView {
+	return {
+		topicUrl: record.topicUrl,
+		watch: record.watch,
+		source: record.source,
+		lastCheckedAt: record.lastCheckedAt,
+		lastChangedAt: record.lastChangedAt,
+		lastError: record.lastError,
+	};
+}
+
 export class TitleAddError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -155,8 +173,126 @@ export class TitleAddError extends Error {
 	}
 }
 
+export class TitleWatchError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "TitleWatchError";
+	}
+}
+
 export function createTitleModule(deps: TitleDeps) {
-	return {
+	async function resolveWatchForTitle(
+		titleId: string,
+		facet: TitleKind | null,
+		titleName: string | null,
+	): Promise<TitleWatchView | null> {
+		if (facet !== "tv") {
+			return null;
+		}
+
+		try {
+			await syncWatchesFromQb({
+				listTorrents: deps.listQbTorrents,
+				getSeriesPath: deps.getSeriesPath,
+				loadWatch: deps.loadWatchByTopicUrl,
+				saveWatch: deps.saveWatch,
+				isCompletePack: deps.isCompletePack,
+				now: deps.now,
+			});
+		} catch {
+			// qB/sync failures must not take down the title card
+		}
+
+		const byTitle = await deps.loadWatchByTitleId(titleId);
+		if (byTitle) {
+			return toWatchView(byTitle);
+		}
+
+		if (!titleName?.trim()) {
+			return null;
+		}
+
+		try {
+			const linked = await linkAutoWatchToTitle(titleId, titleName.trim());
+			return linked ? toWatchView(linked) : null;
+		} catch {
+			return null;
+		}
+	}
+
+	async function linkAutoWatchToTitle(
+		titleId: string,
+		query: string,
+	): Promise<TitleWatchRecord | null> {
+		const [local, tracker, live] = await Promise.all([
+			deps.searchLocal(query),
+			deps.searchTracker(query),
+			deps.listTaggedTorrents(),
+		]);
+		const candidates =
+			tracker.status === "ok" ? tracker.results : local;
+
+		for (const candidate of candidates) {
+			const topicId =
+				extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
+			const transfer = findTransferForTopic(topicId, live);
+			if (!transfer) {
+				continue;
+			}
+			const existing = await deps.loadWatchByTopicUrl(candidate.topicUrl);
+			if (!existing || existing.watch === "off") {
+				continue;
+			}
+			if (existing.titleId && existing.titleId !== titleId) {
+				continue;
+			}
+			const linked: TitleWatchRecord = {
+				...existing,
+				titleId,
+				qbHash: existing.qbHash ?? transfer.hash,
+			};
+			await deps.saveWatch(linked);
+			return linked;
+		}
+
+		return null;
+	}
+
+	async function findTopicInQbForTitle(
+		titleId: string,
+	): Promise<{ topicUrl: string; qbHash: string; size: number } | null> {
+		const title = await module.get({ id: titleId });
+		const query = title.meta.name?.trim();
+		if (!query) {
+			return null;
+		}
+
+		const [local, tracker, live] = await Promise.all([
+			deps.searchLocal(query),
+			deps.searchTracker(query),
+			deps.listTaggedTorrents(),
+		]);
+
+		const candidates =
+			tracker.status === "ok" ? tracker.results : local;
+
+		for (const candidate of candidates) {
+			const topicId =
+				extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
+			const transfer = findTransferForTopic(topicId, live);
+			if (transfer) {
+				return {
+					topicUrl: candidate.topicUrl,
+					qbHash: transfer.hash,
+					size: candidate.size,
+				};
+			}
+		}
+
+		return null;
+	}
+
+	const module = {
 		resolve(ref: TitleRef): { id: string } {
 			return { id: titleRefToId(ref) };
 		},
@@ -172,6 +308,7 @@ export function createTitleModule(deps: TitleDeps) {
 					metaStatus: "empty",
 					meta: emptyMeta(),
 					ratings: await deps.getRatings({ titleId: id }),
+					watch: null,
 				};
 			}
 
@@ -182,15 +319,17 @@ export function createTitleModule(deps: TitleDeps) {
 					metaStatus: "empty",
 					meta: emptyMeta(),
 					ratings: await deps.getRatings({ titleId: id }),
+					watch: null,
 				};
 			}
 
 			const outcome = await deps.fetchTmdbMeta(parsed.kind, parsed.tmdbId);
 
 			if (outcome.status !== "ok") {
+				const facet = parsed.kind;
 				return {
 					id,
-					facet: parsed.kind,
+					facet,
 					metaStatus: "degraded",
 					meta: emptyMeta(),
 					ratings: await deps.getRatings({
@@ -198,6 +337,7 @@ export function createTitleModule(deps: TitleDeps) {
 						tmdbKind: parsed.kind,
 						tmdbId: parsed.tmdbId,
 					}),
+					watch: await resolveWatchForTitle(id, facet, null),
 				};
 			}
 
@@ -216,6 +356,11 @@ export function createTitleModule(deps: TitleDeps) {
 				metaStatus,
 				meta: metaFromTmdb(outcome.meta),
 				ratings,
+				watch: await resolveWatchForTitle(
+					id,
+					parsed.kind,
+					outcome.meta.name,
+				),
 			};
 		},
 
@@ -260,6 +405,7 @@ export function createTitleModule(deps: TitleDeps) {
 			torrentFileUrl: string;
 			kind: TitleKind;
 			topicUrl: string;
+			titleId?: string;
 		}): Promise<{ ok: true }> {
 			const topicId = extractTopicId(input.topicUrl);
 			if (!topicId) {
@@ -270,11 +416,124 @@ export function createTitleModule(deps: TitleDeps) {
 				topicTag(topicId),
 			]);
 
+			if (input.kind === "tv") {
+				const existing = await deps.loadWatchByTopicUrl(input.topicUrl);
+				if (
+					!existing ||
+					existing.watch === "off" ||
+					(input.titleId && !existing.titleId)
+				) {
+					await deps.saveWatch({
+						topicUrl: input.topicUrl,
+						titleId: input.titleId ?? existing?.titleId ?? null,
+						watch:
+							existing && existing.watch !== "off"
+								? existing.watch
+								: "tracking",
+						source: existing?.source ?? "manual",
+						size: existing?.size ?? null,
+						registeredAt: existing?.registeredAt ?? null,
+						contentHash: existing?.contentHash ?? null,
+						qbHash: existing?.qbHash ?? null,
+						lastCheckedAt: existing?.lastCheckedAt ?? null,
+						lastChangedAt: existing?.lastChangedAt ?? null,
+						lastError: existing?.lastError ?? null,
+					});
+				}
+			}
+
 			return { ok: true };
 		},
+
+		async setWatch(input: {
+			id: string;
+			watch: "tracking" | "paused";
+			topicUrl?: string;
+		}): Promise<{ ok: true }> {
+			const existing = await deps.loadWatchByTitleId(input.id);
+			let topicUrl = input.topicUrl ?? existing?.topicUrl ?? null;
+			let qbHash = existing?.qbHash ?? null;
+			let size = existing?.size ?? null;
+
+			if (!topicUrl) {
+				const found = await findTopicInQbForTitle(input.id);
+				if (!found) {
+					throw new TitleWatchError(
+						"Нет раздачи сериала в qBittorrent для follow",
+					);
+				}
+				topicUrl = found.topicUrl;
+				qbHash = found.qbHash;
+				size = found.size;
+			}
+
+			const previous =
+				existing ?? (await deps.loadWatchByTopicUrl(topicUrl));
+
+			await deps.saveWatch({
+				topicUrl,
+				titleId: input.id,
+				watch: input.watch,
+				source: previous?.source ?? "manual",
+				size: previous?.size ?? size,
+				registeredAt: previous?.registeredAt ?? null,
+				contentHash: previous?.contentHash ?? null,
+				qbHash: previous?.qbHash ?? qbHash,
+				lastCheckedAt: previous?.lastCheckedAt ?? null,
+				lastChangedAt: previous?.lastChangedAt ?? null,
+				lastError: previous?.lastError ?? null,
+			});
+
+			return { ok: true };
+		},
+
+		async checkNow(input: { id: string }): Promise<CheckResult> {
+			let record = await deps.loadWatchByTitleId(input.id);
+			if (!record) {
+				const found = await findTopicInQbForTitle(input.id);
+				if (!found) {
+					return {
+						status: "failed",
+						checkedAt: deps.now(),
+						message: "Нет follow или раздачи в qBittorrent",
+					};
+				}
+				record = {
+					topicUrl: found.topicUrl,
+					titleId: input.id,
+					watch: "tracking",
+					source: "manual",
+					size: found.size,
+					registeredAt: null,
+					contentHash: null,
+					qbHash: found.qbHash,
+					lastCheckedAt: null,
+					lastChangedAt: null,
+					lastError: null,
+				};
+				await deps.saveWatch(record);
+			} else if (!record.titleId) {
+				await deps.saveWatch({ ...record, titleId: input.id });
+			}
+
+			return checkTopicNow(
+				{ topicUrl: record.topicUrl },
+				{
+					loadWatch: deps.loadWatchByTopicUrl,
+					saveWatch: deps.saveWatch,
+					fetchTorrentBytes: deps.fetchTorrentBytes,
+					fetchTopicMeta: deps.fetchTopicMeta,
+					replaceInQb: deps.replaceInQb,
+					now: deps.now,
+				},
+			);
+		},
 	};
+
+	return module;
 }
 
 export type TitleModule = ReturnType<typeof createTitleModule>;
 
 export type { TitleDeps, FetchTmdbMetaOutcome } from "./title.types";
+export type { CheckResult } from "./check-topic-now";

@@ -205,11 +205,17 @@ export async function resumeTorrent(hash: string): Promise<void> {
 	});
 }
 
-/** Remove torrent and its downloaded files from qBittorrent. */
-export async function deleteTorrent(hash: string): Promise<void> {
+/** Remove torrent from qBittorrent. Keeps downloaded files unless deleteFiles is true. */
+export async function deleteTorrent(
+	hash: string,
+	options: { deleteFiles?: boolean } = {},
+): Promise<void> {
+	const deleteFiles = options.deleteFiles ?? true;
 	await qbittorentRequest("/torrents/delete", {
 		method: "POST",
 		headers: { "Content-Type": "application/x-www-form-urlencoded" },
-		body: torrentHashesBody(hash, { deleteFiles: "true" }),
+		body: torrentHashesBody(hash, {
+			deleteFiles: deleteFiles ? "true" : "false",
+		}),
 	});
 }
