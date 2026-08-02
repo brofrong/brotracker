@@ -181,3 +181,35 @@ export async function addTorrent(
 		body: formData,
 	});
 }
+
+function torrentHashesBody(hash: string, extra?: Record<string, string>): string {
+	const params = new URLSearchParams({ hashes: hash, ...extra });
+	return params.toString();
+}
+
+/** Pause a torrent (download or seeding). */
+export async function pauseTorrent(hash: string): Promise<void> {
+	await qbittorentRequest("/torrents/pause", {
+		method: "POST",
+		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		body: torrentHashesBody(hash),
+	});
+}
+
+/** Resume a paused torrent. */
+export async function resumeTorrent(hash: string): Promise<void> {
+	await qbittorentRequest("/torrents/resume", {
+		method: "POST",
+		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		body: torrentHashesBody(hash),
+	});
+}
+
+/** Remove torrent and its downloaded files from qBittorrent. */
+export async function deleteTorrent(hash: string): Promise<void> {
+	await qbittorentRequest("/torrents/delete", {
+		method: "POST",
+		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		body: torrentHashesBody(hash, { deleteFiles: "true" }),
+	});
+}

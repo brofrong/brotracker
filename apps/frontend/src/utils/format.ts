@@ -25,3 +25,17 @@ export function formatEta(seconds: number): string {
 export function formatProgress(progress: number): string {
 	return `${(progress * 100).toFixed(1)}%`;
 }
+
+/** Formats a qBittorrent `added_on` unix timestamp (seconds). */
+export function formatAddedOn(unixSeconds: number): string {
+	if (unixSeconds <= 0) return "—";
+	const date = new Date(unixSeconds * 1000);
+	if (Number.isNaN(date.getTime())) return "—";
+	return date.toLocaleString("ru-RU", {
+		day: "2-digit",
+		month: "2-digit",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+}

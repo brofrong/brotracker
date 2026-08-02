@@ -62,6 +62,7 @@ describe("toLiveTorrent", () => {
 			downloadSpeed: 1024,
 			uploadSpeed: 512,
 			etaSeconds: 120,
+			addedOn: 0,
 			savePath: "/data/films",
 			stateKind: "downloading",
 			stateLabel: "Загрузка",
