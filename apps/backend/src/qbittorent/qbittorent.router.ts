@@ -1,25 +1,32 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
-import { iterateTorrentUpdates } from "./qbittorent.poller";
 import {
 	AddFromTrackerGatewayError,
 	AddFromTrackerPreconditionError,
-	qbittorentService,
+	addFromTracker,
 } from "./qbittorent.service";
+import {
+	getFreeSpaceOnDisk,
+	getTorrents,
+} from "./qbittorent.client";
+import { iterateTorrentUpdates } from "./qbittorent.poller";
+import { toLiveTorrents } from "./live-torrent";
 
 export const qbittorentRouter = router({
 	list: protectedProcedure.query(async () => {
-		return qbittorentService.getTorrents();
+		return toLiveTorrents(await getTorrents());
 	}),
 
 	freeSpace: protectedProcedure.query(async () => {
-		const freeSpaceOnDisk = await qbittorentService.getFreeSpaceOnDisk();
+		const freeSpaceOnDisk = await getFreeSpaceOnDisk();
 		return { freeSpaceOnDisk };
 	}),
 
 	listUpdates: protectedProcedure.subscription(async function* (opts) {
-		yield* iterateTorrentUpdates(opts.signal);
+		for await (const torrents of iterateTorrentUpdates(opts.signal)) {
+			yield toLiveTorrents(torrents);
+		}
 	}),
 
 	add: protectedProcedure
@@ -31,10 +38,7 @@ export const qbittorentRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				await qbittorentService.addFromTracker(
-					input.torrentFileUrl,
-					input.mediaType,
-				);
+				await addFromTracker(input.torrentFileUrl, input.mediaType);
 			} catch (error) {
 				if (error instanceof AddFromTrackerPreconditionError) {
 					throw new TRPCError({

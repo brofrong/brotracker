@@ -6,7 +6,8 @@ import { Spinner } from "@astryxdesign/core/Spinner";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { useEffect, useState } from "react";
-import { authClient, redirectToAuthentikSignIn } from "#/utils/auth-client";
+import { authClient } from "#/utils/auth-client";
+import { unauthorizedRedirect } from "#/utils/unauthorized-redirect";
 
 type GateStatus = "checking" | "authenticated" | "redirecting";
 
@@ -36,7 +37,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
 				if (!session.data?.session) {
 					setStatus("redirecting");
-					await redirectToAuthentikSignIn();
+					await unauthorizedRedirect.redirectOnUnauthorized();
 					return;
 				}
 
@@ -44,7 +45,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 			} catch {
 				if (cancelled) return;
 				setStatus("redirecting");
-				await redirectToAuthentikSignIn();
+				await unauthorizedRedirect.redirectOnUnauthorized();
 			}
 		}
 

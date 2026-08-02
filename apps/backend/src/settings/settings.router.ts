@@ -1,26 +1,17 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { testQbittorrentConnection } from "../qbittorent/qbittorent.client";
 import {
-	testQbittorrentConnection,
-} from "../qbittorent/qbittorent.client";
-import {
-	loadQbittorrentConfig,
-	qbittorrentConfigSchema,
-	saveQbittorrentConfig,
-} from "./qbittorrent-config";
-import {
-	loadRutrackerConfig,
-	proxyUrlSchema,
-	rutrackerConfigSchema,
-	saveRutrackerConfig,
-} from "./rutracker-config";
-import { protectedProcedure, router } from "../trpc";
-import {
-	clearRutrackerSession,
 	getTracker,
-	invalidateTracker,
 	RutrackerNotConfiguredError,
 } from "../torrent/torrent.tracker";
+import { protectedProcedure, router } from "../trpc";
+import { MissingSecretError, proxyUrlSchema } from "./provider-config";
+import { providerConfig } from "./provider-config.live";
+import {
+	saveQbittorrentSettings,
+	saveRutrackerSettings,
+} from "./provider-settings";
 
 const rutrackerSetInputSchema = z.object({
 	login: z.string().trim().min(1, "Login is required"),
@@ -37,67 +28,29 @@ const qbittorrentSetInputSchema = z.object({
 	seriesPath: z.string(),
 });
 
+function mapSecretError(error: unknown): never {
+	if (error instanceof MissingSecretError) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: error.message,
+		});
+	}
+	throw error;
+}
+
 export const settingsRouter = router({
 	providers: router({
 		rutracker: router({
-			get: protectedProcedure.query(async () => {
-				const config = await loadRutrackerConfig();
-				if (!config) {
-					return {
-						login: "",
-						password: "",
-						hasPassword: false,
-						proxyUrl: null as string | null,
-					};
-				}
-				return {
-					login: config.login,
-					password: config.password,
-					hasPassword: config.password.length > 0,
-					proxyUrl: config.proxyUrl,
-				};
-			}),
+			get: protectedProcedure.query(async () => providerConfig.getRutracker()),
 
 			set: protectedProcedure
 				.input(rutrackerSetInputSchema)
 				.mutation(async ({ input }) => {
-					const existing = await loadRutrackerConfig();
-					const password =
-						input.password.length > 0
-							? input.password
-							: (existing?.password ?? "");
-
-					if (!password) {
-						throw new TRPCError({
-							code: "BAD_REQUEST",
-							message: "Password is required",
-						});
+					try {
+						return await saveRutrackerSettings(input);
+					} catch (error) {
+						mapSecretError(error);
 					}
-
-					const config = rutrackerConfigSchema.parse({
-						login: input.login,
-						password,
-						proxyUrl: input.proxyUrl,
-					});
-
-					const credentialsChanged =
-						!existing ||
-						existing.login !== config.login ||
-						existing.password !== config.password ||
-						(existing.proxyUrl ?? null) !== (config.proxyUrl ?? null);
-
-					await saveRutrackerConfig(config);
-
-					if (credentialsChanged) {
-						await clearRutrackerSession();
-						invalidateTracker();
-					}
-
-					return {
-						login: config.login,
-						hasPassword: true,
-						proxyUrl: config.proxyUrl,
-					};
 				}),
 
 			test: protectedProcedure.mutation(async () => {
@@ -131,61 +84,18 @@ export const settingsRouter = router({
 		}),
 
 		qbittorrent: router({
-			get: protectedProcedure.query(async () => {
-				const config = await loadQbittorrentConfig();
-				if (!config) {
-					return {
-						url: "",
-						apiKey: "",
-						filmsPath: "",
-						seriesPath: "",
-						hasApiKey: false,
-						isConfigured: false,
-					};
-				}
-				return {
-					url: config.url,
-					apiKey: config.apiKey,
-					filmsPath: config.filmsPath,
-					seriesPath: config.seriesPath,
-					hasApiKey: config.apiKey.length > 0,
-					isConfigured: true,
-				};
-			}),
+			get: protectedProcedure.query(async () =>
+				providerConfig.getQbittorrent(),
+			),
 
 			set: protectedProcedure
 				.input(qbittorrentSetInputSchema)
 				.mutation(async ({ input }) => {
-					const existing = await loadQbittorrentConfig();
-					const apiKey =
-						input.apiKey.length > 0
-							? input.apiKey
-							: (existing?.apiKey ?? "");
-
-					if (!apiKey) {
-						throw new TRPCError({
-							code: "BAD_REQUEST",
-							message: "API key is required",
-						});
+					try {
+						return await saveQbittorrentSettings(input);
+					} catch (error) {
+						mapSecretError(error);
 					}
-
-					const config = qbittorrentConfigSchema.parse({
-						url: input.url,
-						apiKey,
-						filmsPath: input.filmsPath,
-						seriesPath: input.seriesPath,
-					});
-
-					await saveQbittorrentConfig(config);
-
-					return {
-						url: config.url,
-						apiKey: config.apiKey,
-						filmsPath: config.filmsPath,
-						seriesPath: config.seriesPath,
-						hasApiKey: true,
-						isConfigured: true,
-					};
 				}),
 
 			test: protectedProcedure.mutation(async () => {

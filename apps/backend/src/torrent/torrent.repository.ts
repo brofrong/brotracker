@@ -2,15 +2,11 @@ import type { SearchResult } from "@brotracker/rutracker-ts/tracker/tracker-inte
 import { sql } from "drizzle-orm";
 import { db } from "../db/db";
 import { torrents } from "../db/torrent/torrent.schema";
-import { publicUrl } from "../storage/s3";
+import type { LocalCatalogHit } from "../catalog/catalog";
 import { compareTorrentQuality } from "./quality-score";
 import { normalizeTitle } from "./title-norm";
 
 export const TITLE_SIMILARITY_THRESHOLD = 0.3;
-
-export type LocalSearchResult = SearchResult & {
-	imageUrl: string | null;
-};
 
 type TorrentRow = {
 	torrent_id: string;
@@ -33,7 +29,7 @@ type TorrentRow = {
 	score?: number;
 };
 
-function mapRow(row: TorrentRow): LocalSearchResult {
+function mapRow(row: TorrentRow): LocalCatalogHit {
 	return {
 		torrentId: row.torrent_id,
 		title: row.title,
@@ -52,13 +48,13 @@ function mapRow(row: TorrentRow): LocalSearchResult {
 		topicUrl: row.topic_url,
 		hdr: row.hdr,
 		resolution: row.resolution,
-		imageUrl: row.image_key ? publicUrl(row.image_key) : null,
+		imageKey: row.image_key,
 	};
 }
 
 export async function searchLocal(
 	queryNorm: string,
-): Promise<LocalSearchResult[]> {
+): Promise<LocalCatalogHit[]> {
 	// Filter by TITLE_SIMILARITY_THRESHOLD only — `<%` uses a stricter default (~0.6)
 	// and would ignore our constant for typo-tolerant local hits.
 	const rows = await db.execute<TorrentRow>(sql`

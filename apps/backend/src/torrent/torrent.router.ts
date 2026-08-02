@@ -1,6 +1,6 @@
 import z from "zod";
+import { catalog } from "../catalog";
 import { protectedProcedure, router } from "../trpc";
-import { torrentService } from "./torrent.service";
 
 export const torrentRouter = router({
 	search: protectedProcedure
@@ -35,6 +35,6 @@ export const torrentRouter = router({
 					totalResults: null,
 				};
 			}
-			return torrentService.search(searchText, input.options, { source });
+			return catalog.search(searchText, input.options, { source });
 		}),
 });

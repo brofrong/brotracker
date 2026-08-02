@@ -25,29 +25,3 @@ export function formatEta(seconds: number): string {
 export function formatProgress(progress: number): string {
 	return `${(progress * 100).toFixed(1)}%`;
 }
-
-const torrentStateLabels: Record<string, string> = {
-	error: "Ошибка",
-	missingFiles: "Нет файлов",
-	uploading: "Раздача",
-	pausedUP: "На паузе (готов)",
-	queuedUP: "В очереди (раздача)",
-	stalledUP: "Простой (раздача)",
-	checkingUP: "Проверка (готов)",
-	forcedUP: "Принуд. раздача",
-	allocating: "Выделение места",
-	downloading: "Загрузка",
-	metaDL: "Метаданные",
-	pausedDL: "На паузе",
-	queuedDL: "В очереди",
-	stalledDL: "Простой",
-	checkingDL: "Проверка",
-	forcedDL: "Принуд. загрузка",
-	checkingResumeData: "Проверка данных",
-	moving: "Перемещение",
-	unknown: "Неизвестно",
-};
-
-export function formatTorrentState(state: string): string {
-	return torrentStateLabels[state] ?? state;
-}
