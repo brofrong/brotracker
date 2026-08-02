@@ -64,6 +64,18 @@ function deps(overrides: Partial<TitleDeps> = {}): TitleDeps {
 		replaceInQb: async () => {},
 		isCompletePack: () => false,
 		now: () => "2026-08-02T00:00:00.000Z",
+		enqueueWatchTask: async (input) => ({
+			id: "task-1",
+			topicUrl: input.topicUrl,
+			titleId: input.titleId,
+			trigger: input.trigger,
+			status: "pending",
+			error: null,
+			createdAt: "2026-08-02T00:00:00.000Z",
+			startedAt: null,
+			finishedAt: null,
+		}),
+		processWatchTask: async () => ({ outcome: "not_found" }),
 		...overrides,
 	};
 }
