@@ -338,6 +338,7 @@ export const titleModule = createTitleModule({
 	replaceInQb,
 	isCompletePack,
 	now,
+	recordEvent: recordWatchEvent,
 	enqueueWatchTask: createWatchTask,
 	processWatchTask: processWatchTaskById,
 });
@@ -351,6 +352,7 @@ export const nightlyWorker = createNightlyWorker({
 			saveWatch,
 			isCompletePack,
 			now,
+			recordEvent: recordWatchEvent,
 		}),
 	enqueue: () =>
 		enqueueNightlyWatchTasks({

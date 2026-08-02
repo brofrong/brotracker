@@ -1,4 +1,5 @@
 import type { TitleWatchRecord, TopicMeta } from "./check-topic-now";
+import type { RecordWatchEvent } from "./check-topic-now";
 import type { EpisodeProgress } from "./episode-progress";
 import type {
 	ProcessWatchTaskResult,
@@ -211,6 +212,8 @@ export type TitleDeps = {
 	}) => Promise<void>;
 	isCompletePack: (torrentName: string) => boolean;
 	now: () => string;
+	/** Feeds the home titleWatchFeed widget; optional for tests. */
+	recordEvent?: RecordWatchEvent;
 	/** Enqueues a WatchTask row (manual trigger, always fresh — no dedup). */
 	enqueueWatchTask: (input: {
 		topicUrl: string;

@@ -1,4 +1,5 @@
-import type { TitleWatchRecord } from "./check-topic-now";
+import type { RecordWatchEvent, TitleWatchRecord } from "./check-topic-now";
+import { parseEpisodeProgress } from "./episode-progress";
 import { extractTopicIdFromTags, topicUrlFromId } from "./topic-tag";
 
 export type SyncQbTorrent = {
@@ -14,10 +15,25 @@ export type SyncWatchesFromQbDeps = {
 	getSeriesPath: () => Promise<string | null>;
 	loadWatch: (topicUrl: string) => Promise<TitleWatchRecord | null>;
 	saveWatch: (record: TitleWatchRecord) => Promise<void>;
-	/** #12 will provide real N/M parsing; default false until then. */
 	isCompletePack: (torrentName: string) => boolean;
 	now: () => string;
+	/** Optional feed hook (#13); failures must not break sync. */
+	recordEvent?: RecordWatchEvent;
 };
+
+async function tryRecordEvent(
+	recordEvent: RecordWatchEvent | undefined,
+	event: Parameters<RecordWatchEvent>[0],
+): Promise<void> {
+	if (!recordEvent) {
+		return;
+	}
+	try {
+		await recordEvent(event);
+	} catch {
+		// best-effort
+	}
+}
 
 function isUnderSeriesPath(savePath: string, seriesPath: string): boolean {
 	const normalizedSave = savePath.replace(/\/+$/u, "");
@@ -93,7 +109,16 @@ export async function syncWatchesFromQb(
 			size: existing.size ?? torrent.size,
 			watch: justCompleted ? "completed" : existing.watch,
 		});
-		if (!justCompleted) {
+
+		if (justCompleted) {
+			const progress = parseEpisodeProgress(torrent.name);
+			await tryRecordEvent(deps.recordEvent, {
+				titleId: existing.titleId,
+				topicUrl,
+				kind: "completed",
+				message: progress ? `${progress.have} из ${progress.total}` : null,
+			});
+		} else {
 			upserted += 1;
 		}
 	}

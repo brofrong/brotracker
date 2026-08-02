@@ -159,6 +159,53 @@ describe("syncWatchesFromQb", () => {
 		expect(store.get(topicUrl)?.watch).toBe("completed");
 	});
 
+	test("records a completed feed event when a tracking watch finishes", async () => {
+		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=100";
+		const store = new Map<string, TitleWatchRecord>([
+			[
+				topicUrl,
+				{
+					topicUrl,
+					titleId: "tmdb:tv:1",
+					watch: "tracking",
+					source: "auto-qb",
+					size: 1000,
+					registeredAt: null,
+					contentHash: null,
+					qbHash: "h1",
+					lastCheckedAt: null,
+					lastChangedAt: null,
+					lastError: null,
+				},
+			],
+		]);
+		const events: Array<{ kind: string; titleId: string | null }> = [];
+
+		await syncWatchesFromQb({
+			listTorrents: async () => [
+				{
+					hash: "h1",
+					name: "Show 10 из 10",
+					savePath: "/data/tv",
+					tags: "brotracker:topic:100",
+					size: 1000,
+				},
+			],
+			getSeriesPath: async () => "/data/tv",
+			loadWatch: async (url) => store.get(url) ?? null,
+			saveWatch: async (record) => {
+				store.set(record.topicUrl, record);
+			},
+			isCompletePack: (name) => name.includes("10 из 10"),
+			now: () => "2026-08-02T13:00:00.000Z",
+			recordEvent: async (event) => {
+				events.push({ kind: event.kind, titleId: event.titleId });
+			},
+		});
+
+		expect(events).toEqual([{ kind: "completed", titleId: "tmdb:tv:1" }]);
+	});
+
 	test("leaves an incomplete tracking watch alone", async () => {
 		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=100";
 		const store = new Map<string, TitleWatchRecord>([

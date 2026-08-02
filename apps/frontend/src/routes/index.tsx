@@ -3,7 +3,6 @@
 import { AspectRatio } from "@astryxdesign/core/AspectRatio";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
-import { Card } from "@astryxdesign/core/Card";
 import { ClickableCard } from "@astryxdesign/core/ClickableCard";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Grid } from "@astryxdesign/core/Grid";
@@ -97,41 +96,37 @@ function TitleWatchFeedWidget({ items }: { items: TitleWatchFeedItemData[] }) {
 	const navigate = useNavigate();
 
 	return (
-		<Card elevation="low" padding={0} width="100%">
-			<VStack gap={0} width="100%">
-				<VStack gap={0} paddingBlock={5} paddingInline={5}>
-					<Heading level={2}>Обновления сериалов</Heading>
-				</VStack>
-				<List hasDividers>
-					{items.map((item) => (
-						<ListItem
-							key={item.id}
-							description={item.message ?? formatEventTimestamp(item.createdAt)}
-							endContent={
-								item.message ? (
-									<Text type="supporting">
-										{formatEventTimestamp(item.createdAt)}
-									</Text>
-								) : null
-							}
-							label={TITLE_WATCH_EVENT_LABELS[item.kind]}
-							onClick={() =>
-								void navigate({
-									to: "/title/$id",
-									params: { id: item.titleId },
-								})
-							}
-							startContent={
-								<StatusDot
-									label={TITLE_WATCH_EVENT_LABELS[item.kind]}
-									variant={titleWatchEventVariant(item.kind)}
-								/>
-							}
-						/>
-					))}
-				</List>
-			</VStack>
-		</Card>
+		<VStack gap={3} width="100%">
+			<Heading level={2}>Обновления сериалов</Heading>
+			<List hasDividers>
+				{items.map((item) => (
+					<ListItem
+						key={item.id}
+						description={item.message ?? formatEventTimestamp(item.createdAt)}
+						endContent={
+							item.message ? (
+								<Text type="supporting">
+									{formatEventTimestamp(item.createdAt)}
+								</Text>
+							) : null
+						}
+						label={TITLE_WATCH_EVENT_LABELS[item.kind]}
+						onClick={() =>
+							void navigate({
+								to: "/title/$id",
+								params: { id: item.titleId },
+							})
+						}
+						startContent={
+							<StatusDot
+								label={TITLE_WATCH_EVENT_LABELS[item.kind]}
+								variant={titleWatchEventVariant(item.kind)}
+							/>
+						}
+					/>
+				))}
+			</List>
+		</VStack>
 	);
 }
 
