@@ -33,6 +33,7 @@ export type LiveTorrent = {
 	downloadSpeed: number;
 	uploadSpeed: number;
 	etaSeconds: number;
+	addedOn: number;
 	savePath: string;
 	stateKind: QbittorentTorrentState;
 	stateLabel: string;
@@ -49,6 +50,7 @@ export function toLiveTorrent(torrent: QbittorentTorrent): LiveTorrent {
 		downloadSpeed: torrent.dlspeed,
 		uploadSpeed: torrent.upspeed,
 		etaSeconds: torrent.eta,
+		addedOn: torrent.added_on,
 		savePath: torrent.save_path,
 		stateKind,
 		stateLabel: torrentStateLabels[stateKind] ?? stateKind,

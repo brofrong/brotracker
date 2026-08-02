@@ -1,20 +1,21 @@
 "use client";
 
+import { AlertDialog } from "@astryxdesign/core/AlertDialog";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Icon } from "@astryxdesign/core/Icon";
+import { IconButton } from "@astryxdesign/core/IconButton";
 import {
 	Layout,
 	LayoutContent,
 	LayoutFooter,
 	LayoutHeader,
 } from "@astryxdesign/core/Layout";
-import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { Section } from "@astryxdesign/core/Section";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
-import { HStack, StackItem } from "@astryxdesign/core/Stack";
+import { HStack } from "@astryxdesign/core/Stack";
 import {
 	pixel,
 	Table,
@@ -23,18 +24,21 @@ import {
 } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { TextInput } from "@astryxdesign/core/TextInput";
+import { useToast } from "@astryxdesign/core/Toast";
 import { Tooltip } from "@astryxdesign/core/Tooltip";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { HardDrive, Wifi, WifiOff } from "lucide-react";
+import { HardDrive, Pause, Play, Trash2, Wifi, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { TorrentProgressBar } from "#/components/torrent-progress-bar";
 import {
+	formatAddedOn,
 	formatBytes,
 	formatEta,
 	formatProgress,
 	formatSpeed,
 } from "#/utils/format";
-import { getTorrentStateVisual } from "#/utils/torrent-status";
+import { getTorrentStateVisual, isTorrentPaused } from "#/utils/torrent-status";
 import { handleTrpcUnauthorized, trpc } from "#/utils/trpc";
 import {
 	type LiveTorrent,
@@ -49,6 +53,7 @@ type SortKey =
 	| "downloadSpeed"
 	| "uploadSpeed"
 	| "eta"
+	| "addedOn"
 	| "savePath";
 
 type SortDirection = "asc" | "desc";
@@ -63,6 +68,7 @@ interface TorrentRow extends Record<string, unknown> {
 	downloadSpeed: number;
 	uploadSpeed: number;
 	etaSeconds: number;
+	addedOn: number;
 	savePath: string;
 }
 
@@ -74,6 +80,7 @@ const sortLabels: Record<SortKey, string> = {
 	downloadSpeed: "Скорость ↓",
 	uploadSpeed: "Скорость ↑",
 	eta: "ETA",
+	addedOn: "Добавлен",
 	savePath: "Путь сохранения",
 };
 
@@ -88,6 +95,7 @@ function toTorrentRow(torrent: LiveTorrent): TorrentRow {
 		downloadSpeed: torrent.downloadSpeed,
 		uploadSpeed: torrent.uploadSpeed,
 		etaSeconds: torrent.etaSeconds,
+		addedOn: torrent.addedOn,
 		savePath: torrent.savePath,
 	};
 }
@@ -109,24 +117,15 @@ function TorrentProgressCell({
 	progress: number;
 }) {
 	const pct = Math.min(100, Math.max(0, progress * 100));
-	const label = formatProgress(progress);
 	const isComplete = pct >= 100;
 
 	return (
-		<HStack gap={2} vAlign="center" width="100%">
-			<StackItem size="fill">
-				<ProgressBar
-					isLabelHidden
-					label={name}
-					max={100}
-					value={pct}
-					variant={isComplete ? "success" : "accent"}
-				/>
-			</StackItem>
-			<Text hasTabularNumbers size="xsm" type="supporting">
-				{label}
-			</Text>
-		</HStack>
+		<TorrentProgressBar
+			label={name}
+			value={pct}
+			valueLabel={formatProgress(progress)}
+			variant={isComplete ? "success" : "accent"}
+		/>
 	);
 }
 
@@ -221,10 +220,25 @@ function TorrentsTableSkeleton() {
 				renderCell: ({ index }) => cell(index, 6, 40),
 			},
 			{
+				key: "addedOn",
+				header: sortLabels.addedOn,
+				width: pixel(140),
+				align: "end",
+				renderCell: ({ index }) => cell(index, 7, 96),
+			},
+			{
 				key: "savePath",
 				header: sortLabels.savePath,
 				width: pixel(240),
-				renderCell: ({ index }) => cell(index, 7, "70%"),
+				renderCell: ({ index }) => cell(index, 8, "70%"),
+			},
+			{
+				key: "actions",
+				header: "Действия",
+				width: pixel(96),
+				align: "center",
+				renderCell: ({ index }) =>
+					cell(index, 9, 64, { center: true, radius: "rounded" }),
 			},
 		];
 	}, []);
@@ -234,6 +248,7 @@ function TorrentsTableSkeleton() {
 			columns={columns}
 			data={data}
 			density="compact"
+			dividers="grid"
 			idKey="id"
 			textOverflow="truncate"
 		/>
@@ -248,9 +263,7 @@ const GIB = 1024 ** 3;
 const DISK_FREE_WARNING_GIB = 500;
 const DISK_FREE_CRITICAL_GIB = 200;
 
-function diskFreeIconColor(
-	freeBytes: number,
-): "success" | "warning" | "error" {
+function diskFreeIconColor(freeBytes: number): "success" | "warning" | "error" {
 	if (freeBytes < DISK_FREE_CRITICAL_GIB * GIB) return "error";
 	if (freeBytes < DISK_FREE_WARNING_GIB * GIB) return "warning";
 	return "success";
@@ -269,6 +282,7 @@ function diskFreeTooltip(freeBytes: number): string {
 
 function TorrentsPage() {
 	const navigate = useNavigate();
+	const toast = useToast();
 	const qbSettingsQuery = useQuery(
 		trpc.settings.providers.qbittorrent.get.queryOptions(),
 	);
@@ -282,11 +296,22 @@ function TorrentsPage() {
 
 	const [torrents, setTorrents] = useState<LiveTorrent[]>([]);
 	const [search, setSearch] = useState("");
-	const [sortKey, setSortKey] = useState<SortKey>("name");
-	const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+	const [sortKey, setSortKey] = useState<SortKey>("addedOn");
+	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [isLoading, setIsLoading] = useState(true);
 	const [isConnected, setIsConnected] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [pendingDelete, setPendingDelete] = useState<TorrentRow | null>(null);
+
+	const pauseMutation = useMutation({
+		...trpc.qbittorent.pause.mutationOptions(),
+	});
+	const resumeMutation = useMutation({
+		...trpc.qbittorent.resume.mutationOptions(),
+	});
+	const deleteMutation = useMutation({
+		...trpc.qbittorent.delete.mutationOptions(),
+	});
 
 	const freeSpaceOnDisk = freeSpaceQuery.data?.freeSpaceOnDisk ?? null;
 
@@ -364,6 +389,9 @@ function TorrentsPage() {
 				case "eta":
 					comparison = left.etaSeconds - right.etaSeconds;
 					break;
+				case "addedOn":
+					comparison = left.addedOn - right.addedOn;
+					break;
 				case "savePath":
 					comparison = left.savePath.localeCompare(right.savePath, "ru");
 					break;
@@ -402,6 +430,45 @@ function TorrentsPage() {
 		);
 	};
 
+	const handleTogglePause = async (item: TorrentRow) => {
+		const paused = isTorrentPaused(item.stateKind);
+		try {
+			if (paused) {
+				await resumeMutation.mutateAsync({ id: item.id });
+			} else {
+				await pauseMutation.mutateAsync({ id: item.id });
+			}
+		} catch (err) {
+			toast({
+				type: "error",
+				body:
+					err instanceof Error
+						? err.message
+						: paused
+							? "Не удалось продолжить торрент"
+							: "Не удалось поставить торрент на паузу",
+			});
+		}
+	};
+
+	const handleConfirmDelete = async () => {
+		if (!pendingDelete) {
+			return;
+		}
+
+		try {
+			await deleteMutation.mutateAsync({ id: pendingDelete.id });
+			toast({ body: "Торрент и файлы удалены" });
+			setPendingDelete(null);
+		} catch (err) {
+			toast({
+				type: "error",
+				body: err instanceof Error ? err.message : "Не удалось удалить торрент",
+			});
+		}
+	};
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: sortKey/sortDirection drive header icons; action handlers stay current via closure
 	const columns = useMemo((): TableColumn<TorrentRow>[] => {
 		const sortableHeader = (key: SortKey) => (
 			<Button
@@ -512,16 +579,55 @@ function TorrentsPage() {
 				),
 			},
 			{
+				key: "addedOn",
+				header: sortableHeader("addedOn"),
+				width: pixel(140),
+				align: "end",
+				renderCell: (item) => (
+					<Text hasTabularNumbers type="body">
+						{formatAddedOn(item.addedOn)}
+					</Text>
+				),
+			},
+			{
 				key: "savePath",
 				header: sortableHeader("savePath"),
 				width: pixel(240),
 			},
+			{
+				key: "actions",
+				header: "Действия",
+				width: pixel(96),
+				align: "center",
+				renderCell: (item) => {
+					const paused = isTorrentPaused(item.stateKind);
+					const pauseLabel = paused ? "Продолжить" : "Пауза";
+					return (
+						<HStack gap={1} hAlign="center" width="100%">
+							<IconButton
+								clickAction={() => handleTogglePause(item)}
+								icon={paused ? <Play size={16} /> : <Pause size={16} />}
+								label={pauseLabel}
+								size="sm"
+								tooltip={pauseLabel}
+								variant="ghost"
+							/>
+							<IconButton
+								icon={<Trash2 size={16} />}
+								label="Удалить"
+								onClick={() => setPendingDelete(item)}
+								size="sm"
+								tooltip="Удалить торрент и файлы"
+								variant="ghost"
+							/>
+						</HStack>
+					);
+				},
+			},
 		];
 	}, [sortKey, sortDirection]);
 
-	const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
-		{},
-	);
+	const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
 	const columnResize = useTableColumnResize({
 		columnWidths,
 		columns,
@@ -600,7 +706,10 @@ function TorrentsPage() {
 						</HStack>
 					</Tooltip>
 				) : (
-					<Tooltip content="Свободное место на диске неизвестно" placement="above">
+					<Tooltip
+						content="Свободное место на диске неизвестно"
+						placement="above"
+					>
 						<Icon
 							color="tertiary"
 							icon={HardDrive}
@@ -671,51 +780,72 @@ function TorrentsPage() {
 	}
 
 	return (
-		<Layout
-			content={
-				<LayoutContent padding={0}>
-					{isLoading ? <TorrentsTableSkeleton /> : null}
+		<>
+			<Layout
+				content={
+					<LayoutContent padding={0}>
+						{isLoading ? <TorrentsTableSkeleton /> : null}
 
-					{error ? (
-						<Section padding={4} variant="transparent">
-							<Banner
-								container="section"
-								description={error}
-								status="error"
-								title="Не удалось загрузить торренты"
+						{error ? (
+							<Section padding={4} variant="transparent">
+								<Banner
+									container="section"
+									description={error}
+									status="error"
+									title="Не удалось загрузить торренты"
+								/>
+							</Section>
+						) : null}
+
+						{!isLoading && !error && rows.length === 0 ? (
+							<EmptyState
+								description={
+									search.trim()
+										? "Попробуйте изменить запрос или очистить фильтр."
+										: undefined
+								}
+								title={
+									search.trim() ? "Ничего не найдено" : "Нет активных торрентов"
+								}
 							/>
-						</Section>
-					) : null}
+						) : null}
 
-					{!isLoading && !error && rows.length === 0 ? (
-						<EmptyState
-							description={
-								search.trim()
-									? "Попробуйте изменить запрос или очистить фильтр."
-									: undefined
-							}
-							title={
-								search.trim() ? "Ничего не найдено" : "Нет активных торрентов"
-							}
-						/>
-					) : null}
-
-					{!isLoading && !error && rows.length > 0 ? (
-						<Table
-							columns={columns}
-							data={rows}
-							density="compact"
-							hasHover
-							idKey="id"
-							plugins={{ columnResize }}
-							textOverflow="truncate"
-						/>
-					) : null}
-				</LayoutContent>
-			}
-			footer={pageFooter}
-			header={pageHeader}
-			height="fill"
-		/>
+						{!isLoading && !error && rows.length > 0 ? (
+							<Table
+								columns={columns}
+								data={rows}
+								density="compact"
+								dividers="grid"
+								hasHover
+								idKey="id"
+								plugins={{ columnResize }}
+								textOverflow="truncate"
+							/>
+						) : null}
+					</LayoutContent>
+				}
+				footer={pageFooter}
+				header={pageHeader}
+				height="fill"
+			/>
+			<AlertDialog
+				actionLabel="Удалить"
+				cancelLabel="Отмена"
+				description={
+					pendingDelete
+						? `«${pendingDelete.name}» будет удалён из qBittorrent вместе со скачанными файлами. Это действие нельзя отменить.`
+						: ""
+				}
+				isActionLoading={deleteMutation.isPending}
+				isOpen={pendingDelete !== null}
+				onAction={handleConfirmDelete}
+				onOpenChange={(open) => {
+					if (!open) {
+						setPendingDelete(null);
+					}
+				}}
+				title="Удалить торрент?"
+			/>
+		</>
 	);
 }

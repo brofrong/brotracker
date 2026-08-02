@@ -1,4 +1,3 @@
-import type { ComponentType, SVGProps } from "react";
 import {
 	Ban,
 	CircleAlert,
@@ -13,6 +12,7 @@ import {
 	RefreshCw,
 	Upload,
 } from "lucide-react";
+import type { ComponentType, SVGProps } from "react";
 
 export type TorrentStatusIconColor =
 	| "success"
@@ -55,4 +55,9 @@ const fallbackVisual: TorrentStateVisual = {
 
 export function getTorrentStateVisual(state: string): TorrentStateVisual {
 	return torrentStateVisuals[state] ?? fallbackVisual;
+}
+
+/** Whether the torrent is paused (download or seeding). */
+export function isTorrentPaused(stateKind: string): boolean {
+	return stateKind === "pausedDL" || stateKind === "pausedUP";
 }
