@@ -24,6 +24,7 @@ import {
 	formatSpeed,
 } from "#/utils/format";
 import { trpc } from "#/utils/trpc";
+import { TmdbAttribution } from "#/components/tmdb-attribution";
 
 export const Route = createFileRoute("/title/$id")({
 	component: TitlePage,
@@ -409,6 +410,10 @@ function TitlePage() {
 				) : null}
 
 				<TitleTorrentsList facet={facet} titleId={id} />
+
+				{metaStatus === "ok" || metaStatus === "degraded" ? (
+					<TmdbAttribution compact />
+				) : null}
 			</VStack>
 		</Section>
 	);
