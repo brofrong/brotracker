@@ -216,6 +216,7 @@ export function createTitleModule(deps: TitleDeps) {
 				saveWatch: deps.saveWatch,
 				isCompletePack: deps.isCompletePack,
 				now: deps.now,
+				recordEvent: deps.recordEvent,
 			});
 		} catch {
 			// qB/sync failures must not take down the title card
