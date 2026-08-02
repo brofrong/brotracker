@@ -1,4 +1,8 @@
-import type { TitleWatchRecord, TopicMeta } from "./check-topic-now";
+import type {
+	RecordWatchEvent,
+	TitleWatchRecord,
+	TopicMeta,
+} from "./check-topic-now";
 import type { SyncQbTorrent } from "./sync-watches-from-qb";
 
 /** Matches RuTracker MediaType / app domain: films | tv. */
@@ -203,4 +207,6 @@ export type TitleDeps = {
 	}) => Promise<void>;
 	isCompletePack: (torrentName: string) => boolean;
 	now: () => string;
+	/** Feeds the home `titleWatchFeed` widget (#13); optional so existing callers/tests keep working. */
+	recordEvent?: RecordWatchEvent;
 };

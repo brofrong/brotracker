@@ -1,7 +1,7 @@
 import { scoreTorrentQuality } from "../torrent/quality-score";
 import {
-	checkTopicNow,
 	type CheckResult,
+	checkTopicNow,
 	type TitleWatchRecord,
 } from "./check-topic-now";
 import { syncWatchesFromQb } from "./sync-watches-from-qb";
@@ -19,11 +19,7 @@ import type {
 	TitleWatchView,
 	TmdbMeta,
 } from "./title.types";
-import {
-	extractTopicId,
-	findTransferForTopic,
-	topicTag,
-} from "./topic-tag";
+import { extractTopicId, findTransferForTopic, topicTag } from "./topic-tag";
 
 export function encodeTopicUrl(topicUrl: string): string {
 	return Buffer.from(topicUrl, "utf8")
@@ -229,12 +225,10 @@ export function createTitleModule(deps: TitleDeps) {
 			deps.searchTracker(query),
 			deps.listTaggedTorrents(),
 		]);
-		const candidates =
-			tracker.status === "ok" ? tracker.results : local;
+		const candidates = tracker.status === "ok" ? tracker.results : local;
 
 		for (const candidate of candidates) {
-			const topicId =
-				extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
+			const topicId = extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
 			const transfer = findTransferForTopic(topicId, live);
 			if (!transfer) {
 				continue;
@@ -273,12 +267,10 @@ export function createTitleModule(deps: TitleDeps) {
 			deps.listTaggedTorrents(),
 		]);
 
-		const candidates =
-			tracker.status === "ok" ? tracker.results : local;
+		const candidates = tracker.status === "ok" ? tracker.results : local;
 
 		for (const candidate of candidates) {
-			const topicId =
-				extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
+			const topicId = extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
 			const transfer = findTransferForTopic(topicId, live);
 			if (transfer) {
 				return {
@@ -356,11 +348,7 @@ export function createTitleModule(deps: TitleDeps) {
 				metaStatus,
 				meta: metaFromTmdb(outcome.meta),
 				ratings,
-				watch: await resolveWatchForTitle(
-					id,
-					parsed.kind,
-					outcome.meta.name,
-				),
+				watch: await resolveWatchForTitle(id, parsed.kind, outcome.meta.name),
 			};
 		},
 
@@ -467,8 +455,7 @@ export function createTitleModule(deps: TitleDeps) {
 				size = found.size;
 			}
 
-			const previous =
-				existing ?? (await deps.loadWatchByTopicUrl(topicUrl));
+			const previous = existing ?? (await deps.loadWatchByTopicUrl(topicUrl));
 
 			await deps.saveWatch({
 				topicUrl,
@@ -525,6 +512,7 @@ export function createTitleModule(deps: TitleDeps) {
 					fetchTopicMeta: deps.fetchTopicMeta,
 					replaceInQb: deps.replaceInQb,
 					now: deps.now,
+					recordEvent: deps.recordEvent,
 				},
 			);
 		},
@@ -535,5 +523,5 @@ export function createTitleModule(deps: TitleDeps) {
 
 export type TitleModule = ReturnType<typeof createTitleModule>;
 
-export type { TitleDeps, FetchTmdbMetaOutcome } from "./title.types";
 export type { CheckResult } from "./check-topic-now";
+export type { FetchTmdbMetaOutcome, TitleDeps } from "./title.types";

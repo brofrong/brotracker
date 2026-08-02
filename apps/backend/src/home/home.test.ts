@@ -1,5 +1,20 @@
 import { describe, expect, test } from "bun:test";
+import type { TitleWatchEvent } from "../title/title-watch-event";
 import { createHome } from "./home";
+
+function watchEvent(partial: Partial<TitleWatchEvent> = {}): TitleWatchEvent {
+	return {
+		id: "evt-1",
+		titleId: "tmdb:tv:1",
+		topicUrl: "https://rutracker.org/forum/viewtopic.php?t=55",
+		kind: "torrent-updated",
+		message: null,
+		previousSize: null,
+		newSize: null,
+		createdAt: "2026-08-02T10:00:00.000Z",
+		...partial,
+	};
+}
 
 describe("home.compose", () => {
 	test("returns transferStats ok when qB provides data", async () => {
@@ -13,6 +28,7 @@ describe("home.compose", () => {
 				ratio: 0.5,
 			}),
 			getDiscoverFeed: async () => [],
+			getTitleWatchEvents: async () => [],
 		});
 
 		const response = await home.compose({
@@ -40,6 +56,7 @@ describe("home.compose", () => {
 		const home = createHome({
 			getTransferStats: async () => null,
 			getDiscoverFeed: async () => [],
+			getTitleWatchEvents: async () => [],
 		});
 
 		const response = await home.compose({
@@ -65,6 +82,7 @@ describe("home.compose", () => {
 					kind: "films",
 				},
 			],
+			getTitleWatchEvents: async () => [],
 		});
 
 		const response = await home.compose({
@@ -98,6 +116,7 @@ describe("home.compose", () => {
 				uploadedBytes: 50,
 			}),
 			getDiscoverFeed: async () => null,
+			getTitleWatchEvents: async () => [],
 		});
 
 		const response = await home.compose({
@@ -115,6 +134,7 @@ describe("home.compose", () => {
 		const home = createHome({
 			getTransferStats: async () => null,
 			getDiscoverFeed: async () => [],
+			getTitleWatchEvents: async () => [],
 		});
 
 		const response = await home.compose({
@@ -131,6 +151,7 @@ describe("home.compose", () => {
 				uploadedBytes: 50,
 			}),
 			getDiscoverFeed: async () => [],
+			getTitleWatchEvents: async () => [],
 		});
 
 		const response = await home.compose({
@@ -150,5 +171,81 @@ describe("home.compose", () => {
 			},
 		});
 		expect(response.widgets.mystery).toBeUndefined();
+	});
+
+	test("returns titleWatchFeed ok with events when non-empty", async () => {
+		const home = createHome({
+			getTransferStats: async () => null,
+			getDiscoverFeed: async () => [],
+			getTitleWatchEvents: async () => [
+				watchEvent({ id: "evt-2", createdAt: "2026-08-02T12:00:00.000Z" }),
+				watchEvent({
+					id: "evt-1",
+					kind: "check-failed",
+					message: "tracker down",
+					createdAt: "2026-08-02T10:00:00.000Z",
+				}),
+			],
+		});
+
+		const response = await home.compose({
+			widgets: [{ key: "feed", widget: "titleWatchFeed" }],
+		});
+
+		expect(response).toEqual({
+			widgets: {
+				feed: {
+					status: "ok",
+					data: {
+						items: [
+							{
+								id: "evt-2",
+								titleId: "tmdb:tv:1",
+								kind: "torrent-updated",
+								message: null,
+								createdAt: "2026-08-02T12:00:00.000Z",
+							},
+							{
+								id: "evt-1",
+								titleId: "tmdb:tv:1",
+								kind: "check-failed",
+								message: "tracker down",
+								createdAt: "2026-08-02T10:00:00.000Z",
+							},
+						],
+					},
+				},
+			},
+		});
+	});
+
+	test("returns titleWatchFeed empty when there are no events (empty follow list)", async () => {
+		const home = createHome({
+			getTransferStats: async () => null,
+			getDiscoverFeed: async () => [],
+			getTitleWatchEvents: async () => [],
+		});
+
+		const response = await home.compose({
+			widgets: [{ key: "feed", widget: "titleWatchFeed" }],
+		});
+
+		expect(response.widgets.feed).toEqual({ status: "empty" });
+	});
+
+	test("skips titleWatchFeed events without a linked titleId", async () => {
+		const home = createHome({
+			getTransferStats: async () => null,
+			getDiscoverFeed: async () => [],
+			getTitleWatchEvents: async () => [
+				watchEvent({ id: "evt-unlinked", titleId: null }),
+			],
+		});
+
+		const response = await home.compose({
+			widgets: [{ key: "feed", widget: "titleWatchFeed" }],
+		});
+
+		expect(response.widgets.feed).toEqual({ status: "empty" });
 	});
 });
