@@ -16,11 +16,7 @@ import type {
 	TitleWatchView,
 	TmdbMeta,
 } from "./title.types";
-import {
-	extractTopicId,
-	findTransferForTopic,
-	topicTag,
-} from "./topic-tag";
+import { extractTopicId, findTransferForTopic, topicTag } from "./topic-tag";
 
 export function encodeTopicUrl(topicUrl: string): string {
 	return Buffer.from(topicUrl, "utf8")
@@ -251,12 +247,10 @@ export function createTitleModule(deps: TitleDeps) {
 			deps.searchTracker(query),
 			deps.listTaggedTorrents(),
 		]);
-		const candidates =
-			tracker.status === "ok" ? tracker.results : local;
+		const candidates = tracker.status === "ok" ? tracker.results : local;
 
 		for (const candidate of candidates) {
-			const topicId =
-				extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
+			const topicId = extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
 			const transfer = findTransferForTopic(topicId, live);
 			if (!transfer) {
 				continue;
@@ -295,12 +289,10 @@ export function createTitleModule(deps: TitleDeps) {
 			deps.listTaggedTorrents(),
 		]);
 
-		const candidates =
-			tracker.status === "ok" ? tracker.results : local;
+		const candidates = tracker.status === "ok" ? tracker.results : local;
 
 		for (const candidate of candidates) {
-			const topicId =
-				extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
+			const topicId = extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
 			const transfer = findTransferForTopic(topicId, live);
 			if (transfer) {
 				return {
@@ -378,11 +370,7 @@ export function createTitleModule(deps: TitleDeps) {
 				metaStatus,
 				meta: metaFromTmdb(outcome.meta),
 				ratings,
-				watch: await resolveWatchForTitle(
-					id,
-					parsed.kind,
-					outcome.meta.name,
-				),
+				watch: await resolveWatchForTitle(id, parsed.kind, outcome.meta.name),
 			};
 		},
 
@@ -489,8 +477,7 @@ export function createTitleModule(deps: TitleDeps) {
 				size = found.size;
 			}
 
-			const previous =
-				existing ?? (await deps.loadWatchByTopicUrl(topicUrl));
+			const previous = existing ?? (await deps.loadWatchByTopicUrl(topicUrl));
 
 			await deps.saveWatch({
 				topicUrl,
@@ -540,7 +527,8 @@ export function createTitleModule(deps: TitleDeps) {
 
 			// Same queue path as the nightly worker: create a manual WatchTask
 			// and drain it through processWatchTask instead of calling
-			// checkTopicNow ad hoc.
+			// checkTopicNow ad hoc. Events are recorded inside checkTopicNow
+			// via the bound recordEvent dep.
 			const task = await deps.enqueueWatchTask({
 				topicUrl: record.topicUrl,
 				titleId: input.id,
@@ -565,5 +553,5 @@ export function createTitleModule(deps: TitleDeps) {
 
 export type TitleModule = ReturnType<typeof createTitleModule>;
 
-export type { TitleDeps, FetchTmdbMetaOutcome } from "./title.types";
 export type { CheckResult } from "./check-topic-now";
+export type { FetchTmdbMetaOutcome, TitleDeps } from "./title.types";
