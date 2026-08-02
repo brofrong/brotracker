@@ -36,6 +36,7 @@ export type LiveTorrent = {
 	savePath: string;
 	stateKind: QbittorentTorrentState;
 	stateLabel: string;
+	tags: string;
 };
 
 export function toLiveTorrent(torrent: QbittorentTorrent): LiveTorrent {
@@ -51,6 +52,7 @@ export function toLiveTorrent(torrent: QbittorentTorrent): LiveTorrent {
 		savePath: torrent.save_path,
 		stateKind,
 		stateLabel: torrentStateLabels[stateKind] ?? stateKind,
+		tags: torrent.tags ?? "",
 	};
 }
 

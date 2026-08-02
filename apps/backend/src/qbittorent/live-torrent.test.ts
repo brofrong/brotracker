@@ -65,6 +65,7 @@ describe("toLiveTorrent", () => {
 			savePath: "/data/films",
 			stateKind: "downloading",
 			stateLabel: "Загрузка",
+			tags: "",
 		});
 	});
 

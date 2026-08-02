@@ -100,10 +100,77 @@ export type RatingsContext = {
 	tmdbVoteCount?: number | null;
 };
 
+export type TitleTorrentCandidate = {
+	torrentId: string;
+	title: string;
+	size: number;
+	seeds: number;
+	leeches: number;
+	torrentFileUrl: string;
+	topicUrl: string;
+	hdr: "HDR" | "SDR" | null;
+	resolution: "4K" | "1080p" | "720p" | "SD" | null;
+	forumId: string;
+};
+
+export type TitleTorrentBadge = "4K" | "1080p" | "720p" | "SD" | "HDR";
+
+export type TitleTorrentTransfer = {
+	hash: string;
+	progress: number;
+	stateKind: string;
+	stateLabel: string;
+	downloadSpeed: number;
+	etaSeconds: number;
+};
+
+export type TitleTorrent = {
+	torrentId: string;
+	topicUrl: string;
+	title: string;
+	size: number;
+	seeds: number;
+	leeches: number;
+	qualityScore: number;
+	badges: TitleTorrentBadge[];
+	source: "local" | "tracker";
+	torrentFileUrl: string;
+	forumId: string;
+	transfer: TitleTorrentTransfer | null;
+};
+
+export type TitleTorrentsResult = {
+	status: "ok" | "degraded" | "empty";
+	items: TitleTorrent[];
+};
+
+export type TrackerSearchForTitle =
+	| { status: "ok"; results: TitleTorrentCandidate[] }
+	| { status: "unavailable" }
+	| { status: "error" };
+
+export type TaggedQbTorrent = {
+	hash: string;
+	progress: number;
+	stateKind: string;
+	stateLabel: string;
+	downloadSpeed: number;
+	etaSeconds: number;
+	tags: string;
+};
+
 export type TitleDeps = {
 	fetchTmdbMeta: (
 		kind: TitleKind,
 		tmdbId: number,
 	) => Promise<FetchTmdbMetaOutcome>;
 	getRatings: (ctx: RatingsContext) => Promise<TitleRating[]>;
+	searchLocal: (query: string) => Promise<TitleTorrentCandidate[]>;
+	searchTracker: (query: string) => Promise<TrackerSearchForTitle>;
+	listTaggedTorrents: () => Promise<TaggedQbTorrent[]>;
+	addFromTracker: (
+		torrentFileUrl: string,
+		kind: TitleKind,
+		tags: string[],
+	) => Promise<void>;
 };

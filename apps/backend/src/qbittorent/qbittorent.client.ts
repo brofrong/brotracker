@@ -145,6 +145,9 @@ export async function addTorrent(
 ): Promise<void> {
 	const formData = new FormData();
 	formData.append("savepath", options.pathToSave);
+	if (options.tags && options.tags.length > 0) {
+		formData.append("tags", options.tags.join(","));
+	}
 
 	if (torrentFileOrMagnetLinkOrBytes instanceof Uint8Array) {
 		const bytes = Buffer.from(torrentFileOrMagnetLinkOrBytes);
