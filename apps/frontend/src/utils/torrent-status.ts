@@ -68,3 +68,34 @@ export function isTorrentPaused(stateKind: string): boolean {
 		stateKind === "stoppedUP"
 	);
 }
+
+function isSeedingLike(torrent: {
+	progress: number;
+	stateKind: string;
+}): boolean {
+	return (
+		torrent.progress >= 1 ||
+		torrent.stateKind.endsWith("UP") ||
+		torrent.stateKind === "uploading"
+	);
+}
+
+/** Optimistic status after stop (qBittorrent 5 uses stopped*). */
+export function getOptimisticStoppedState(torrent: {
+	progress: number;
+	stateKind: string;
+}): { stateKind: string; stateLabel: string } {
+	return isSeedingLike(torrent)
+		? { stateKind: "stoppedUP", stateLabel: "На паузе (готов)" }
+		: { stateKind: "stoppedDL", stateLabel: "На паузе" };
+}
+
+/** Optimistic status after start. */
+export function getOptimisticStartedState(torrent: {
+	progress: number;
+	stateKind: string;
+}): { stateKind: string; stateLabel: string } {
+	return isSeedingLike(torrent)
+		? { stateKind: "uploading", stateLabel: "Раздача" }
+		: { stateKind: "downloading", stateLabel: "Загрузка" };
+}
