@@ -210,4 +210,94 @@ describe("title.get watch", () => {
 		});
 		expect(store.get(topicUrl)?.titleId).toBe("tmdb:tv:1");
 	});
+
+	test("exposes episode progress parsed from the current torrent name", async () => {
+		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=55";
+		const { store } = createWatchDeps();
+		store.set(topicUrl, {
+			topicUrl,
+			titleId: "tmdb:tv:1",
+			watch: "tracking",
+			source: "manual",
+			size: 1,
+			registeredAt: null,
+			contentHash: null,
+			qbHash: "h1",
+			lastCheckedAt: null,
+			lastChangedAt: null,
+			lastError: null,
+		});
+
+		const { module: moduleWithTorrents } = createWatchDeps({
+			loadWatchByTopicUrl: async (url) => store.get(url) ?? null,
+			loadWatchByTitleId: async (titleId) => {
+				for (const record of store.values()) {
+					if (record.titleId === titleId) {
+						return record;
+					}
+				}
+				return null;
+			},
+			saveWatch: async (record) => {
+				store.set(record.topicUrl, record);
+			},
+			listQbTorrents: async () => [
+				{
+					hash: "h1",
+					name: "Test Show 1-8 из 10",
+					savePath: "/data/tv",
+					tags: "brotracker:topic:55",
+					size: 100,
+				},
+			],
+		});
+
+		const title = await moduleWithTorrents.get({ id: "tmdb:tv:1" });
+		expect(title.watch?.progress).toEqual({ have: 8, total: 10 });
+	});
+
+	test("progress is null when the torrent name has no N/M pattern", async () => {
+		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=55";
+		const { store } = createWatchDeps();
+		store.set(topicUrl, {
+			topicUrl,
+			titleId: "tmdb:tv:1",
+			watch: "tracking",
+			source: "manual",
+			size: 1,
+			registeredAt: null,
+			contentHash: null,
+			qbHash: "h1",
+			lastCheckedAt: null,
+			lastChangedAt: null,
+			lastError: null,
+		});
+
+		const { module: moduleWithTorrents } = createWatchDeps({
+			loadWatchByTopicUrl: async (url) => store.get(url) ?? null,
+			loadWatchByTitleId: async (titleId) => {
+				for (const record of store.values()) {
+					if (record.titleId === titleId) {
+						return record;
+					}
+				}
+				return null;
+			},
+			saveWatch: async (record) => {
+				store.set(record.topicUrl, record);
+			},
+			listQbTorrents: async () => [
+				{
+					hash: "h1",
+					name: "Test Show S01 WEB-DL",
+					savePath: "/data/tv",
+					tags: "brotracker:topic:55",
+					size: 100,
+				},
+			],
+		});
+
+		const title = await moduleWithTorrents.get({ id: "tmdb:tv:1" });
+		expect(title.watch?.progress).toBeNull();
+	});
 });

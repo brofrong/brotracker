@@ -15,6 +15,7 @@ import { normalizeTitle } from "../torrent/title-norm";
 import { searchLocal, upsertFromTracker } from "../torrent/torrent.repository";
 import { getTracker } from "../torrent/torrent.tracker";
 import { logger } from "../utils/logger";
+import { isCompletePack } from "./episode-progress";
 import { createDefaultRatingsPort } from "./ratings-port";
 import { createReplaceTorrentInQb } from "./replace-torrent-in-qb";
 import {
@@ -284,7 +285,7 @@ export const titleModule = createTitleModule({
 	fetchTorrentBytes,
 	fetchTopicMeta,
 	replaceInQb,
-	isCompletePack: () => false,
+	isCompletePack,
 	now: () => new Date().toISOString(),
 });
 
