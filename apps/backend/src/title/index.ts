@@ -1,3 +1,6 @@
+import { eq } from "drizzle-orm";
+import { db } from "../db/db";
+import { torrents } from "../db/torrent/torrent.schema";
 import { toLiveTorrent } from "../qbittorent/live-torrent";
 import {
 	addTorrent,
@@ -6,16 +9,13 @@ import {
 	QbittorrentNotConfiguredError,
 } from "../qbittorent/qbittorent.client";
 import { addFromTracker } from "../qbittorent/qbittorent.service";
-import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
 import { resolveTmdbApiKey } from "../settings/provider-settings";
-import { eq } from "drizzle-orm";
-import { db } from "../db/db";
-import { torrents } from "../db/torrent/torrent.schema";
+import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
 import { normalizeTitle } from "../torrent/title-norm";
 import { searchLocal, upsertFromTracker } from "../torrent/torrent.repository";
 import { getTracker } from "../torrent/torrent.tracker";
 import { logger } from "../utils/logger";
-import { checkTopicNow } from "./check-topic-now";
+import { checkTopicNow, type RecordWatchEventInput } from "./check-topic-now";
 import { enqueueNightlyWatchTasks } from "./enqueue-nightly-tasks";
 import { isCompletePack } from "./episode-progress";
 import { createNightlyWorker } from "./nightly-worker";
@@ -39,6 +39,7 @@ import {
 	loadWatchByTopicUrl,
 	saveWatch,
 } from "./title-watch.repository";
+import { appendWatchEvent } from "./title-watch-event.repository";
 import {
 	parseMovieDetails,
 	parseTvDetails,
@@ -78,10 +79,7 @@ async function fetchTmdbJson<T>(
 		});
 
 		if (!response.ok) {
-			logger.warn(
-				{ path, status: response.status },
-				"tmdb fetch failed",
-			);
+			logger.warn({ path, status: response.status }, "tmdb fetch failed");
 			return null;
 		}
 
@@ -265,6 +263,19 @@ async function fetchTopicMeta(topicUrl: string) {
 	};
 }
 
+async function recordWatchEvent(event: RecordWatchEventInput): Promise<void> {
+	await appendWatchEvent({
+		id: crypto.randomUUID(),
+		titleId: event.titleId,
+		topicUrl: event.topicUrl,
+		kind: event.kind,
+		message: event.message,
+		previousSize: event.previousSize ?? null,
+		newSize: event.newSize ?? null,
+		createdAt: new Date().toISOString(),
+	});
+}
+
 const replaceInQb = createReplaceTorrentInQb({
 	listTorrents: async () => {
 		const qbTorrents = await getTorrents();
@@ -291,6 +302,7 @@ async function checkTopicNowBound(input: { topicUrl: string }) {
 		fetchTopicMeta,
 		replaceInQb,
 		now,
+		recordEvent: recordWatchEvent,
 	});
 }
 

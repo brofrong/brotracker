@@ -1,9 +1,10 @@
+import type { TitleWatchEventKind } from "./title-watch-event";
+import { extractTopicId, topicTag } from "./topic-tag";
 import {
 	fingerprintsEqual,
 	hashTorrentBytes,
 	type TorrentFingerprint,
 } from "./torrent-fingerprint";
-import { extractTopicId, topicTag } from "./topic-tag";
 
 export type WatchState = "tracking" | "paused" | "completed" | "off";
 
@@ -38,6 +39,18 @@ export type TopicMeta = {
 	torrentFileUrl: string;
 };
 
+export type RecordWatchEventInput = {
+	titleId: string | null;
+	topicUrl: string;
+	kind: TitleWatchEventKind;
+	message: string | null;
+	previousSize?: number;
+	newSize?: number;
+};
+
+/** Emits a feed event for #13's home widget; failures here must never break the check flow. */
+export type RecordWatchEvent = (event: RecordWatchEventInput) => Promise<void>;
+
 export type CheckTopicNowDeps = {
 	loadWatch: (topicUrl: string) => Promise<TitleWatchRecord | null>;
 	saveWatch: (record: TitleWatchRecord) => Promise<void>;
@@ -49,7 +62,23 @@ export type CheckTopicNowDeps = {
 		tags: string[];
 	}) => Promise<void>;
 	now: () => string;
+	/** Optional so callers (and older tests) that don't care about the feed keep working. */
+	recordEvent?: RecordWatchEvent;
 };
+
+async function tryRecordEvent(
+	recordEvent: RecordWatchEvent | undefined,
+	event: RecordWatchEventInput,
+): Promise<void> {
+	if (!recordEvent) {
+		return;
+	}
+	try {
+		await recordEvent(event);
+	} catch {
+		// best-effort; feed recording must not break the check flow
+	}
+}
 
 function recordFingerprint(record: TitleWatchRecord): TorrentFingerprint {
 	return {
@@ -130,6 +159,15 @@ export async function checkTopicNow(
 			lastError: null,
 		});
 
+		await tryRecordEvent(deps.recordEvent, {
+			titleId: existing.titleId,
+			topicUrl: input.topicUrl,
+			kind: "torrent-updated",
+			message: null,
+			previousSize,
+			newSize: current.size,
+		});
+
 		return {
 			status: "updated",
 			checkedAt,
@@ -143,6 +181,12 @@ export async function checkTopicNow(
 			...existing,
 			lastCheckedAt: checkedAt,
 			lastError: message,
+		});
+		await tryRecordEvent(deps.recordEvent, {
+			titleId: existing.titleId,
+			topicUrl: input.topicUrl,
+			kind: "check-failed",
+			message,
 		});
 		return { status: "failed", checkedAt, message };
 	}
