@@ -41,3 +41,7 @@ export async function loadRutrackerConfig() {
 export async function loadQbittorrentConfig() {
 	return providerConfig.loadQbittorrent();
 }
+
+export async function loadTmdbConfig() {
+	return providerConfig.loadTmdb();
+}

@@ -243,7 +243,19 @@ function HomePage() {
 				discover?.status === "unavailable" ? (
 					<Banner
 						container="section"
-						description="Добавьте TMDB_API_KEY, чтобы видеть подборку. Остальная главная работает как обычно."
+						description="Добавьте TMDB API key в настройках, чтобы видеть подборку. Остальная главная работает как обычно."
+						endContent={
+							<Button
+								label="Открыть настройки"
+								onClick={() =>
+									void navigate({
+										to: "/settings",
+										search: { section: "tmdb" },
+									})
+								}
+								variant="secondary"
+							/>
+						}
 						status="warning"
 						title="Discover недоступен"
 					/>

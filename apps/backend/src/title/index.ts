@@ -1,13 +1,13 @@
-import { normalizeTitle } from "../torrent/title-norm";
-import { searchLocal, upsertFromTracker } from "../torrent/torrent.repository";
-import { getTracker } from "../torrent/torrent.tracker";
+import { toLiveTorrent } from "../qbittorent/live-torrent";
 import {
 	getTorrents,
 	QbittorrentNotConfiguredError,
 } from "../qbittorent/qbittorent.client";
-import { toLiveTorrent } from "../qbittorent/live-torrent";
 import { addFromTracker } from "../qbittorent/qbittorent.service";
-import { env } from "../utils/env";
+import { resolveTmdbApiKey } from "../settings/provider-settings";
+import { normalizeTitle } from "../torrent/title-norm";
+import { searchLocal, upsertFromTracker } from "../torrent/torrent.repository";
+import { getTracker } from "../torrent/torrent.tracker";
 import { logger } from "../utils/logger";
 import { createDefaultRatingsPort } from "./ratings-port";
 import { createTitleModule, TitleAddError } from "./title";
@@ -65,9 +65,10 @@ async function fetchTmdbJson<T>(
 }
 
 export function createFetchTmdbMeta(
-	apiKey: string | undefined,
+	resolveApiKey: () => Promise<string | undefined>,
 ): (kind: TitleKind, tmdbId: number) => Promise<FetchTmdbMetaOutcome> {
 	return async (kind, tmdbId) => {
+		const apiKey = await resolveApiKey();
 		if (!apiKey) {
 			return { status: "unavailable" };
 		}
@@ -160,7 +161,7 @@ async function searchTrackerForTitle(
 const ratingsPort = createDefaultRatingsPort();
 
 export const titleModule = createTitleModule({
-	fetchTmdbMeta: createFetchTmdbMeta(env.TMDB_API_KEY),
+	fetchTmdbMeta: createFetchTmdbMeta(resolveTmdbApiKey),
 	getRatings: ratingsPort.getRatings,
 	searchLocal: searchLocalForTitle,
 	searchTracker: searchTrackerForTitle,

@@ -19,7 +19,7 @@ function memoryStore(
 }
 
 describe("provider-config rutracker", () => {
-	test("get returns redacted DTO without password", async () => {
+	test("get returns stored password", async () => {
 		const store = memoryStore({
 			rutracker: {
 				login: "alice",
@@ -31,7 +31,7 @@ describe("provider-config rutracker", () => {
 
 		await expect(providers.getRutracker()).resolves.toEqual({
 			login: "alice",
-			hasPassword: true,
+			password: "secret",
 			proxyUrl: "socks5://127.0.0.1:1080",
 		});
 	});
@@ -54,7 +54,7 @@ describe("provider-config rutracker", () => {
 
 		expect(result.public).toEqual({
 			login: "alice",
-			hasPassword: true,
+			password: "secret",
 			proxyUrl: "http://proxy:8080",
 		});
 		expect(result.effects).toEqual({
@@ -104,7 +104,7 @@ describe("provider-config rutracker", () => {
 });
 
 describe("provider-config qbittorrent", () => {
-	test("get returns redacted DTO without apiKey", async () => {
+	test("get returns stored apiKey", async () => {
 		const store = memoryStore({
 			qbittorrent: {
 				url: "http://qb:8080/",
@@ -117,7 +117,7 @@ describe("provider-config qbittorrent", () => {
 
 		await expect(providers.getQbittorrent()).resolves.toEqual({
 			url: "http://qb:8080",
-			hasApiKey: true,
+			apiKey: "key",
 			filmsPath: "/films",
 			seriesPath: "/series",
 			isConfigured: true,
@@ -144,7 +144,7 @@ describe("provider-config qbittorrent", () => {
 
 		expect(result.public).toEqual({
 			url: "http://qb:9090",
-			hasApiKey: true,
+			apiKey: "old-key",
 			filmsPath: "/movies",
 			seriesPath: "/tv",
 			isConfigured: true,
@@ -155,5 +155,42 @@ describe("provider-config qbittorrent", () => {
 			filmsPath: "/movies",
 			seriesPath: "/tv",
 		});
+	});
+});
+
+describe("provider-config tmdb", () => {
+	test("get returns stored apiKey", async () => {
+		const store = memoryStore({
+			tmdb: { apiKey: "tmdb-key" },
+		});
+		const providers = createProviderConfig(store);
+
+		await expect(providers.getTmdb()).resolves.toEqual({
+			apiKey: "tmdb-key",
+			isConfigured: true,
+		});
+	});
+
+	test("save keeps existing apiKey when incoming is empty", async () => {
+		const store = memoryStore({
+			tmdb: { apiKey: "old-tmdb" },
+		});
+		const providers = createProviderConfig(store);
+
+		const result = await providers.saveTmdb({ apiKey: "" });
+
+		expect(result.public).toEqual({
+			apiKey: "old-tmdb",
+			isConfigured: true,
+		});
+		expect(store.data.tmdb).toEqual({ apiKey: "old-tmdb" });
+	});
+
+	test("save rejects first-time empty apiKey", async () => {
+		const providers = createProviderConfig(memoryStore());
+
+		await expect(providers.saveTmdb({ apiKey: "" })).rejects.toBeInstanceOf(
+			MissingSecretError,
+		);
 	});
 });

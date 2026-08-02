@@ -31,6 +31,7 @@ const torrentStateVisuals: Record<string, TorrentStateVisual> = {
 	missingFiles: { icon: FileX, color: "error" },
 	uploading: { icon: Upload, color: "success" },
 	pausedUP: { icon: Pause, color: "warning" },
+	stoppedUP: { icon: Pause, color: "warning" },
 	queuedUP: { icon: Clock, color: "accent" },
 	stalledUP: { icon: Ban, color: "warning" },
 	checkingUP: { icon: RefreshCw, color: "success" },
@@ -39,6 +40,7 @@ const torrentStateVisuals: Record<string, TorrentStateVisual> = {
 	downloading: { icon: Download, color: "accent" },
 	metaDL: { icon: Download, color: "accent" },
 	pausedDL: { icon: Pause, color: "warning" },
+	stoppedDL: { icon: Pause, color: "warning" },
 	queuedDL: { icon: Clock, color: "accent" },
 	stalledDL: { icon: Ban, color: "warning" },
 	checkingDL: { icon: RefreshCw, color: "accent" },
@@ -57,7 +59,12 @@ export function getTorrentStateVisual(state: string): TorrentStateVisual {
 	return torrentStateVisuals[state] ?? fallbackVisual;
 }
 
-/** Whether the torrent is paused (download or seeding). */
+/** Whether the torrent is paused/stopped (download or seeding). */
 export function isTorrentPaused(stateKind: string): boolean {
-	return stateKind === "pausedDL" || stateKind === "pausedUP";
+	return (
+		stateKind === "pausedDL" ||
+		stateKind === "pausedUP" ||
+		stateKind === "stoppedDL" ||
+		stateKind === "stoppedUP"
+	);
 }
