@@ -54,6 +54,10 @@ function deps(
 	return {
 		fetchTmdbMeta: async () => ({ status: "unavailable" }),
 		getRatings: async () => stubRatings(),
+		searchLocal: async () => [],
+		searchTracker: async () => ({ status: "unavailable" }),
+		listTaggedTorrents: async () => [],
+		addFromTracker: async () => {},
 		...overrides,
 	};
 }

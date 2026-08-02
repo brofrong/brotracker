@@ -12,6 +12,7 @@ describe("home.compose", () => {
 				freeSpaceBytes: 100_000_000_000,
 				ratio: 0.5,
 			}),
+			getDiscoverFeed: async () => [],
 		});
 
 		const response = await home.compose({
@@ -38,6 +39,7 @@ describe("home.compose", () => {
 	test("returns unavailable when qB is missing", async () => {
 		const home = createHome({
 			getTransferStats: async () => null,
+			getDiscoverFeed: async () => [],
 		});
 
 		const response = await home.compose({
@@ -51,18 +53,90 @@ describe("home.compose", () => {
 		});
 	});
 
-	test("ignores unknown widgets gracefully", async () => {
+	test("returns discoverFeed ok with title cards", async () => {
+		const home = createHome({
+			getTransferStats: async () => null,
+			getDiscoverFeed: async () => [
+				{
+					titleId: "tmdb:films:1",
+					name: "Dune",
+					poster: "https://image.tmdb.org/t/p/w342/dune.jpg",
+					year: 2021,
+					kind: "films",
+				},
+			],
+		});
+
+		const response = await home.compose({
+			widgets: [{ key: "discover", widget: "discoverFeed" }],
+		});
+
+		expect(response).toEqual({
+			widgets: {
+				discover: {
+					status: "ok",
+					data: {
+						items: [
+							{
+								titleId: "tmdb:films:1",
+								name: "Dune",
+								poster: "https://image.tmdb.org/t/p/w342/dune.jpg",
+								year: 2021,
+								kind: "films",
+							},
+						],
+					},
+				},
+			},
+		});
+	});
+
+	test("returns discoverFeed unavailable when TMDB is missing", async () => {
 		const home = createHome({
 			getTransferStats: async () => ({
 				downloadedBytes: 100,
 				uploadedBytes: 50,
 			}),
+			getDiscoverFeed: async () => null,
 		});
 
 		const response = await home.compose({
 			widgets: [
 				{ key: "transfer", widget: "transferStats" },
 				{ key: "discover", widget: "discoverFeed" },
+			],
+		});
+
+		expect(response.widgets.transfer?.status).toBe("ok");
+		expect(response.widgets.discover).toEqual({ status: "unavailable" });
+	});
+
+	test("returns discoverFeed empty when TMDB has no items", async () => {
+		const home = createHome({
+			getTransferStats: async () => null,
+			getDiscoverFeed: async () => [],
+		});
+
+		const response = await home.compose({
+			widgets: [{ key: "discover", widget: "discoverFeed" }],
+		});
+
+		expect(response.widgets.discover).toEqual({ status: "empty" });
+	});
+
+	test("ignores unknown widgets gracefully", async () => {
+		const home = createHome({
+			getTransferStats: async () => ({
+				downloadedBytes: 100,
+				uploadedBytes: 50,
+			}),
+			getDiscoverFeed: async () => [],
+		});
+
+		const response = await home.compose({
+			widgets: [
+				{ key: "transfer", widget: "transferStats" },
+				{ key: "mystery", widget: "unknownWidget" },
 			],
 		});
 
@@ -75,6 +149,6 @@ describe("home.compose", () => {
 				},
 			},
 		});
-		expect(response.widgets.discover).toBeUndefined();
+		expect(response.widgets.mystery).toBeUndefined();
 	});
 });

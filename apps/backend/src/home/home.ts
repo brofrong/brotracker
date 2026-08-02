@@ -7,6 +7,18 @@ export type TransferStats = {
 	ratio?: number;
 };
 
+export type DiscoverCard = {
+	titleId: string;
+	name: string;
+	poster: string | null;
+	year: number | null;
+	kind: "films" | "tv";
+};
+
+export type DiscoverFeed = {
+	items: DiscoverCard[];
+};
+
 export type WidgetEnvelope<T> =
 	| { status: "ok"; data: T }
 	| { status: "unavailable" }
@@ -17,12 +29,16 @@ export type ComposeWidgetRequest = {
 	widget: string;
 };
 
+export type ComposeWidgetData = TransferStats | DiscoverFeed;
+
 export type ComposeResponse = {
-	widgets: Record<string, WidgetEnvelope<TransferStats>>;
+	widgets: Record<string, WidgetEnvelope<ComposeWidgetData>>;
 };
 
 export type HomeDeps = {
 	getTransferStats: () => Promise<TransferStats | null>;
+	/** `null` = TMDB unavailable / error; `[]` = empty feed. */
+	getDiscoverFeed: () => Promise<DiscoverCard[] | null>;
 };
 
 export function createHome(deps: HomeDeps) {
@@ -32,25 +48,37 @@ export function createHome(deps: HomeDeps) {
 		}: {
 			widgets: ComposeWidgetRequest[];
 		}): Promise<ComposeResponse> => {
-			const result: Record<string, WidgetEnvelope<TransferStats>> = {};
+			const result: Record<string, WidgetEnvelope<ComposeWidgetData>> = {};
 
 			for (const { key, widget } of widgets) {
-				if (widget !== "transferStats") {
+				if (widget === "transferStats") {
+					const stats = await deps.getTransferStats();
+					if (stats === null) {
+						result[key] = { status: "unavailable" };
+						continue;
+					}
+
+					if (stats.downloadedBytes === 0 && stats.uploadedBytes === 0) {
+						result[key] = { status: "empty" };
+						continue;
+					}
+
+					result[key] = { status: "ok", data: stats };
 					continue;
 				}
 
-				const stats = await deps.getTransferStats();
-				if (stats === null) {
-					result[key] = { status: "unavailable" };
-					continue;
+				if (widget === "discoverFeed") {
+					const items = await deps.getDiscoverFeed();
+					if (items === null) {
+						result[key] = { status: "unavailable" };
+						continue;
+					}
+					if (items.length === 0) {
+						result[key] = { status: "empty" };
+						continue;
+					}
+					result[key] = { status: "ok", data: { items } };
 				}
-
-				if (stats.downloadedBytes === 0 && stats.uploadedBytes === 0) {
-					result[key] = { status: "empty" };
-					continue;
-				}
-
-				result[key] = { status: "ok", data: stats };
 			}
 
 			return { widgets: result };

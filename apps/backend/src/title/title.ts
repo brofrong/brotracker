@@ -1,3 +1,4 @@
+import { scoreTorrentQuality } from "../torrent/quality-score";
 import type {
 	Title,
 	TitleDeps,
@@ -5,8 +6,17 @@ import type {
 	TitleMeta,
 	TitleMetaStatus,
 	TitleRef,
+	TitleTorrent,
+	TitleTorrentBadge,
+	TitleTorrentCandidate,
+	TitleTorrentsResult,
 	TmdbMeta,
 } from "./title.types";
+import {
+	extractTopicId,
+	findTransferForTopic,
+	topicTag,
+} from "./topic-tag";
 
 export function encodeTopicUrl(topicUrl: string): string {
 	return Buffer.from(topicUrl, "utf8")
@@ -101,6 +111,50 @@ function metaFromTmdb(meta: TmdbMeta): TitleMeta {
 	};
 }
 
+function badgesFor(candidate: TitleTorrentCandidate): TitleTorrentBadge[] {
+	const badges: TitleTorrentBadge[] = [];
+	if (candidate.resolution) {
+		badges.push(candidate.resolution);
+	}
+	if (candidate.hdr === "HDR") {
+		badges.push("HDR");
+	}
+	return badges;
+}
+
+function toTitleTorrent(
+	candidate: TitleTorrentCandidate,
+	source: "local" | "tracker",
+	transfer: TitleTorrent["transfer"],
+): TitleTorrent {
+	return {
+		torrentId: candidate.torrentId,
+		topicUrl: candidate.topicUrl,
+		title: candidate.title,
+		size: candidate.size,
+		seeds: candidate.seeds,
+		leeches: candidate.leeches,
+		qualityScore: scoreTorrentQuality({
+			seeds: candidate.seeds,
+			size: candidate.size,
+			hdr: candidate.hdr,
+			resolution: candidate.resolution,
+		}),
+		badges: badgesFor(candidate),
+		source,
+		torrentFileUrl: candidate.torrentFileUrl,
+		forumId: candidate.forumId,
+		transfer,
+	};
+}
+
+export class TitleAddError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "TitleAddError";
+	}
+}
+
 export function createTitleModule(deps: TitleDeps) {
 	return {
 		resolve(ref: TitleRef): { id: string } {
@@ -163,6 +217,60 @@ export function createTitleModule(deps: TitleDeps) {
 				meta: metaFromTmdb(outcome.meta),
 				ratings,
 			};
+		},
+
+		async torrents(input: { id: string }): Promise<TitleTorrentsResult> {
+			const title = await this.get({ id: input.id });
+			const query = title.meta.name?.trim();
+			if (!query) {
+				return { status: "empty", items: [] };
+			}
+
+			const [tracker, local, live] = await Promise.all([
+				deps.searchTracker(query),
+				deps.searchLocal(query),
+				deps.listTaggedTorrents(),
+			]);
+
+			let source: "local" | "tracker" = "local";
+			let status: TitleTorrentsResult["status"] = "degraded";
+			let candidates: TitleTorrentCandidate[] = local;
+
+			if (tracker.status === "ok") {
+				source = "tracker";
+				status = "ok";
+				candidates = tracker.results;
+			} else if (local.length === 0) {
+				return { status: "empty", items: [] };
+			}
+
+			const items = candidates
+				.map((candidate) => {
+					const topicId =
+						extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
+					const transfer = findTransferForTopic(topicId, live);
+					return toTitleTorrent(candidate, source, transfer);
+				})
+				.sort((a, b) => b.qualityScore - a.qualityScore);
+
+			return { status, items };
+		},
+
+		async add(input: {
+			torrentFileUrl: string;
+			kind: TitleKind;
+			topicUrl: string;
+		}): Promise<{ ok: true }> {
+			const topicId = extractTopicId(input.topicUrl);
+			if (!topicId) {
+				throw new TitleAddError("Invalid topic URL: missing topic id");
+			}
+
+			await deps.addFromTracker(input.torrentFileUrl, input.kind, [
+				topicTag(topicId),
+			]);
+
+			return { ok: true };
 		},
 	};
 }

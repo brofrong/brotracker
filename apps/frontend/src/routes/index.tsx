@@ -1,11 +1,15 @@
 "use client";
 
+import { AspectRatio } from "@astryxdesign/core/AspectRatio";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
+import { ClickableCard } from "@astryxdesign/core/ClickableCard";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
+import { Grid } from "@astryxdesign/core/Grid";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Section } from "@astryxdesign/core/Section";
+import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
@@ -44,6 +48,14 @@ type TransferStatsData = {
 	uploadSpeed?: number;
 	freeSpaceBytes?: number;
 	ratio?: number;
+};
+
+type DiscoverCardData = {
+	titleId: string;
+	name: string;
+	poster: string | null;
+	year: number | null;
+	kind: "films" | "tv";
 };
 
 function TransferStatsWidget({ stats }: { stats: TransferStatsData }) {
@@ -96,32 +108,98 @@ function TransferStatsWidget({ stats }: { stats: TransferStatsData }) {
 	);
 }
 
+function DiscoverWidget({ items }: { items: DiscoverCardData[] }) {
+	const navigate = useNavigate();
+
+	return (
+		<VStack gap={3} width="100%">
+			<Heading level={2}>Discover</Heading>
+			<Grid columns={{ minWidth: 140, max: 6 }} gap={3} width="100%">
+				{items.map((item) => (
+					<ClickableCard
+						key={item.titleId}
+						elevation="low"
+						label={item.name}
+						padding={0}
+						width="100%"
+						onClick={() =>
+							void navigate({
+								to: "/title/$id",
+								params: { id: item.titleId },
+							})
+						}
+					>
+						<VStack gap={2} width="100%">
+							<AspectRatio fit="cover" ratio={2 / 3}>
+								{item.poster ? (
+									<img alt={item.name} src={item.poster} />
+								) : (
+									<Skeleton height="100%" width="100%" />
+								)}
+							</AspectRatio>
+							<VStack gap={0} width="100%">
+								<Text display="block" type="body" wordBreak="break-word">
+									{item.name}
+								</Text>
+								{item.year != null ? (
+									<Text type="supporting">{item.year}</Text>
+								) : null}
+							</VStack>
+						</VStack>
+					</ClickableCard>
+				))}
+			</Grid>
+		</VStack>
+	);
+}
+
+function isTransferStats(
+	data: TransferStatsData | { items: DiscoverCardData[] },
+): data is TransferStatsData {
+	return "downloadedBytes" in data;
+}
+
+function isDiscoverFeed(
+	data: TransferStatsData | { items: DiscoverCardData[] },
+): data is { items: DiscoverCardData[] } {
+	return "items" in data;
+}
+
 function HomePage() {
 	const navigate = useNavigate();
-	const { data, isLoading, isError, error } = useQuery({
+	const transferQuery = useQuery({
 		...trpc.home.compose.queryOptions({
 			widgets: [{ key: "transfer", widget: "transferStats" }],
 		}),
 		refetchOnWindowFocus: false,
 	});
+	const discoverQuery = useQuery({
+		...trpc.home.compose.queryOptions({
+			widgets: [{ key: "discover", widget: "discoverFeed" }],
+		}),
+		refetchOnWindowFocus: false,
+	});
 
-	const transfer = data?.widgets.transfer;
+	const transfer = transferQuery.data?.widgets.transfer;
+	const discover = discoverQuery.data?.widgets.discover;
 
 	return (
 		<Section padding={4} variant="transparent">
-			<VStack gap={4} width="100%">
+			<VStack gap={6} width="100%">
 				<Heading level={1}>Главная</Heading>
 
-				{isLoading ? <Spinner label="Загрузка" /> : null}
+				{transferQuery.isLoading ? <Spinner label="Загрузка статистики" /> : null}
 
-				{isError ? (
+				{transferQuery.isError ? (
 					<EmptyState
-						description={error.message}
-						title="Не удалось загрузить главную"
+						description={transferQuery.error.message}
+						title="Не удалось загрузить статистику"
 					/>
 				) : null}
 
-				{!isLoading && !isError && transfer?.status === "unavailable" ? (
+				{!transferQuery.isLoading &&
+				!transferQuery.isError &&
+				transfer?.status === "unavailable" ? (
 					<Banner
 						container="section"
 						description="Укажите URL и API key qBittorrent в настройках, чтобы видеть статистику."
@@ -142,15 +220,49 @@ function HomePage() {
 					/>
 				) : null}
 
-				{!isLoading && !isError && transfer?.status === "empty" ? (
+				{!transferQuery.isLoading &&
+				!transferQuery.isError &&
+				transfer?.status === "empty" ? (
 					<EmptyState
 						description="Статистика появится после первой передачи данных."
 						title="Нет данных о передаче"
 					/>
 				) : null}
 
-				{!isLoading && !isError && transfer?.status === "ok" ? (
+				{!transferQuery.isLoading &&
+				!transferQuery.isError &&
+				transfer?.status === "ok" &&
+				isTransferStats(transfer.data) ? (
 					<TransferStatsWidget stats={transfer.data} />
+				) : null}
+
+				{discoverQuery.isLoading ? <Spinner label="Загрузка Discover" /> : null}
+
+				{!discoverQuery.isLoading &&
+				!discoverQuery.isError &&
+				discover?.status === "unavailable" ? (
+					<Banner
+						container="section"
+						description="Добавьте TMDB_API_KEY, чтобы видеть подборку. Остальная главная работает как обычно."
+						status="warning"
+						title="Discover недоступен"
+					/>
+				) : null}
+
+				{!discoverQuery.isLoading &&
+				!discoverQuery.isError &&
+				discover?.status === "empty" ? (
+					<EmptyState
+						description="TMDB не вернул тренды."
+						title="Discover пуст"
+					/>
+				) : null}
+
+				{!discoverQuery.isLoading &&
+				!discoverQuery.isError &&
+				discover?.status === "ok" &&
+				isDiscoverFeed(discover.data) ? (
+					<DiscoverWidget items={discover.data.items} />
 				) : null}
 			</VStack>
 		</Section>

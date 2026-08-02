@@ -1,7 +1,11 @@
 import { TRPCError } from "@trpc/server";
 import z from "zod";
-import { titleModule } from "./index";
+import {
+	AddFromTrackerGatewayError,
+	AddFromTrackerPreconditionError,
+} from "../qbittorent/qbittorent.service";
 import { protectedProcedure, router } from "../trpc";
+import { TitleAddError, titleModule } from "./index";
 
 const titleRefSchema = z.discriminatedUnion("type", [
 	z.object({
@@ -19,6 +23,19 @@ const titleRefSchema = z.discriminatedUnion("type", [
 	}),
 ]);
 
+function assertTitleId(id: string) {
+	if (
+		!id.startsWith("tmdb:") &&
+		!id.startsWith("topic:") &&
+		!id.startsWith("qb:")
+	) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Invalid title id",
+		});
+	}
+}
+
 export const titleRouter = router({
 	resolve: protectedProcedure
 		.input(titleRefSchema)
@@ -27,16 +44,48 @@ export const titleRouter = router({
 	get: protectedProcedure
 		.input(z.object({ id: z.string().min(1) }))
 		.query(async ({ input }) => {
-			if (
-				!input.id.startsWith("tmdb:") &&
-				!input.id.startsWith("topic:") &&
-				!input.id.startsWith("qb:")
-			) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Invalid title id",
-				});
-			}
+			assertTitleId(input.id);
 			return titleModule.get({ id: input.id });
+		}),
+
+	torrents: protectedProcedure
+		.input(z.object({ id: z.string().min(1) }))
+		.query(async ({ input }) => {
+			assertTitleId(input.id);
+			return titleModule.torrents({ id: input.id });
+		}),
+
+	add: protectedProcedure
+		.input(
+			z.object({
+				torrentFileUrl: z.string().url(),
+				kind: z.enum(["films", "tv"]),
+				topicUrl: z.string().url(),
+			}),
+		)
+		.mutation(async ({ input }) => {
+			try {
+				return await titleModule.add(input);
+			} catch (error) {
+				if (error instanceof TitleAddError) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: error.message,
+					});
+				}
+				if (error instanceof AddFromTrackerPreconditionError) {
+					throw new TRPCError({
+						code: "PRECONDITION_FAILED",
+						message: error.message,
+					});
+				}
+				if (error instanceof AddFromTrackerGatewayError) {
+					throw new TRPCError({
+						code: "BAD_GATEWAY",
+						message: error.message,
+					});
+				}
+				throw error;
+			}
 		}),
 });

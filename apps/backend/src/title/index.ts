@@ -1,8 +1,22 @@
+import { normalizeTitle } from "../torrent/title-norm";
+import { searchLocal, upsertFromTracker } from "../torrent/torrent.repository";
+import { getTracker } from "../torrent/torrent.tracker";
+import {
+	getTorrents,
+	QbittorrentNotConfiguredError,
+} from "../qbittorent/qbittorent.client";
+import { toLiveTorrent } from "../qbittorent/live-torrent";
+import { addFromTracker } from "../qbittorent/qbittorent.service";
 import { env } from "../utils/env";
 import { logger } from "../utils/logger";
 import { createDefaultRatingsPort } from "./ratings-port";
-import { createTitleModule } from "./title";
-import type { FetchTmdbMetaOutcome, TitleKind } from "./title.types";
+import { createTitleModule, TitleAddError } from "./title";
+import type {
+	FetchTmdbMetaOutcome,
+	TitleKind,
+	TitleTorrentCandidate,
+	TrackerSearchForTitle,
+} from "./title.types";
 import {
 	parseMovieDetails,
 	parseTvDetails,
@@ -80,11 +94,101 @@ export function createFetchTmdbMeta(
 	};
 }
 
+function toCandidate(hit: {
+	torrentId: string;
+	title: string;
+	size: number;
+	seeds: number;
+	leeches: number;
+	torrentFileUrl: string;
+	topicUrl: string;
+	hdr: "HDR" | "SDR" | null;
+	resolution: "4K" | "1080p" | "720p" | "SD" | null;
+	forumId: string;
+}): TitleTorrentCandidate {
+	return {
+		torrentId: hit.torrentId,
+		title: hit.title,
+		size: hit.size,
+		seeds: hit.seeds,
+		leeches: hit.leeches,
+		torrentFileUrl: hit.torrentFileUrl,
+		topicUrl: hit.topicUrl,
+		hdr: hit.hdr,
+		resolution: hit.resolution,
+		forumId: hit.forumId,
+	};
+}
+
+async function searchLocalForTitle(
+	query: string,
+): Promise<TitleTorrentCandidate[]> {
+	const hits = await searchLocal(normalizeTitle(query));
+	return hits.map(toCandidate);
+}
+
+async function searchTrackerForTitle(
+	query: string,
+): Promise<TrackerSearchForTitle> {
+	let tracker;
+	try {
+		tracker = await getTracker();
+	} catch (err) {
+		logger.warn(
+			{ err: err instanceof Error ? err.message : String(err), query },
+			"title.torrents: tracker unavailable",
+		);
+		return { status: "unavailable" };
+	}
+
+	const page = await tracker.search(query, {});
+	if (page.isErr()) {
+		logger.warn(
+			{ err: page.error.message, query },
+			"title.torrents: tracker search failed",
+		);
+		return { status: "error" };
+	}
+
+	await upsertFromTracker(page.value.results);
+	return {
+		status: "ok",
+		results: page.value.results.map(toCandidate),
+	};
+}
+
 const ratingsPort = createDefaultRatingsPort();
 
 export const titleModule = createTitleModule({
 	fetchTmdbMeta: createFetchTmdbMeta(env.TMDB_API_KEY),
 	getRatings: ratingsPort.getRatings,
+	searchLocal: searchLocalForTitle,
+	searchTracker: searchTrackerForTitle,
+	listTaggedTorrents: async () => {
+		try {
+			const torrents = await getTorrents();
+			return torrents.map((torrent) => {
+				const live = toLiveTorrent(torrent);
+				return {
+					hash: live.id,
+					progress: live.progress,
+					stateKind: live.stateKind,
+					stateLabel: live.stateLabel,
+					downloadSpeed: live.downloadSpeed,
+					etaSeconds: live.etaSeconds,
+					tags: live.tags,
+				};
+			});
+		} catch (error) {
+			if (error instanceof QbittorrentNotConfiguredError) {
+				return [];
+			}
+			throw error;
+		}
+	},
+	addFromTracker: async (torrentFileUrl, kind, tags) => {
+		await addFromTracker(torrentFileUrl, kind, tags);
+	},
 });
 
-export { createTitleModule };
+export { createTitleModule, TitleAddError };

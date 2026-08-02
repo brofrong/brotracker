@@ -37,7 +37,7 @@ export type AddFromTrackerDeps = {
 	fetchTorrentFile: (torrentFileUrl: string) => Promise<Uint8Array>;
 	addTorrent: (
 		bytes: Uint8Array,
-		options: { pathToSave: string },
+		options: { pathToSave: string; tags?: string[] },
 	) => Promise<void>;
 };
 
@@ -45,6 +45,7 @@ export function createAddFromTracker(deps: AddFromTrackerDeps) {
 	return async function addFromTracker(
 		torrentFileUrl: string,
 		mediaType: "films" | "tv",
+		tags: string[] = [],
 	): Promise<void> {
 		if (!isAllowedRutrackerTorrentUrl(torrentFileUrl)) {
 			throw new AddFromTrackerPreconditionError(
@@ -85,7 +86,10 @@ export function createAddFromTracker(deps: AddFromTrackerDeps) {
 		}
 
 		try {
-			await deps.addTorrent(bytes, { pathToSave });
+			await deps.addTorrent(bytes, {
+				pathToSave,
+				tags: tags.length > 0 ? tags : undefined,
+			});
 		} catch (error) {
 			throw new AddFromTrackerGatewayError(
 				error instanceof Error ? error.message : String(error),
