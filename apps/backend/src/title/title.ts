@@ -1,6 +1,7 @@
 import { scoreTorrentQuality } from "../torrent/quality-score";
 import type { CheckResult, TitleWatchRecord } from "./check-topic-now";
-import { syncWatchesFromQb } from "./sync-watches-from-qb";
+import { parseEpisodeProgress } from "./episode-progress";
+import { syncWatchesFromQb, type SyncQbTorrent } from "./sync-watches-from-qb";
 import type {
 	Title,
 	TitleDeps,
@@ -151,7 +152,24 @@ function toTitleTorrent(
 	};
 }
 
-function toWatchView(record: TitleWatchRecord): TitleWatchView {
+function progressForWatch(
+	record: TitleWatchRecord,
+	qbTorrents: SyncQbTorrent[],
+): TitleWatchView["progress"] {
+	if (!record.qbHash) {
+		return null;
+	}
+	const torrent = qbTorrents.find((item) => item.hash === record.qbHash);
+	if (!torrent) {
+		return null;
+	}
+	return parseEpisodeProgress(torrent.name);
+}
+
+function toWatchView(
+	record: TitleWatchRecord,
+	qbTorrents: SyncQbTorrent[],
+): TitleWatchView {
 	return {
 		topicUrl: record.topicUrl,
 		watch: record.watch,
@@ -159,6 +177,7 @@ function toWatchView(record: TitleWatchRecord): TitleWatchView {
 		lastCheckedAt: record.lastCheckedAt,
 		lastChangedAt: record.lastChangedAt,
 		lastError: record.lastError,
+		progress: progressForWatch(record, qbTorrents),
 	};
 }
 
@@ -186,9 +205,16 @@ export function createTitleModule(deps: TitleDeps) {
 			return null;
 		}
 
+		let qbTorrents: SyncQbTorrent[] = [];
+		try {
+			qbTorrents = await deps.listQbTorrents();
+		} catch {
+			qbTorrents = [];
+		}
+
 		try {
 			await syncWatchesFromQb({
-				listTorrents: deps.listQbTorrents,
+				listTorrents: async () => qbTorrents,
 				getSeriesPath: deps.getSeriesPath,
 				loadWatch: deps.loadWatchByTopicUrl,
 				saveWatch: deps.saveWatch,
@@ -201,7 +227,7 @@ export function createTitleModule(deps: TitleDeps) {
 
 		const byTitle = await deps.loadWatchByTitleId(titleId);
 		if (byTitle) {
-			return toWatchView(byTitle);
+			return toWatchView(byTitle, qbTorrents);
 		}
 
 		if (!titleName?.trim()) {
@@ -210,7 +236,7 @@ export function createTitleModule(deps: TitleDeps) {
 
 		try {
 			const linked = await linkAutoWatchToTitle(titleId, titleName.trim());
-			return linked ? toWatchView(linked) : null;
+			return linked ? toWatchView(linked, qbTorrents) : null;
 		} catch {
 			return null;
 		}

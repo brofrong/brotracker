@@ -1,4 +1,5 @@
 import type { TitleWatchRecord, TopicMeta } from "./check-topic-now";
+import type { EpisodeProgress } from "./episode-progress";
 import type {
 	ProcessWatchTaskResult,
 	WatchTask,
@@ -80,6 +81,8 @@ export type TitleWatchView = {
 	lastCheckedAt: string | null;
 	lastChangedAt: string | null;
 	lastError: string | null;
+	/** Episodes have/total parsed from the current torrent name; null when unknown. */
+	progress: EpisodeProgress | null;
 };
 
 export type Title = {
