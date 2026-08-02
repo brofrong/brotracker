@@ -15,8 +15,13 @@ import { normalizeTitle } from "../torrent/title-norm";
 import { searchLocal, upsertFromTracker } from "../torrent/torrent.repository";
 import { getTracker } from "../torrent/torrent.tracker";
 import { logger } from "../utils/logger";
+import { checkTopicNow } from "./check-topic-now";
+import { enqueueNightlyWatchTasks } from "./enqueue-nightly-tasks";
+import { createNightlyWorker } from "./nightly-worker";
+import { processWatchTask } from "./process-watch-task";
 import { createDefaultRatingsPort } from "./ratings-port";
 import { createReplaceTorrentInQb } from "./replace-torrent-in-qb";
+import { syncWatchesFromQb } from "./sync-watches-from-qb";
 import {
 	createTitleModule,
 	TitleAddError,
@@ -41,6 +46,14 @@ import {
 	type TmdbTvDetails,
 } from "./tmdb-meta";
 import { extractTopicId, torrentFileUrlFromId } from "./topic-tag";
+import {
+	createWatchTask,
+	hasPendingWatchTask,
+	listPendingWatchTaskIds,
+	listTrackingWatches,
+	loadWatchTask,
+	saveWatchTask,
+} from "./watch-task.repository";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 
@@ -267,6 +280,35 @@ const replaceInQb = createReplaceTorrentInQb({
 
 const ratingsPort = createDefaultRatingsPort();
 
+const now = () => new Date().toISOString();
+
+/** #12 will provide real N/M parsing; default false until then. */
+const isCompletePack = () => false;
+
+async function checkTopicNowBound(input: { topicUrl: string }) {
+	return checkTopicNow(input, {
+		loadWatch: loadWatchByTopicUrl,
+		saveWatch,
+		fetchTorrentBytes,
+		fetchTopicMeta,
+		replaceInQb,
+		now,
+	});
+}
+
+/** The single path both the nightly worker and manual checkNow drain through. */
+async function processWatchTaskById(taskId: string) {
+	return processWatchTask(
+		{ taskId },
+		{
+			loadTask: loadWatchTask,
+			saveTask: saveWatchTask,
+			checkTopicNow: checkTopicNowBound,
+			now,
+		},
+	);
+}
+
 export const titleModule = createTitleModule({
 	fetchTmdbMeta: createFetchTmdbMeta(resolveTmdbApiKey),
 	getRatings: ratingsPort.getRatings,
@@ -284,8 +326,31 @@ export const titleModule = createTitleModule({
 	fetchTorrentBytes,
 	fetchTopicMeta,
 	replaceInQb,
-	isCompletePack: () => false,
-	now: () => new Date().toISOString(),
+	isCompletePack,
+	now,
+	enqueueWatchTask: createWatchTask,
+	processWatchTask: processWatchTaskById,
+});
+
+export const nightlyWorker = createNightlyWorker({
+	sync: () =>
+		syncWatchesFromQb({
+			listTorrents: listQbTorrents,
+			getSeriesPath,
+			loadWatch: loadWatchByTopicUrl,
+			saveWatch,
+			isCompletePack,
+			now,
+		}),
+	enqueue: () =>
+		enqueueNightlyWatchTasks({
+			listTrackingWatches,
+			hasPendingTask: hasPendingWatchTask,
+			createTask: createWatchTask,
+		}),
+	listPendingTaskIds: listPendingWatchTaskIds,
+	processTask: processWatchTaskById,
+	now: () => new Date(),
 });
 
 export { createTitleModule, TitleAddError, TitleWatchError };
