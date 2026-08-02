@@ -1,3 +1,5 @@
+import { fetchWithProxy } from "../http/fetch-with-proxy";
+import type { TmdbCredentials } from "../settings/provider-settings";
 import { yearFromDate } from "../title/tmdb-meta";
 import { logger } from "../utils/logger";
 import type { DiscoverCard } from "./home";
@@ -56,19 +58,20 @@ export function mapTrendingItem(
 }
 
 export function createFetchDiscoverFeed(
-	resolveApiKey: () => Promise<string | undefined>,
+	resolveCredentials: () => Promise<TmdbCredentials | undefined>,
 ): () => Promise<DiscoverCard[] | null> {
 	return async () => {
-		const apiKey = await resolveApiKey();
-		if (!apiKey) {
+		const credentials = await resolveCredentials();
+		if (!credentials) {
 			return null;
 		}
 
-		const url = `${TMDB_BASE}/trending/all/day?api_key=${encodeURIComponent(apiKey)}&language=ru-RU`;
+		const url = `${TMDB_BASE}/trending/all/day?api_key=${encodeURIComponent(credentials.apiKey)}&language=ru-RU`;
 
 		try {
-			const response = await fetch(url, {
+			const response = await fetchWithProxy(url, {
 				headers: { Accept: "application/json" },
+				proxyUrl: credentials.proxyUrl,
 			});
 			if (!response.ok) {
 				logger.warn(

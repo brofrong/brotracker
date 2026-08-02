@@ -558,6 +558,7 @@ function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
 	);
 
 	const [apiKey, setApiKey] = useState("");
+	const [proxyUrl, setProxyUrl] = useState("");
 	const [message, setMessage] = useState<StatusMessage>(null);
 
 	useEffect(() => {
@@ -565,6 +566,7 @@ function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
 			return;
 		}
 		setApiKey(settingsQuery.data.apiKey);
+		setProxyUrl(settingsQuery.data.proxyUrl ?? "");
 	}, [settingsQuery.data]);
 
 	const saveMutation = useMutation({
@@ -574,6 +576,7 @@ function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
 				queryKey: trpc.settings.providers.tmdb.get.queryKey(),
 			});
 			setApiKey(data.apiKey);
+			setProxyUrl(data.proxyUrl ?? "");
 			setMessage({ status: "success", text: "Сохранено" });
 		},
 		onError: (error) => {
@@ -603,7 +606,10 @@ function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
 	const onSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setMessage(null);
-		saveMutation.mutate({ apiKey });
+		saveMutation.mutate({
+			apiKey,
+			proxyUrl: proxyUrl.trim() === "" ? null : proxyUrl.trim(),
+		});
 	};
 
 	if (settingsQuery.isLoading) {
@@ -636,7 +642,8 @@ function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
 					<VStack gap={1}>
 						<Heading level={2}>TMDB</Heading>
 						<Text type="supporting">
-							API key для метаданных Title и виджета Discover на главной
+							API key и прокси для метаданных Title и виджета Discover
+							на главной
 						</Text>
 					</VStack>
 
@@ -653,6 +660,15 @@ function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
 									? "Оставьте пустым, чтобы не менять"
 									: undefined
 							}
+						/>
+						<TextInput
+							label="Proxy"
+							value={proxyUrl}
+							onChange={setProxyUrl}
+							isOptional
+							placeholder="socks5://user:pass@host:1080"
+							description="http://, https:// или socks5://, с optional user:pass@"
+							width="100%"
 						/>
 					</FormLayout>
 

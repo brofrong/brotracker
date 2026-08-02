@@ -9,7 +9,11 @@ import {
 	QbittorrentNotConfiguredError,
 } from "../qbittorent/qbittorent.client";
 import { addFromTracker } from "../qbittorent/qbittorent.service";
-import { resolveTmdbApiKey } from "../settings/provider-settings";
+import { fetchWithProxy } from "../http/fetch-with-proxy";
+import {
+	resolveTmdbCredentials,
+	type TmdbCredentials,
+} from "../settings/provider-settings";
 import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
 import { normalizeTitle } from "../torrent/title-norm";
 import { searchLocal, upsertFromTracker } from "../torrent/torrent.repository";
@@ -65,17 +69,18 @@ function tmdbAuthQuery(apiKey: string): string {
 
 async function fetchTmdbJson<T>(
 	path: string,
-	apiKey: string,
+	credentials: TmdbCredentials,
 ): Promise<T | null> {
 	const url = `${TMDB_BASE}${path}${
 		path.includes("?") ? "&" : "?"
-	}${tmdbAuthQuery(apiKey)}&language=ru-RU`;
+	}${tmdbAuthQuery(credentials.apiKey)}&language=ru-RU`;
 
 	try {
-		const response = await fetch(url, {
+		const response = await fetchWithProxy(url, {
 			headers: {
 				Accept: "application/json",
 			},
+			proxyUrl: credentials.proxyUrl,
 		});
 
 		if (!response.ok) {
@@ -94,11 +99,11 @@ async function fetchTmdbJson<T>(
 }
 
 export function createFetchTmdbMeta(
-	resolveApiKey: () => Promise<string | undefined>,
+	resolveCredentials: () => Promise<TmdbCredentials | undefined>,
 ): (kind: TitleKind, tmdbId: number) => Promise<FetchTmdbMetaOutcome> {
 	return async (kind, tmdbId) => {
-		const apiKey = await resolveApiKey();
-		if (!apiKey) {
+		const credentials = await resolveCredentials();
+		if (!credentials) {
 			return { status: "unavailable" };
 		}
 
@@ -107,8 +112,11 @@ export function createFetchTmdbMeta(
 		const creditsPath = `/${segment}/${tmdbId}/credits`;
 
 		const [details, credits] = await Promise.all([
-			fetchTmdbJson<TmdbMovieDetails | TmdbTvDetails>(detailsPath, apiKey),
-			fetchTmdbJson<TmdbCredits>(creditsPath, apiKey),
+			fetchTmdbJson<TmdbMovieDetails | TmdbTvDetails>(
+				detailsPath,
+				credentials,
+			),
+			fetchTmdbJson<TmdbCredits>(creditsPath, credentials),
 		]);
 
 		if (!details || !credits) {
@@ -320,7 +328,7 @@ async function processWatchTaskById(taskId: string) {
 }
 
 export const titleModule = createTitleModule({
-	fetchTmdbMeta: createFetchTmdbMeta(resolveTmdbApiKey),
+	fetchTmdbMeta: createFetchTmdbMeta(resolveTmdbCredentials),
 	getRatings: ratingsPort.getRatings,
 	searchLocal: searchLocalForTitle,
 	searchTracker: searchTrackerForTitle,

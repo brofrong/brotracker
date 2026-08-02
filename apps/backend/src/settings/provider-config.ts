@@ -42,6 +42,7 @@ export type QbittorrentPublic = {
 
 export type TmdbPublic = {
 	apiKey: string;
+	proxyUrl: string | null;
 	isConfigured: boolean;
 };
 
@@ -65,10 +66,12 @@ const qbittorrentStoredSchema = z.object({
 
 const tmdbStoredSchema = z.object({
 	apiKey: z.string(),
+	proxyUrl: z.string().nullable().optional(),
 });
 
 const tmdbConfigSchema = z.object({
 	apiKey: z.string().min(1, "API key is required"),
+	proxyUrl: proxyUrlSchema,
 });
 
 function normalizePath(value: string): string {
@@ -111,9 +114,13 @@ function toQbittorrentPublic(
 
 function toTmdbPublic(config: TmdbProviderConfig | null): TmdbPublic {
 	if (!config) {
-		return { apiKey: "", isConfigured: false };
+		return { apiKey: "", proxyUrl: null, isConfigured: false };
 	}
-	return { apiKey: config.apiKey, isConfigured: true };
+	return {
+		apiKey: config.apiKey,
+		proxyUrl: config.proxyUrl,
+		isConfigured: true,
+	};
 }
 
 function parseRutracker(raw: unknown): RutrackerProviderConfig | null {
@@ -152,7 +159,10 @@ function parseTmdb(raw: unknown): TmdbProviderConfig | null {
 	if (!parsed.success || !parsed.data.apiKey) {
 		return null;
 	}
-	return { apiKey: parsed.data.apiKey };
+	return {
+		apiKey: parsed.data.apiKey,
+		proxyUrl: parsed.data.proxyUrl ?? null,
+	};
 }
 
 export function createProviderConfig(store: ProviderStore) {
@@ -269,6 +279,7 @@ export function createProviderConfig(store: ProviderStore) {
 
 		saveTmdb: async (input: {
 			apiKey: string;
+			proxyUrl: string | null | undefined;
 		}): Promise<{
 			config: TmdbProviderConfig;
 			public: TmdbPublic;
@@ -284,7 +295,10 @@ export function createProviderConfig(store: ProviderStore) {
 				throw new MissingSecretError("API key is required");
 			}
 
-			const config = tmdbConfigSchema.parse({ apiKey });
+			const config = tmdbConfigSchema.parse({
+				apiKey,
+				proxyUrl: input.proxyUrl,
+			});
 			await store.save(TMDB_PROVIDER, config);
 
 			return {

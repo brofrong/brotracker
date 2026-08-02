@@ -42,13 +42,35 @@ export async function saveQbittorrentSettings(input: {
 	return result.public;
 }
 
-export async function saveTmdbSettings(input: { apiKey: string }) {
+export async function saveTmdbSettings(input: {
+	apiKey: string;
+	proxyUrl: string | null | undefined;
+}) {
 	const result = await providerConfig.saveTmdb(input);
 	return result.public;
 }
 
+export type TmdbCredentials = {
+	apiKey: string;
+	proxyUrl: string | null;
+};
+
+/** Resolve TMDB API key + proxy from provider settings. */
+export async function resolveTmdbCredentials(): Promise<
+	TmdbCredentials | undefined
+> {
+	const stored = await loadTmdbConfig();
+	if (!stored?.apiKey) {
+		return undefined;
+	}
+	return {
+		apiKey: stored.apiKey,
+		proxyUrl: stored.proxyUrl ?? null,
+	};
+}
+
 /** Resolve TMDB API key from provider settings. */
 export async function resolveTmdbApiKey(): Promise<string | undefined> {
-	const stored = await loadTmdbConfig();
-	return stored?.apiKey || undefined;
+	const credentials = await resolveTmdbCredentials();
+	return credentials?.apiKey;
 }

@@ -17,6 +17,7 @@ export type QbittorrentProviderConfig = {
 
 export type TmdbProviderConfig = {
 	apiKey: string;
+	proxyUrl: string | null;
 };
 
 /** Per-provider app settings (rutracker, qbittorrent, tmdb, later kinopoisk, …). */

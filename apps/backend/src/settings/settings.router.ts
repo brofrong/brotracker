@@ -10,11 +10,12 @@ import { protectedProcedure, router } from "../trpc";
 import { MissingSecretError, proxyUrlSchema } from "./provider-config";
 import { providerConfig } from "./provider-config.live";
 import {
-	resolveTmdbApiKey,
+	resolveTmdbCredentials,
 	saveQbittorrentSettings,
 	saveRutrackerSettings,
 	saveTmdbSettings,
 } from "./provider-settings";
+import { fetchWithProxy } from "../http/fetch-with-proxy";
 
 const rutrackerSetInputSchema = z.object({
 	login: z.string().trim().min(1, "Login is required"),
@@ -34,6 +35,7 @@ const qbittorrentSetInputSchema = z.object({
 const tmdbSetInputSchema = z.object({
 	/** Empty string keeps the existing API key. */
 	apiKey: z.string(),
+	proxyUrl: proxyUrlSchema,
 });
 
 function mapSecretError(error: unknown): never {
@@ -47,18 +49,19 @@ function mapSecretError(error: unknown): never {
 }
 
 async function testTmdbConnection(): Promise<{ ok: true }> {
-	const apiKey = await resolveTmdbApiKey();
-	if (!apiKey) {
+	const credentials = await resolveTmdbCredentials();
+	if (!credentials) {
 		throw new TRPCError({
 			code: "PRECONDITION_FAILED",
 			message: "TMDB API key is not configured. Set it in Settings.",
 		});
 	}
 
-	const url = `https://api.themoviedb.org/3/configuration?api_key=${encodeURIComponent(apiKey)}`;
+	const url = `https://api.themoviedb.org/3/configuration?api_key=${encodeURIComponent(credentials.apiKey)}`;
 	try {
-		const response = await fetch(url, {
+		const response = await fetchWithProxy(url, {
 			headers: { Accept: "application/json" },
+			proxyUrl: credentials.proxyUrl,
 		});
 		if (!response.ok) {
 			throw new TRPCError({
