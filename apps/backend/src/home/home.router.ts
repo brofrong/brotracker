@@ -1,6 +1,6 @@
 import z from "zod";
-import { home } from "./index";
 import { protectedProcedure, router } from "../trpc";
+import { home } from "./index";
 
 export const homeRouter = router({
 	compose: protectedProcedure

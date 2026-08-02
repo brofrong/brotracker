@@ -29,7 +29,7 @@ describe("home.compose", () => {
 			}),
 			getDiscoverFeed: async () => [],
 			getTitleWatchEvents: async () => [],
-	});
+		});
 
 		const response = await home.compose({
 			widgets: [{ key: "transfer", widget: "transferStats" }],
@@ -57,7 +57,7 @@ describe("home.compose", () => {
 			getTransferStats: async () => null,
 			getDiscoverFeed: async () => [],
 			getTitleWatchEvents: async () => [],
-	});
+		});
 
 		const response = await home.compose({
 			widgets: [{ key: "transfer", widget: "transferStats" }],
@@ -80,10 +80,11 @@ describe("home.compose", () => {
 					poster: "https://image.tmdb.org/t/p/w342/dune.jpg",
 					year: 2021,
 					kind: "films",
+					rating: 8.4,
 				},
 			],
 			getTitleWatchEvents: async () => [],
-	});
+		});
 
 		const response = await home.compose({
 			widgets: [{ key: "discover", widget: "discoverFeed" }],
@@ -101,6 +102,7 @@ describe("home.compose", () => {
 								poster: "https://image.tmdb.org/t/p/w342/dune.jpg",
 								year: 2021,
 								kind: "films",
+								rating: 8.4,
 							},
 						],
 					},
@@ -117,7 +119,7 @@ describe("home.compose", () => {
 			}),
 			getDiscoverFeed: async () => null,
 			getTitleWatchEvents: async () => [],
-	});
+		});
 
 		const response = await home.compose({
 			widgets: [
@@ -135,7 +137,7 @@ describe("home.compose", () => {
 			getTransferStats: async () => null,
 			getDiscoverFeed: async () => [],
 			getTitleWatchEvents: async () => [],
-	});
+		});
 
 		const response = await home.compose({
 			widgets: [{ key: "discover", widget: "discoverFeed" }],
@@ -152,7 +154,7 @@ describe("home.compose", () => {
 			}),
 			getDiscoverFeed: async () => [],
 			getTitleWatchEvents: async () => [],
-	});
+		});
 
 		const response = await home.compose({
 			widgets: [
@@ -186,7 +188,7 @@ describe("home.compose", () => {
 			getTransferHistory: async () => history,
 			getDiscoverFeed: async () => [],
 			getTitleWatchEvents: async () => [],
-	});
+		});
 
 		const response = await home.compose({
 			widgets: [{ key: "transfer", widget: "transferStats" }],
@@ -213,7 +215,7 @@ describe("home.compose", () => {
 			},
 			getDiscoverFeed: async () => [],
 			getTitleWatchEvents: async () => [],
-	});
+		});
 
 		const response = await home.compose({
 			widgets: [{ key: "transfer", widget: "transferStats" }],
@@ -241,7 +243,7 @@ describe("home.compose", () => {
 			getRecentSpeeds: async () => recentSpeeds,
 			getDiscoverFeed: async () => [],
 			getTitleWatchEvents: async () => [],
-	});
+		});
 
 		const response = await home.compose({
 			widgets: [{ key: "transfer", widget: "transferStats" }],

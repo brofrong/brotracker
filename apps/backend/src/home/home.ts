@@ -111,6 +111,8 @@ export type DiscoverCard = {
 	poster: string | null;
 	year: number | null;
 	kind: "films" | "tv";
+	/** TMDB vote average rounded to 1 decimal; `null` when unrated. */
+	rating: number | null;
 };
 
 export type DiscoverFeed = {
