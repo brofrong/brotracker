@@ -24,6 +24,22 @@ const SIDE_NAV_COLLAPSED_KEY = "side-nav-collapsed";
 /** Wider than any viewport — MobileNav uses width: 100vw with maxWidth from this prop. */
 const MOBILE_NAV_FULL_WIDTH = 10_000;
 
+const brandIcon = (
+	<img
+		src="/logos/chunky-wordmark-icon.png"
+		alt=""
+		width={20}
+		height={20}
+		className="size-5 rounded-sm"
+	/>
+);
+
+function BrandHeading() {
+	return (
+		<SideNavHeading heading="torrent-manager" icon={brandIcon} />
+	);
+}
+
 function readCollapsed(): boolean {
 	if (typeof window === "undefined") {
 		return false;
@@ -82,7 +98,11 @@ export function NavItems() {
 
 export function MobileNavigation() {
 	return (
-		<MobileNav header="BroTracker" width={MOBILE_NAV_FULL_WIDTH} label="Навигация">
+		<MobileNav
+			header={<BrandHeading />}
+			width={MOBILE_NAV_FULL_WIDTH}
+			label="Навигация"
+		>
 			<SideNavRenderContext value="drawer">
 				<NavItems />
 			</SideNavRenderContext>
@@ -98,7 +118,7 @@ export default function Navigation() {
 		<SideNav
 			header={
 				isMobile ? (
-					<SideNavHeading heading="BroTracker" />
+					<BrandHeading />
 				) : (
 					<HStack
 						gap={1}
@@ -106,9 +126,7 @@ export default function Navigation() {
 						justify={isCollapsed ? "center" : "between"}
 						width="100%"
 					>
-						{!isCollapsed ? (
-							<SideNavHeading heading="BroTracker" />
-						) : null}
+						{!isCollapsed ? <BrandHeading /> : null}
 						<SideNavCollapseButton />
 					</HStack>
 				)
