@@ -1,9 +1,5 @@
 import { scoreTorrentQuality } from "../torrent/quality-score";
-import {
-	checkTopicNow,
-	type CheckResult,
-	type TitleWatchRecord,
-} from "./check-topic-now";
+import type { CheckResult, TitleWatchRecord } from "./check-topic-now";
 import { syncWatchesFromQb } from "./sync-watches-from-qb";
 import type {
 	Title,
@@ -516,17 +512,25 @@ export function createTitleModule(deps: TitleDeps) {
 				await deps.saveWatch({ ...record, titleId: input.id });
 			}
 
-			return checkTopicNow(
-				{ topicUrl: record.topicUrl },
-				{
-					loadWatch: deps.loadWatchByTopicUrl,
-					saveWatch: deps.saveWatch,
-					fetchTorrentBytes: deps.fetchTorrentBytes,
-					fetchTopicMeta: deps.fetchTopicMeta,
-					replaceInQb: deps.replaceInQb,
-					now: deps.now,
-				},
-			);
+			// Same queue path as the nightly worker: create a manual WatchTask
+			// and drain it through processWatchTask instead of calling
+			// checkTopicNow ad hoc.
+			const task = await deps.enqueueWatchTask({
+				topicUrl: record.topicUrl,
+				titleId: input.id,
+				trigger: "manual",
+			});
+			const outcome = await deps.processWatchTask(task.id);
+
+			if (outcome.outcome === "processed") {
+				return outcome.checkResult;
+			}
+
+			return {
+				status: "failed",
+				checkedAt: deps.now(),
+				message: "Не удалось выполнить проверку задачи",
+			};
 		},
 	};
 
