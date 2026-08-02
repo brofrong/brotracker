@@ -1,5 +1,6 @@
 "use client";
 
+import { Avatar } from "@astryxdesign/core/Avatar";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
@@ -11,9 +12,13 @@ import {
 	InputGroup,
 	InputGroupText,
 } from "@astryxdesign/core/InputGroup";
+import {
+	MetadataList,
+	MetadataListItem,
+} from "@astryxdesign/core/MetadataList";
 import { Section } from "@astryxdesign/core/Section";
 import { Spinner } from "@astryxdesign/core/Spinner";
-import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,12 +28,13 @@ import { useEffect, useState, type FormEvent } from "react";
 import z from "zod";
 import { ThemeToggle } from "#/components/ThemeToggle";
 import { TmdbAttribution } from "#/components/tmdb-attribution";
+import { authClient, signOutAndRedirect } from "#/utils/auth-client";
 import { env } from "#/utils/env";
 import { trpc } from "#/utils/trpc";
 
 const settingsSearchSchema = z.object({
 	section: z
-		.enum(["appearance", "rutracker", "qbittorrent", "tmdb"])
+		.enum(["account", "appearance", "rutracker", "qbittorrent", "tmdb"])
 		.optional(),
 });
 
@@ -58,6 +64,7 @@ function SettingsPage() {
 							Версия сборки {env.VITE_APP_VERSION}
 						</Text>
 					</VStack>
+					<AccountSettings highlighted={section === "account"} />
 					<AppearanceSettings highlighted={section === "appearance"} />
 					<RutrackerSettingsForm highlighted={section === "rutracker"} />
 					<QbittorrentSettingsForm
@@ -67,6 +74,87 @@ function SettingsPage() {
 				</VStack>
 			</Center>
 		</Section>
+	);
+}
+
+function AccountSettings({ highlighted }: { highlighted: boolean }) {
+	const sessionQuery = useQuery({
+		queryKey: ["auth", "session"],
+		queryFn: async () => {
+			const result = await authClient.getSession();
+			if (result.error) {
+				throw new Error(result.error.message || "Не удалось загрузить сессию");
+			}
+			return result.data;
+		},
+	});
+
+	if (sessionQuery.isLoading) {
+		return <Spinner label="Загрузка" />;
+	}
+
+	if (sessionQuery.isError) {
+		return (
+			<Banner
+				status="error"
+				title="Не удалось загрузить данные пользователя"
+				description={sessionQuery.error.message}
+			/>
+		);
+	}
+
+	const user = sessionQuery.data?.user;
+
+	return (
+		<form id="settings-account">
+			<Card
+				elevation={highlighted ? "med" : "low"}
+				padding={5}
+				width="100%"
+			>
+				<VStack gap={4} width="100%">
+					<VStack gap={1}>
+						<Heading level={2}>Аккаунт</Heading>
+						<Text type="supporting">
+							Информация о текущем пользователе и выход из системы
+						</Text>
+					</VStack>
+
+					{user ? (
+						<HStack gap={3} vAlign="center" width="100%">
+							<Avatar
+								name={user.name}
+								src={user.image ?? undefined}
+								size="lg"
+							/>
+							<StackItem size="fill">
+								<MetadataList>
+									<MetadataListItem label="Имя">
+										{user.name}
+									</MetadataListItem>
+									<MetadataListItem label="Email">
+										{user.email}
+									</MetadataListItem>
+								</MetadataList>
+							</StackItem>
+						</HStack>
+					) : (
+						<Banner
+							status="warning"
+							title="Пользователь не найден"
+							description="Сессия активна, но данные пользователя недоступны"
+						/>
+					)}
+
+					<Button
+						label="Выйти"
+						variant="secondary"
+						type="button"
+						clickAction={() => signOutAndRedirect()}
+					/>
+				</VStack>
+			</Card>
+		</form>
 	);
 }
 

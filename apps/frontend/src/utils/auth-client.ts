@@ -23,3 +23,8 @@ export async function redirectToAuthentikSignIn(): Promise<void> {
 		callbackURL: window.location.href,
 	});
 }
+
+export async function signOutAndRedirect(): Promise<void> {
+	await authClient.signOut();
+	await redirectToAuthentikSignIn();
+}

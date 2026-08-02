@@ -1,7 +1,6 @@
 "use client";
 
 import { useAppShellMobile } from "@astryxdesign/core/AppShell";
-import { IconButton } from "@astryxdesign/core/IconButton";
 import { MobileNav } from "@astryxdesign/core/MobileNav";
 import {
 	SideNav,
@@ -13,13 +12,12 @@ import {
 } from "@astryxdesign/core/SideNav";
 import { HStack } from "@astryxdesign/core/Stack";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Download, Home, LogOut, Search, Settings } from "lucide-react";
+import { Download, Home, Search, Settings } from "lucide-react";
 import {
 	type ComponentPropsWithoutRef,
 	forwardRef,
 	useState,
 } from "react";
-import { authClient, redirectToAuthentikSignIn } from "#/utils/auth-client";
 
 const SIDE_NAV_COLLAPSED_KEY = "side-nav-collapsed";
 
@@ -43,12 +41,7 @@ const SideNavLink = forwardRef<HTMLAnchorElement, SideNavLinkProps>(
 	},
 );
 
-async function handleSignOut() {
-	await authClient.signOut();
-	await redirectToAuthentikSignIn();
-}
-
-export function NavItems({ includeSignOut = false }: { includeSignOut?: boolean }) {
+export function NavItems() {
 	const pathname = useRouterState({
 		select: (state) => state.location.pathname,
 	});
@@ -83,15 +76,6 @@ export function NavItems({ includeSignOut = false }: { includeSignOut?: boolean 
 				icon={Settings}
 				isSelected={pathname === "/settings"}
 			/>
-			{includeSignOut ? (
-				<SideNavItem
-					label="Выйти"
-					icon={LogOut}
-					onClick={() => {
-						void handleSignOut();
-					}}
-				/>
-			) : null}
 		</SideNavSection>
 	);
 }
@@ -100,7 +84,7 @@ export function MobileNavigation() {
 	return (
 		<MobileNav header="BroTracker" width={MOBILE_NAV_FULL_WIDTH} label="Навигация">
 			<SideNavRenderContext value="drawer">
-				<NavItems includeSignOut />
+				<NavItems />
 			</SideNavRenderContext>
 		</MobileNav>
 	);
@@ -128,17 +112,6 @@ export default function Navigation() {
 						<SideNavCollapseButton />
 					</HStack>
 				)
-			}
-			footer={
-				<IconButton
-					variant="ghost"
-					label="Выйти"
-					tooltip="Выйти"
-					icon={<LogOut />}
-					onClick={() => {
-						void handleSignOut();
-					}}
-				/>
 			}
 			collapsible={{
 				hasButton: false,
