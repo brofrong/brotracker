@@ -1,5 +1,5 @@
 import { TRPCClientError } from "@trpc/client";
-import { redirectToAuthentikSignIn } from "./auth-client";
+import { redirectToSignIn } from "./auth-client";
 
 export type UnauthorizedRedirectDeps = {
 	isBrowser: () => boolean;
@@ -50,5 +50,5 @@ export function createUnauthorizedRedirectPolicy(
 
 export const unauthorizedRedirect = createUnauthorizedRedirectPolicy({
 	isBrowser: () => typeof window !== "undefined",
-	redirect: redirectToAuthentikSignIn,
+	redirect: redirectToSignIn,
 });
