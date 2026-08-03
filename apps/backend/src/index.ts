@@ -6,7 +6,8 @@ import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import { toNodeHandler } from "better-auth/node";
 import { WebSocketServer } from "ws";
 import { appRouter } from "./appRouter";
-import { auth, initAuth } from "./auth/auth";
+import { auth, countUsers, getAuthMode, initAuth } from "./auth/auth";
+import { buildAuthModeResponse } from "./auth/auth-mode";
 import { runMigrations } from "./db/migrate";
 import { startTransferSnapshotScheduler } from "./home/transfer-history";
 import { tryServeMedia } from "./http/media-proxy";
@@ -75,6 +76,25 @@ const server = createHTTPServer({
 			return;
 		}
 		const url = req.url ?? "";
+		const pathname = url.split("?")[0] ?? "";
+		if (pathname === "/api/auth/mode" && req.method === "GET") {
+			void (async () => {
+				try {
+					const body = buildAuthModeResponse({
+						mode: getAuthMode(),
+						userCount: await countUsers(),
+					});
+					res.setHeader("Content-Type", "application/json");
+					res.statusCode = 200;
+					res.end(JSON.stringify(body));
+				} catch (err) {
+					logger.error({ err }, "Failed to resolve auth mode");
+					res.statusCode = 500;
+					res.end(JSON.stringify({ error: "Internal Server Error" }));
+				}
+			})();
+			return;
+		}
 		if (url.startsWith("/api/auth")) {
 			return authHandler(req, res);
 		}

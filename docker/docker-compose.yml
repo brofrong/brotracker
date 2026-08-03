@@ -16,8 +16,9 @@ services:
       S3_BUCKET: ${S3_BUCKET:-brotracker}
       BYPARR_URL: http://byparr:8191/v1
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3101}
-      AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID:-change-me}
-      AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET:-change-me}
+      # Omit AUTHENTIK_* for local email/password (bootstrap registration).
+      AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID:-}
+      AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET:-}
       AUTHENTIK_DISCOVERY_URL: ${AUTHENTIK_DISCOVERY_URL:-http://host.docker.internal:9080/application/o/brotracker/.well-known/openid-configuration}
     networks:
       - brotracker

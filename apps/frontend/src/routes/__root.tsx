@@ -1,7 +1,14 @@
+"use client";
+
 import { AppShell } from "@astryxdesign/core/AppShell";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+	createRootRoute,
+	HeadContent,
+	Scripts,
+	useRouterState,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { AuthGate } from "#/components/AuthGate";
 import Navigation, {
@@ -56,6 +63,27 @@ export const Route = createRootRoute({
 
 const themeFlashScript = `(function(){try{var s=localStorage.getItem("theme");if(s==="light"||s==="dark"){document.documentElement.setAttribute("data-theme",s)}else{document.documentElement.removeAttribute("data-theme")}}catch(e){}})();`;
 
+function AppFrame({ children }: { children: React.ReactNode }) {
+	const pathname = useRouterState({
+		select: (state) => state.location.pathname,
+	});
+
+	if (pathname === "/login") {
+		return children;
+	}
+
+	return (
+		<AppShell
+			height="fill"
+			contentPadding={0}
+			sideNav={<Navigation />}
+			mobileNav={{ content: <MobileNavigation /> }}
+		>
+			{children}
+		</AppShell>
+	);
+}
+
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
@@ -67,14 +95,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<ThemeProvider>
 					<QueryClientProvider client={queryClient}>
 						<AuthGate>
-							<AppShell
-								height="fill"
-								contentPadding={0}
-								sideNav={<Navigation />}
-								mobileNav={{ content: <MobileNavigation /> }}
-							>
-								{children}
-							</AppShell>
+							<AppFrame>{children}</AppFrame>
 						</AuthGate>
 					</QueryClientProvider>
 				</ThemeProvider>
