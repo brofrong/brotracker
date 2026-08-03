@@ -1,5 +1,7 @@
 # Local Authentik OIDC setup
 
+Authentik is **optional**. Without `AUTHENTIK_CLIENT_ID`, the app uses local email/password auth (first visitor registers; then login-only). Follow this guide when you want Authentik as the IdP.
+
 BroTracker uses [Authentik](https://goauthentik.io/) as the OIDC IdP in dev. Services live in `docker-compose.dev.yml` (`authentik-postgres`, `authentik-server`, `authentik-worker`). HTTP is on **9080** (MinIO uses 9000).
 
 ## 1. Authentik secret
