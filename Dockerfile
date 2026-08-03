@@ -59,7 +59,7 @@ FROM oven/bun:1.2-alpine AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3101
+ENV PORT=8080
 ENV STATIC_DIR=/app/apps/backend/public
 
 COPY package.json bun.lock turbo.json ./
@@ -75,6 +75,6 @@ COPY packages/rutracker-ts/src packages/rutracker-ts/src
 COPY --from=frontend-build /app/apps/frontend/dist/client ./apps/backend/public
 
 WORKDIR /app/apps/backend
-EXPOSE 3101
+EXPOSE 8080
 
 CMD ["bun", "run", "src/index.ts"]
