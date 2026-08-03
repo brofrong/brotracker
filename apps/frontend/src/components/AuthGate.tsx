@@ -5,6 +5,7 @@ import { Heading } from "@astryxdesign/core/Heading";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
+import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "#/utils/auth-client";
 import { unauthorizedRedirect } from "#/utils/unauthorized-redirect";
@@ -25,9 +26,16 @@ const STATUS_COPY = {
 } as const;
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
+	const pathname = useRouterState({
+		select: (state) => state.location.pathname,
+	});
 	const [status, setStatus] = useState<GateStatus>("checking");
 
 	useEffect(() => {
+		if (pathname === "/login") {
+			return;
+		}
+
 		let cancelled = false;
 
 		async function ensureSession() {
@@ -54,7 +62,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 		return () => {
 			cancelled = true;
 		};
-	}, []);
+	}, [pathname]);
+
+	if (pathname === "/login") {
+		return children;
+	}
 
 	if (status === "authenticated") {
 		return children;
