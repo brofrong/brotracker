@@ -42,7 +42,7 @@ function unusedTrackerDeps(): Pick<
 }
 
 describe("catalog.search", () => {
-	test("local search returns hits with cover URLs from image keys", async () => {
+	test("returns local hits with cover URLs from image keys", async () => {
 		const catalog = createCatalog({
 			normalizeTitle: (q) => q.trim().toLowerCase(),
 			searchLocal: async () => [
@@ -53,10 +53,9 @@ describe("catalog.search", () => {
 			...unusedTrackerDeps(),
 		});
 
-		const response = await catalog.search("Example", {}, { source: "local" });
+		const response = await catalog.search("Example");
 
 		expect(response).toEqual({
-			source: "local",
 			totalResults: 2,
 			results: [
 				{
@@ -70,15 +69,17 @@ describe("catalog.search", () => {
 			],
 		});
 	});
+});
 
-	test("tracker search enriches cover URLs and enqueues only missing covers", async () => {
+describe("catalog.searchRefresh", () => {
+	test("upserts, enriches covers, enqueues only missing covers", async () => {
 		const upserted: string[] = [];
 		const enqueued: string[][] = [];
 
 		const catalog = createCatalog({
 			normalizeTitle: (q) => q,
 			searchLocal: async () => {
-				throw new Error("local search should not run for tracker source");
+				throw new Error("local search should not run for refresh");
 			},
 			searchTracker: async () => ({
 				status: "ok",
@@ -102,12 +103,11 @@ describe("catalog.search", () => {
 			},
 		});
 
-		const response = await catalog.search("film", {}, { source: "tracker" });
+		const response = await catalog.searchRefresh("film", {});
 
 		expect(upserted).toEqual(["10", "11"]);
 		expect(enqueued).toEqual([["11"]]);
 		expect(response).toEqual({
-			source: "tracker",
 			totalResults: 2,
 			results: [
 				{
@@ -122,7 +122,7 @@ describe("catalog.search", () => {
 		});
 	});
 
-	test("tracker search returns empty results when tracker is unavailable", async () => {
+	test("throws when tracker is unavailable", async () => {
 		const catalog = createCatalog({
 			normalizeTitle: (q) => q,
 			searchLocal: async () => [],
@@ -137,12 +137,29 @@ describe("catalog.search", () => {
 			},
 		});
 
-		await expect(
-			catalog.search("film", {}, { source: "tracker" }),
-		).resolves.toEqual({
-			source: "tracker",
-			results: [],
-			totalResults: null,
+		await expect(catalog.searchRefresh("film", {})).rejects.toThrow(
+			/tracker/i,
+		);
+	});
+
+	test("throws when tracker returns error", async () => {
+		const catalog = createCatalog({
+			normalizeTitle: (q) => q,
+			searchLocal: async () => [],
+			searchTracker: async () => ({
+				status: "error",
+				error: new Error("timeout"),
+			}),
+			upsertFromTracker: async () => {
+				throw new Error("should not upsert on error");
+			},
+			loadImageKeys: async () => new Map(),
+			publicUrl: (key) => key,
+			enqueueCoverFetch: () => {
+				throw new Error("should not enqueue on error");
+			},
 		});
+
+		await expect(catalog.searchRefresh("film", {})).rejects.toThrow("timeout");
 	});
 });
