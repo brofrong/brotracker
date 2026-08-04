@@ -30,8 +30,8 @@ import {
 } from "#/components/search/download-torrent-dialog";
 import { SearchBar } from "#/components/search/search-bar";
 import {
-	SearchCardTags,
 	type SearchCardItem,
+	SearchCardTags,
 	SearchResultsCards,
 } from "#/components/search/search-results-cards";
 import { formatBytes } from "#/utils/format";
@@ -176,9 +176,7 @@ function SearchPage() {
 	const hasActiveSearch = Boolean(search?.trim());
 	const toast = useToast();
 	const [viewMode, setViewMode] = useState<ViewMode>("table");
-	const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
-		{},
-	);
+	const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
 	const [downloadItem, setDownloadItem] = useState<DownloadTorrentItem | null>(
 		null,
 	);
@@ -258,8 +256,7 @@ function SearchPage() {
 		toast({
 			type: "error",
 			body:
-				refreshQuery.error.message ||
-				"Не удалось получить данные с трекера",
+				refreshQuery.error.message || "Не удалось получить данные с трекера",
 			uniqueID: "search-refresh-error",
 			collisionBehavior: "ignore",
 		});
@@ -268,19 +265,17 @@ function SearchPage() {
 	const displayData = refreshQuery.isSuccess
 		? refreshQuery.data
 		: localQuery.data;
-	const rows = useMemo(
-		() => toSearchRows(displayData?.results),
-		[displayData],
-	);
+	const rows = useMemo(() => toSearchRows(displayData?.results), [displayData]);
 
 	const showInitialSpinner =
-		hasActiveSearch && localQuery.isLoading && !localQuery.data;
+		hasActiveSearch &&
+		localQuery.isLoading &&
+		!localQuery.data &&
+		!refreshQuery.isSuccess;
 	const showTrackerIndicator =
 		hasActiveSearch && refreshQuery.isFetching && !showInitialSpinner;
 	const showLocalError =
-		localQuery.isError &&
-		!refreshQuery.isSuccess &&
-		!refreshQuery.isFetching;
+		localQuery.isError && !refreshQuery.isSuccess && !refreshQuery.isFetching;
 	const showEmpty =
 		hasActiveSearch &&
 		rows.length === 0 &&
@@ -308,10 +303,7 @@ function SearchPage() {
 			</Section>
 			{showTrackerIndicator ? (
 				<HStack gap={2} paddingInline={4} vAlign="center">
-					<Spinner
-						aria-label="Ищем на трекере"
-						size="sm"
-					/>
+					<Spinner aria-label="Ищем на трекере" size="sm" />
 					<Text type="supporting">Ищем на трекере…</Text>
 				</HStack>
 			) : null}
