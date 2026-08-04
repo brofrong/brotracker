@@ -5,8 +5,12 @@ import { Avatar } from "@astryxdesign/core/Avatar";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
+import { Carousel } from "@astryxdesign/core/Carousel";
+import { Center } from "@astryxdesign/core/Center";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Heading } from "@astryxdesign/core/Heading";
+import { Icon } from "@astryxdesign/core/Icon";
+import { Lightbox } from "@astryxdesign/core/Lightbox";
 import { List, ListItem } from "@astryxdesign/core/List";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { Section } from "@astryxdesign/core/Section";
@@ -15,13 +19,17 @@ import {
 	SegmentedControlItem,
 } from "@astryxdesign/core/SegmentedControl";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
-import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Text } from "@astryxdesign/core/Text";
 import { useToast } from "@astryxdesign/core/Toast";
+import { MediaTheme } from "@astryxdesign/core/theme";
 import { detectMediaType } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/media-type";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { ImageOff, Star } from "lucide-react";
+import { type SVGProps, useState } from "react";
+import { TitleCard } from "#/components/title-card";
 import { TmdbAttribution } from "#/components/tmdb-attribution";
 import {
 	formatBytes,
@@ -35,23 +43,76 @@ export const Route = createFileRoute("/title/$id")({
 	component: TitlePage,
 });
 
-function ratingLabel(
-	rating: {
-		source: string;
-		status: string;
-		value?: number;
-		voteCount?: number | null;
-	},
-): string {
-	if (rating.status === "ok" && rating.value != null) {
-		const votes =
-			rating.voteCount != null ? ` · ${rating.voteCount.toLocaleString("ru-RU")}` : "";
-		return `${rating.value.toFixed(1)}${votes}`;
+function formatRuntime(minutes: number): string {
+	if (minutes < 60) {
+		return `${minutes} мин`;
 	}
-	if (rating.status === "unconfigured") {
-		return "не настроено";
+	const hours = Math.floor(minutes / 60);
+	const rest = minutes % 60;
+	return rest === 0 ? `${hours} ч` : `${hours} ч ${rest} мин`;
+}
+
+function votesLabel(count: number): string {
+	const mod10 = count % 10;
+	const mod100 = count % 100;
+	if (mod10 === 1 && mod100 !== 11) {
+		return "оценка";
 	}
-	return "нет данных";
+	if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+		return "оценки";
+	}
+	return "оценок";
+}
+
+function ratingColor(value: number): "success" | "warning" | "error" {
+	if (value >= 7) {
+		return "success";
+	}
+	if (value >= 5) {
+		return "warning";
+	}
+	return "error";
+}
+
+function ratingTextClass(value: number): string {
+	if (value >= 7) {
+		return "text-green-vivid";
+	}
+	if (value >= 5) {
+		return "text-yellow-vivid";
+	}
+	return "text-red-vivid";
+}
+
+const RATING_SOURCE_LABELS: Record<string, string> = {
+	tmdb: "TMDB",
+	imdb: "IMDb",
+	kinopoisk: "Кинопоиск",
+};
+
+const CREW_JOB_LABELS: Record<string, string> = {
+	Director: "Режиссёр",
+	Screenplay: "Сценарий",
+	Writer: "Сценарий",
+	Creator: "Создатель",
+	"Executive Producer": "Продюсер",
+};
+
+function groupCrewByJob(
+	crew: Array<{ name: string; job: string }>,
+): Array<{ job: string; names: string[] }> {
+	const groups = new Map<string, string[]>();
+	for (const member of crew) {
+		const job = CREW_JOB_LABELS[member.job] ?? member.job;
+		const names = groups.get(job) ?? [];
+		names.push(member.name);
+		groups.set(job, names);
+	}
+	return [...groups.entries()].map(([job, names]) => ({ job, names }));
+}
+
+function FilledStarIcon(props: SVGProps<SVGSVGElement>) {
+	return <Star {...props} fill="currentColor" />;
 }
 
 function badgeVariant(
@@ -405,16 +466,213 @@ function TitleWatchPanel({
 			) : null}
 			{watch?.lastCheckedAt ? (
 				<Text type="supporting">
-					Проверено:{" "}
-					{new Date(watch.lastCheckedAt).toLocaleString("ru-RU")}
+					Проверено: {new Date(watch.lastCheckedAt).toLocaleString("ru-RU")}
 				</Text>
 			) : null}
 		</VStack>
 	);
 }
 
+type TitleHeroProps = {
+	titleId: string;
+	titleName: string;
+	facet: "films" | "tv" | null;
+	meta: {
+		poster: string | null;
+		backdrop: string | null;
+		overview: string | null;
+		year: number | null;
+		genres: string[];
+		runtimeMinutes: number | null;
+		status: string | null;
+		seasons: number | null;
+	};
+	crewGroups: Array<{ job: string; names: string[] }>;
+	ratings: Array<{
+		source: string;
+		status: string;
+		value?: number;
+		voteCount?: number | null;
+	}>;
+	hasRatings: boolean;
+	watch: TitleWatchView | null;
+	onOpenPoster: () => void;
+};
+
+function TitleHero({
+	titleId,
+	titleName,
+	facet,
+	meta,
+	crewGroups,
+	ratings,
+	hasRatings,
+	watch,
+	onOpenPoster,
+}: TitleHeroProps) {
+	const content = (
+		<HStack gap={6} vAlign="center" wrap="nowrap" width="100%">
+			<VStack className="shrink-0" width={208}>
+				{meta.poster ? (
+					<VStack
+						aria-label={`Открыть постер: ${titleName}`}
+						as="button"
+						className="cursor-pointer"
+						onClick={onOpenPoster}
+						type="button"
+						width="100%"
+					>
+						<AspectRatio
+							className="overflow-hidden rounded-lg shadow-md"
+							fit="cover"
+							ratio={2 / 3}
+						>
+							<img alt={titleName} src={meta.poster} />
+						</AspectRatio>
+					</VStack>
+				) : (
+					<AspectRatio
+						className="overflow-hidden rounded-lg shadow-md"
+						fit="cover"
+						ratio={2 / 3}
+					>
+						<Center height="100%" width="100%">
+							<ImageOff aria-hidden size={48} strokeWidth={1.5} />
+						</Center>
+					</AspectRatio>
+				)}
+			</VStack>
+
+			<StackItem className="min-w-0" size="fill">
+				<VStack gap={3} width="100%">
+					<VStack gap={1}>
+						<Heading level={1}>{titleName}</Heading>
+						<HStack gap={2} vAlign="center" wrap="wrap">
+							{facet ? (
+								<Badge
+									label={facet === "films" ? "Фильм" : "Сериал"}
+									variant="teal"
+								/>
+							) : null}
+							{meta.year != null ? (
+								<Text type="supporting">{meta.year}</Text>
+							) : null}
+							{facet === "films" && meta.runtimeMinutes != null ? (
+								<Text type="supporting">
+									{formatRuntime(meta.runtimeMinutes)}
+								</Text>
+							) : null}
+							{facet === "tv" && meta.status ? (
+								<Text type="supporting">{meta.status}</Text>
+							) : null}
+							{facet === "tv" && meta.seasons != null ? (
+								<Text type="supporting">Сезонов: {meta.seasons}</Text>
+							) : null}
+							{facet === "tv" ? (
+								<HStack gap={1} vAlign="center">
+									<StatusDot
+										label={episodeProgressLabel(watch)}
+										variant={episodeProgressVariant(watch)}
+									/>
+									<Text type="supporting">{episodeProgressLabel(watch)}</Text>
+								</HStack>
+							) : null}
+						</HStack>
+						{meta.genres.length > 0 ? (
+							<Text type="supporting">{meta.genres.join(" · ")}</Text>
+						) : null}
+					</VStack>
+
+					{meta.overview ? <Text type="body">{meta.overview}</Text> : null}
+
+					{crewGroups.length > 0 ? (
+						<VStack gap={1}>
+							<Text type="supporting">Съёмочная группа</Text>
+							{crewGroups.map((group) => (
+								<Text key={group.job} type="body">
+									<Text color="secondary" type="inherit">
+										{group.job}:{" "}
+									</Text>
+									{group.names.join(", ")}
+								</Text>
+							))}
+						</VStack>
+					) : null}
+
+					{hasRatings ? (
+						<HStack gap={5} wrap="wrap">
+							{ratings.map((rating) =>
+								rating.status === "ok" && rating.value != null ? (
+									<VStack gap={0.5} key={rating.source}>
+										<HStack gap={1} vAlign="center">
+											<Icon
+												color={ratingColor(rating.value)}
+												icon={FilledStarIcon}
+												size="sm"
+											/>
+											<Text
+												className={ratingTextClass(rating.value)}
+												hasTabularNumbers
+												size="2xl"
+												weight="bold"
+											>
+												{rating.value.toFixed(1)}
+											</Text>
+										</HStack>
+										<Text type="supporting">
+											{RATING_SOURCE_LABELS[rating.source] ?? rating.source}
+											{rating.voteCount != null
+												? ` · ${rating.voteCount.toLocaleString("ru-RU")} ${votesLabel(rating.voteCount)}`
+												: ""}
+										</Text>
+									</VStack>
+								) : null,
+							)}
+						</HStack>
+					) : null}
+
+					{facet === "tv" ? (
+						<TitleWatchPanel titleId={titleId} watch={watch} />
+					) : null}
+				</VStack>
+			</StackItem>
+		</HStack>
+	);
+
+	return (
+		<VStack
+			className="relative isolate overflow-hidden rounded-lg"
+			padding={4}
+			width="100%"
+		>
+			{meta.backdrop ? (
+				<>
+					<img
+						alt=""
+						aria-hidden
+						className="pointer-events-none absolute inset-0 -z-10 size-full scale-125 object-cover blur-3xl"
+						src={meta.backdrop}
+					/>
+					<VStack
+						aria-hidden
+						className="pointer-events-none absolute inset-0 -z-10 bg-overlay opacity-70"
+					/>
+					<MediaTheme mode="dark">
+						<VStack className="relative z-10" width="100%">
+							{content}
+						</VStack>
+					</MediaTheme>
+				</>
+			) : (
+				content
+			)}
+		</VStack>
+	);
+}
+
 function TitlePage() {
 	const { id } = Route.useParams();
+	const [isPosterOpen, setIsPosterOpen] = useState(false);
 	const { data, isLoading, isError, error } = useQuery({
 		...trpc.title.get.queryOptions({ id }),
 		refetchOnWindowFocus: false,
@@ -423,14 +681,25 @@ function TitlePage() {
 	if (isLoading) {
 		return (
 			<Section padding={4} variant="transparent">
-				<HStack gap={4} wrap="wrap">
-					<Skeleton height={240} width={160} />
-					<VStack gap={2} width="100%">
-						<Skeleton height={28} width={280} />
-						<Skeleton height={16} width={200} />
-						<Skeleton height={80} width="100%" />
-					</VStack>
-				</HStack>
+				<VStack gap={5} width="100%">
+					<HStack gap={6} wrap="wrap">
+						<Skeleton height={312} width={208} />
+						<VStack gap={2} width="100%">
+							<Skeleton height={32} width={280} />
+							<Skeleton height={20} width={240} />
+							<Skeleton height={16} width={180} />
+							<Skeleton height={80} width="100%" />
+							<Skeleton height={24} width={200} />
+						</VStack>
+					</HStack>
+					<HStack gap={3}>
+						<Skeleton height={96} width={96} />
+						<Skeleton height={96} width={96} />
+						<Skeleton height={96} width={96} />
+						<Skeleton height={96} width={96} />
+						<Skeleton height={96} width={96} />
+					</HStack>
+				</VStack>
 			</Section>
 		);
 	}
@@ -449,6 +718,8 @@ function TitlePage() {
 
 	const { meta, metaStatus, facet, ratings, watch } = data;
 	const titleName = meta.name ?? "Без названия";
+	const crewGroups = groupCrewByJob(meta.crew);
+	const hasRatings = ratings.some((rating) => rating.status === "ok");
 
 	return (
 		<Section padding={4} variant="transparent">
@@ -471,119 +742,82 @@ function TitlePage() {
 					/>
 				) : null}
 
-				<HStack gap={5} vAlign="start" wrap="wrap" width="100%">
-					{meta.poster ? (
-						<VStack width={160}>
-							<AspectRatio fit="cover" ratio={2 / 3}>
-								<img alt={titleName} src={meta.poster} />
-							</AspectRatio>
-						</VStack>
-					) : (
-						<Skeleton height={240} width={160} />
-					)}
+				<TitleHero
+					crewGroups={crewGroups}
+					facet={facet}
+					hasRatings={hasRatings}
+					meta={meta}
+					onOpenPoster={() => setIsPosterOpen(true)}
+					ratings={ratings}
+					titleId={id}
+					titleName={titleName}
+					watch={watch}
+				/>
 
-					<VStack gap={3} width="100%">
-						<VStack gap={1}>
-							<Heading level={1}>{titleName}</Heading>
-							<HStack gap={2} wrap="wrap">
-								{facet ? (
-									<Badge
-										label={facet === "films" ? "Фильм" : "Сериал"}
-										variant="teal"
-									/>
-								) : null}
-								{meta.year != null ? (
-									<Text type="supporting">{meta.year}</Text>
-								) : null}
-								{facet === "films" && meta.runtimeMinutes != null ? (
-									<Text type="supporting">{meta.runtimeMinutes} мин</Text>
-								) : null}
-								{facet === "tv" && meta.status ? (
-									<Text type="supporting">{meta.status}</Text>
-								) : null}
-								{facet === "tv" && meta.seasons != null ? (
-									<Text type="supporting">
-										Сезонов: {meta.seasons}
-									</Text>
-								) : null}
-								{facet === "tv" ? (
-									<HStack gap={1} vAlign="center">
-										<StatusDot
-											label={episodeProgressLabel(watch)}
-											variant={episodeProgressVariant(watch)}
-										/>
-										<Text type="supporting">{episodeProgressLabel(watch)}</Text>
-									</HStack>
-								) : null}
-							</HStack>
-						</VStack>
-
-						{meta.genres.length > 0 ? (
-							<Text type="supporting">{meta.genres.join(" · ")}</Text>
-						) : null}
-
-						{meta.overview ? (
-							<Text type="body">{meta.overview}</Text>
-						) : null}
-
-						{meta.crew.length > 0 ? (
-							<VStack gap={1}>
-								<Text type="supporting">Съёмочная группа</Text>
-								<Text type="body">
-									{meta.crew
-										.map((member) => `${member.name} (${member.job})`)
-										.join(", ")}
-								</Text>
-							</VStack>
-						) : null}
-
-						<HStack gap={4} wrap="wrap">
-							{ratings.map((rating) => (
-								<VStack gap={1} key={rating.source}>
-									<Text type="supporting">
-										{rating.source === "tmdb"
-											? "TMDB"
-											: rating.source === "imdb"
-												? "IMDb"
-												: "Кинопоиск"}
-									</Text>
-									<Text hasTabularNumbers type="body">
-										{ratingLabel(rating)}
-									</Text>
-								</VStack>
-							))}
-						</HStack>
-
-						{facet === "tv" ? (
-							<TitleWatchPanel titleId={id} watch={watch} />
-						) : null}
-					</VStack>
-				</HStack>
+				{meta.poster ? (
+					<Lightbox
+						hasZoom
+						isOpen={isPosterOpen}
+						media={{ alt: titleName, src: meta.poster }}
+						onOpenChange={setIsPosterOpen}
+					/>
+				) : null}
 
 				{meta.cast.length > 0 ? (
-					<List
-						density="compact"
-						hasDividers
-						header={<Heading level={2}>Актёры</Heading>}
-					>
-						{meta.cast.map((member) => (
-							<ListItem
-								key={`${member.name}-${member.character ?? ""}`}
-								description={member.character ?? undefined}
-								label={member.name}
-								startContent={
+					<VStack gap={2} width="100%">
+						<Heading level={2}>Актёры</Heading>
+						<Carousel aria-label="Актёры" gap={3} hasSnap>
+							{meta.cast.map((member) => (
+								<VStack
+									gap={2}
+									hAlign="center"
+									key={`${member.name}-${member.character ?? ""}`}
+									width={128}
+								>
 									<Avatar
 										name={member.name}
-										size="md"
+										size={96}
 										src={member.profileUrl ?? undefined}
+										tooltip={false}
 									/>
-								}
-							/>
-						))}
-					</List>
+									<VStack gap={0.5} hAlign="center" width="100%">
+										<Text
+											display="block"
+											justify="center"
+											maxLines={2}
+											weight="medium"
+										>
+											{member.name}
+										</Text>
+										{member.character ? (
+											<Text
+												display="block"
+												justify="center"
+												maxLines={2}
+												type="supporting"
+											>
+												{member.character}
+											</Text>
+										) : null}
+									</VStack>
+								</VStack>
+							))}
+						</Carousel>
+					</VStack>
 				) : null}
 
 				<TitleTorrentsList facet={facet} titleId={id} />
+
+				{meta.similar.length > 0 ? (
+					<VStack gap={3} width="100%">
+						<Heading level={2}>Похожие</Heading>
+						<Carousel aria-label="Похожие тайтлы" gap={3} hasSnap>
+							{meta.similar.map((item) => (
+								<TitleCard key={item.titleId} item={item} />
+							))}
+						</Carousel>
+					</VStack>
+				) : null}
 
 				{metaStatus === "ok" || metaStatus === "degraded" ? (
 					<TmdbAttribution compact />

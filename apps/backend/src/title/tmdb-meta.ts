@@ -1,6 +1,13 @@
-import type { TitleCastMember, TitleCrewMember, TitleKind } from "./title.types";
+import type {
+	TitleCastMember,
+	TitleCrewMember,
+	TitleKind,
+	TitleSimilarItem,
+	TmdbMeta,
+} from "./title.types";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
+const BACKDROP_BASE = "https://image.tmdb.org/t/p/w1280";
 const PROFILE_BASE = "https://image.tmdb.org/t/p/w185";
 
 const KEY_CREW_JOBS = new Set([
@@ -29,6 +36,7 @@ type TmdbMovieDetails = {
 	release_date?: string;
 	overview?: string;
 	poster_path?: string | null;
+	backdrop_path?: string | null;
 	genres?: TmdbGenre[];
 	runtime?: number | null;
 	vote_average?: number;
@@ -40,11 +48,26 @@ type TmdbTvDetails = {
 	first_air_date?: string;
 	overview?: string;
 	poster_path?: string | null;
+	backdrop_path?: string | null;
 	genres?: TmdbGenre[];
 	status?: string | null;
 	number_of_seasons?: number | null;
 	vote_average?: number;
 	vote_count?: number;
+};
+
+type TmdbSimilarEntry = {
+	id?: number;
+	title?: string;
+	name?: string;
+	release_date?: string;
+	first_air_date?: string;
+	poster_path?: string | null;
+	vote_average?: number;
+};
+
+type TmdbSimilarResponse = {
+	results?: TmdbSimilarEntry[];
 };
 
 type TmdbCredits = {
@@ -57,6 +80,15 @@ export function posterUrl(posterPath: string | null | undefined): string | null 
 		return null;
 	}
 	return `${POSTER_BASE}${posterPath}`;
+}
+
+export function backdropUrl(
+	backdropPath: string | null | undefined,
+): string | null {
+	if (!backdropPath) {
+		return null;
+	}
+	return `${BACKDROP_BASE}${backdropPath}`;
 }
 
 export function profileUrl(
@@ -116,27 +148,50 @@ export function parseKeyCrew(
 	return result;
 }
 
+export function parseSimilar(
+	response: TmdbSimilarResponse | null,
+	kind: TitleKind,
+): TitleSimilarItem[] {
+	if (!response?.results) {
+		return [];
+	}
+
+	const items: TitleSimilarItem[] = [];
+	for (const entry of response.results) {
+		if (entry.id == null) {
+			continue;
+		}
+		const name = kind === "films" ? entry.title : entry.name;
+		if (!name) {
+			continue;
+		}
+		const date = kind === "films" ? entry.release_date : entry.first_air_date;
+		items.push({
+			titleId: `tmdb:${kind}:${entry.id}`,
+			kind,
+			name,
+			poster: posterUrl(entry.poster_path),
+			year: yearFromDate(date),
+			rating:
+				entry.vote_average != null && entry.vote_average > 0
+					? entry.vote_average
+					: null,
+		});
+		if (items.length >= 12) {
+			break;
+		}
+	}
+	return items;
+}
+
 export function parseMovieDetails(
 	details: TmdbMovieDetails,
 	credits: TmdbCredits,
-): {
-	kind: TitleKind;
-	poster: string | null;
-	name: string;
-	year: number | null;
-	overview: string | null;
-	genres: string[];
-	cast: TitleCastMember[];
-	crew: TitleCrewMember[];
-	runtimeMinutes: number | null;
-	status: string | null;
-	seasons: number | null;
-	voteAverage: number | null;
-	voteCount: number | null;
-} {
+): Omit<TmdbMeta, "similar"> {
 	return {
 		kind: "films",
 		poster: posterUrl(details.poster_path),
+		backdrop: backdropUrl(details.backdrop_path),
 		name: details.title ?? "",
 		year: yearFromDate(details.release_date),
 		overview: details.overview ?? null,
@@ -161,24 +216,11 @@ export function parseMovieDetails(
 export function parseTvDetails(
 	details: TmdbTvDetails,
 	credits: TmdbCredits,
-): {
-	kind: TitleKind;
-	poster: string | null;
-	name: string;
-	year: number | null;
-	overview: string | null;
-	genres: string[];
-	cast: TitleCastMember[];
-	crew: TitleCrewMember[];
-	runtimeMinutes: number | null;
-	status: string | null;
-	seasons: number | null;
-	voteAverage: number | null;
-	voteCount: number | null;
-} {
+): Omit<TmdbMeta, "similar"> {
 	return {
 		kind: "tv",
 		poster: posterUrl(details.poster_path),
+		backdrop: backdropUrl(details.backdrop_path),
 		name: details.name ?? "",
 		year: yearFromDate(details.first_air_date),
 		overview: details.overview ?? null,
@@ -202,4 +244,4 @@ export function parseTvDetails(
 	};
 }
 
-export type { TmdbMovieDetails, TmdbTvDetails, TmdbCredits };
+export type { TmdbMovieDetails, TmdbTvDetails, TmdbCredits, TmdbSimilarResponse };

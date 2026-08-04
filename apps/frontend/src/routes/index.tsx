@@ -1,29 +1,24 @@
 "use client";
 
-import { AspectRatio } from "@astryxdesign/core/AspectRatio";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Carousel } from "@astryxdesign/core/Carousel";
-import { Center } from "@astryxdesign/core/Center";
-import { ClickableCard } from "@astryxdesign/core/ClickableCard";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Heading } from "@astryxdesign/core/Heading";
-import { Icon } from "@astryxdesign/core/Icon";
 import { List, ListItem } from "@astryxdesign/core/List";
 import { Section } from "@astryxdesign/core/Section";
 import { Spinner } from "@astryxdesign/core/Spinner";
-import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Text } from "@astryxdesign/core/Text";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { ImageOff, Star } from "lucide-react";
-import type { SVGProps } from "react";
 import z from "zod";
 import {
 	type TransferStatsData,
 	TransferStatsWidget,
 } from "#/components/home/transfer-stats-widget";
+import { TitleCard, type TitleCardData } from "#/components/title-card";
 import { TmdbAttribution } from "#/components/tmdb-attribution";
 import { trpc } from "#/utils/trpc";
 
@@ -47,15 +42,6 @@ export const Route = createFileRoute("/")({
 		}
 	},
 });
-
-type DiscoverCardData = {
-	titleId: string;
-	name: string;
-	poster: string | null;
-	year: number | null;
-	kind: "films" | "tv";
-	rating: number | null;
-};
 
 type TitleWatchEventKind =
 	| "torrent-updated"
@@ -133,80 +119,13 @@ function TitleWatchFeedWidget({ items }: { items: TitleWatchFeedItemData[] }) {
 	);
 }
 
-const DISCOVER_KIND_LABELS: Record<DiscoverCardData["kind"], string> = {
-	films: "Фильм",
-	tv: "Сериал",
-};
-
-function formatRating(rating: number): string {
-	return rating.toLocaleString("ru-RU", {
-		minimumFractionDigits: 1,
-		maximumFractionDigits: 1,
-	});
-}
-
-function FilledStarIcon(props: SVGProps<SVGSVGElement>) {
-	return <Star {...props} fill="currentColor" />;
-}
-
-function DiscoverCard({ item }: { item: DiscoverCardData }) {
-	const navigate = useNavigate();
-
-	return (
-		<ClickableCard
-			className="w-44 shrink-0 overflow-hidden"
-			elevation="low"
-			label={item.name}
-			padding={0}
-			onClick={() =>
-				void navigate({
-					to: "/title/$id",
-					params: { id: item.titleId },
-				})
-			}
-		>
-			<VStack gap={0} width="100%">
-				<AspectRatio fit="cover" ratio={2 / 3}>
-					{item.poster ? (
-						<img alt={item.name} src={item.poster} />
-					) : (
-						<Center height="100%" width="100%">
-							<ImageOff aria-hidden size={32} strokeWidth={1.5} />
-						</Center>
-					)}
-				</AspectRatio>
-				<VStack gap={1} padding={2} width="100%">
-					<Text display="block" maxLines={2} type="body">
-						{item.name}
-					</Text>
-					<HStack gap={1} vAlign="center">
-						{item.rating != null ? (
-							<>
-								<Icon color="warning" icon={FilledStarIcon} size="xsm" />
-								<Text hasTabularNumbers type="supporting">
-									{formatRating(item.rating)}
-								</Text>
-								<Text type="supporting">·</Text>
-							</>
-						) : null}
-						<Text type="supporting">
-							{DISCOVER_KIND_LABELS[item.kind]}
-							{item.year != null ? ` · ${item.year}` : ""}
-						</Text>
-					</HStack>
-				</VStack>
-			</VStack>
-		</ClickableCard>
-	);
-}
-
-function DiscoverWidget({ items }: { items: DiscoverCardData[] }) {
+function DiscoverWidget({ items }: { items: TitleCardData[] }) {
 	return (
 		<VStack gap={3} width="100%">
 			<Heading level={2}>Discover</Heading>
 			<Carousel aria-label="Тренды дня" gap={3} hasSnap>
 				{items.map((item) => (
-					<DiscoverCard key={item.titleId} item={item} />
+					<TitleCard key={item.titleId} item={item} />
 				))}
 			</Carousel>
 			<TmdbAttribution compact />
@@ -216,7 +135,7 @@ function DiscoverWidget({ items }: { items: DiscoverCardData[] }) {
 
 type ComposeWidgetDataUnion =
 	| TransferStatsData
-	| { items: DiscoverCardData[] }
+	| { items: TitleCardData[] }
 	| { items: TitleWatchFeedItemData[] };
 
 function isTransferStats(
@@ -227,7 +146,7 @@ function isTransferStats(
 
 function isDiscoverFeed(
 	data: ComposeWidgetDataUnion,
-): data is { items: DiscoverCardData[] } {
+): data is { items: TitleCardData[] } {
 	return (
 		"items" in data && (data.items.length === 0 || "poster" in data.items[0])
 	);
