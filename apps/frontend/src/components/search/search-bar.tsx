@@ -5,19 +5,15 @@ import { HStack, StackItem } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { useEffect, useState, type FormEvent } from "react";
 
-export type SearchSource = "local" | "tracker";
-
 type SearchBarProps = {
 	initialQuery?: string;
 	isSearching?: boolean;
-	searchingSource?: SearchSource;
-	onSearch: (query: string, source: SearchSource) => void;
+	onSearch: (query: string) => void;
 };
 
 export const SearchBar = ({
 	initialQuery = "",
 	isSearching = false,
-	searchingSource,
 	onSearch,
 }: SearchBarProps) => {
 	const [query, setQuery] = useState(initialQuery);
@@ -27,15 +23,15 @@ export const SearchBar = ({
 		setQuery(initialQuery);
 	}, [initialQuery]);
 
-	const submit = (source: SearchSource) => {
+	const submit = () => {
 		const trimmed = query.trim();
 		if (!trimmed) return;
-		onSearch(trimmed, source);
+		onSearch(trimmed);
 	};
 
 	const onSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		submit("local");
+		submit();
 	};
 
 	return (
@@ -54,19 +50,11 @@ export const SearchBar = ({
 					/>
 				</StackItem>
 				<Button
-					label="Локально"
+					label="Найти"
 					type="submit"
-					variant="secondary"
-					isDisabled={!canSearch || isSearching}
-					isLoading={isSearching && searchingSource === "local"}
-				/>
-				<Button
-					label="Трекер"
-					type="button"
 					variant="primary"
-					isDisabled={!canSearch || isSearching}
-					isLoading={isSearching && searchingSource === "tracker"}
-					onClick={() => submit("tracker")}
+					isDisabled={!canSearch}
+					isLoading={isSearching}
 				/>
 			</HStack>
 		</form>
