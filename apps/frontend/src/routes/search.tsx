@@ -22,7 +22,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { useToast } from "@astryxdesign/core/Toast";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import z from "zod";
 import {
 	DownloadTorrentDialog,
@@ -175,7 +175,6 @@ function SearchPage() {
 	const { search } = Route.useSearch();
 	const hasActiveSearch = Boolean(search?.trim());
 	const toast = useToast();
-	const lastToastedErrorRef = useRef<unknown>(null);
 	const [viewMode, setViewMode] = useState<ViewMode>("table");
 	const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
 		{},
@@ -255,18 +254,14 @@ function SearchPage() {
 	});
 
 	useEffect(() => {
-		if (!refreshQuery.isError) {
-			lastToastedErrorRef.current = null;
-			return;
-		}
-		const errorIdentity = refreshQuery.error;
-		if (lastToastedErrorRef.current === errorIdentity) return;
-		lastToastedErrorRef.current = errorIdentity;
+		if (!refreshQuery.isError) return;
 		toast({
 			type: "error",
 			body:
 				refreshQuery.error.message ||
 				"Не удалось получить данные с трекера",
+			uniqueID: "search-refresh-error",
+			collisionBehavior: "ignore",
 		});
 	}, [refreshQuery.isError, refreshQuery.error, toast]);
 
@@ -280,8 +275,12 @@ function SearchPage() {
 
 	const showInitialSpinner =
 		hasActiveSearch && localQuery.isLoading && !localQuery.data;
-	const showTrackerIndicator = hasActiveSearch && refreshQuery.isFetching;
-	const showLocalError = localQuery.isError && !refreshQuery.isSuccess;
+	const showTrackerIndicator =
+		hasActiveSearch && refreshQuery.isFetching && !showInitialSpinner;
+	const showLocalError =
+		localQuery.isError &&
+		!refreshQuery.isSuccess &&
+		!refreshQuery.isFetching;
 	const showEmpty =
 		hasActiveSearch &&
 		rows.length === 0 &&
@@ -289,7 +288,10 @@ function SearchPage() {
 		!refreshQuery.isFetching &&
 		!showLocalError;
 	const showResultsChrome =
-		hasActiveSearch && !showInitialSpinner && !showLocalError;
+		hasActiveSearch &&
+		!showInitialSpinner &&
+		!showLocalError &&
+		rows.length > 0;
 
 	const handleSearch = (query: string) => {
 		void navigate({ search: { search: query }, replace: true });
@@ -300,9 +302,7 @@ function SearchPage() {
 			<Section padding={4} variant="transparent">
 				<SearchBar
 					initialQuery={search ?? ""}
-					isSearching={
-						hasActiveSearch && localQuery.isLoading && !localQuery.data
-					}
+					isSearching={showInitialSpinner}
 					onSearch={handleSearch}
 				/>
 			</Section>
@@ -331,17 +331,15 @@ function SearchPage() {
 					wrap="wrap"
 				>
 					<Badge label={`Найдено: ${rows.length}`} variant="teal" />
-					{rows.length > 0 ? (
-						<SegmentedControl
-							label="Вид результатов"
-							onChange={(value) => setViewMode(value as ViewMode)}
-							size="sm"
-							value={viewMode}
-						>
-							<SegmentedControlItem label="Таблица" value="table" />
-							<SegmentedControlItem label="Карточки" value="cards" />
-						</SegmentedControl>
-					) : null}
+					<SegmentedControl
+						label="Вид результатов"
+						onChange={(value) => setViewMode(value as ViewMode)}
+						size="sm"
+						value={viewMode}
+					>
+						<SegmentedControlItem label="Таблица" value="table" />
+						<SegmentedControlItem label="Карточки" value="cards" />
+					</SegmentedControl>
 				</HStack>
 			) : null}
 			{showEmpty ? <EmptyState title="Ничего не найдено" /> : null}
