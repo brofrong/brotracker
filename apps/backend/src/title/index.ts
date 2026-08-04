@@ -46,9 +46,11 @@ import {
 import { appendWatchEvent } from "./title-watch-event.repository";
 import {
 	parseMovieDetails,
+	parseSimilar,
 	parseTvDetails,
 	type TmdbCredits,
 	type TmdbMovieDetails,
+	type TmdbSimilarResponse,
 	type TmdbTvDetails,
 } from "./tmdb-meta";
 import { extractTopicId, torrentFileUrlFromId } from "./topic-tag";
@@ -110,25 +112,30 @@ export function createFetchTmdbMeta(
 		const segment = kind === "films" ? "movie" : "tv";
 		const detailsPath = `/${segment}/${tmdbId}`;
 		const creditsPath = `/${segment}/${tmdbId}/credits`;
+		const similarPath = `/${segment}/${tmdbId}/similar`;
 
-		const [details, credits] = await Promise.all([
+		const [details, credits, similar] = await Promise.all([
 			fetchTmdbJson<TmdbMovieDetails | TmdbTvDetails>(
 				detailsPath,
 				credentials,
 			),
 			fetchTmdbJson<TmdbCredits>(creditsPath, credentials),
+			fetchTmdbJson<TmdbSimilarResponse>(similarPath, credentials),
 		]);
 
 		if (!details || !credits) {
 			return { status: "error" };
 		}
 
-		const meta =
+		const parsed =
 			kind === "films"
 				? parseMovieDetails(details as TmdbMovieDetails, credits)
 				: parseTvDetails(details as TmdbTvDetails, credits);
 
-		return { status: "ok", meta };
+		return {
+			status: "ok",
+			meta: { ...parsed, similar: parseSimilar(similar, kind) },
+		};
 	};
 }
 

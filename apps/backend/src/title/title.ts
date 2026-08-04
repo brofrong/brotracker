@@ -85,12 +85,14 @@ function parseTitleId(id: string): ParsedTitleId | null {
 
 const emptyMeta = (): TitleMeta => ({
 	poster: null,
+	backdrop: null,
 	name: null,
 	year: null,
 	overview: null,
 	genres: [],
 	cast: [],
 	crew: [],
+	similar: [],
 	runtimeMinutes: null,
 	status: null,
 	seasons: null,
@@ -99,12 +101,14 @@ const emptyMeta = (): TitleMeta => ({
 function metaFromTmdb(meta: TmdbMeta): TitleMeta {
 	return {
 		poster: meta.poster,
+		backdrop: meta.backdrop,
 		name: meta.name,
 		year: meta.year,
 		overview: meta.overview,
 		genres: meta.genres,
 		cast: meta.cast,
 		crew: meta.crew,
+		similar: meta.similar,
 		runtimeMinutes: meta.runtimeMinutes,
 		status: meta.status,
 		seasons: meta.seasons,

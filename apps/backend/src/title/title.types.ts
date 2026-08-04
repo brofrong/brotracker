@@ -29,14 +29,25 @@ export type TitleCrewMember = {
 	job: string;
 };
 
+export type TitleSimilarItem = {
+	titleId: string;
+	kind: TitleKind;
+	name: string;
+	poster: string | null;
+	year: number | null;
+	rating: number | null;
+};
+
 export type TitleMeta = {
 	poster: string | null;
+	backdrop: string | null;
 	name: string | null;
 	year: number | null;
 	overview: string | null;
 	genres: string[];
 	cast: TitleCastMember[];
 	crew: TitleCrewMember[];
+	similar: TitleSimilarItem[];
 	/** films facet */
 	runtimeMinutes: number | null;
 	/** tv facet */
@@ -99,12 +110,14 @@ export type Title = {
 export type TmdbMeta = {
 	kind: TitleKind;
 	poster: string | null;
+	backdrop: string | null;
 	name: string;
 	year: number | null;
 	overview: string | null;
 	genres: string[];
 	cast: TitleCastMember[];
 	crew: TitleCrewMember[];
+	similar: TitleSimilarItem[];
 	runtimeMinutes: number | null;
 	status: string | null;
 	seasons: number | null;
