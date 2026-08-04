@@ -251,6 +251,12 @@ function SearchPage() {
 		retry: false,
 	});
 
+	const recentQuery = useQuery({
+		...trpc.torrent.recent.queryOptions({ limit: 50 }),
+		enabled: !hasActiveSearch,
+		refetchOnWindowFocus: false,
+	});
+
 	useEffect(() => {
 		if (!refreshQuery.isError) return;
 		toast({
@@ -262,35 +268,43 @@ function SearchPage() {
 		});
 	}, [refreshQuery.isError, refreshQuery.error, toast]);
 
-	const displayData = refreshQuery.isSuccess
-		? refreshQuery.data
-		: localQuery.data;
+	const displayData = hasActiveSearch
+		? refreshQuery.isSuccess
+			? refreshQuery.data
+			: localQuery.data
+		: recentQuery.data;
 	const rows = useMemo(() => toSearchRows(displayData?.results), [displayData]);
 
-	const showInitialSpinner =
-		hasActiveSearch &&
-		localQuery.isLoading &&
-		!localQuery.data &&
-		!refreshQuery.isSuccess;
+	const showInitialSpinner = hasActiveSearch
+		? localQuery.isLoading && !localQuery.data && !refreshQuery.isSuccess
+		: recentQuery.isLoading && !recentQuery.data;
 	const showTrackerIndicator =
 		hasActiveSearch && refreshQuery.isFetching && !showInitialSpinner;
-	const showLocalError =
-		localQuery.isError && !refreshQuery.isSuccess && !refreshQuery.isFetching;
+	const showLocalError = hasActiveSearch
+		? localQuery.isError && !refreshQuery.isSuccess && !refreshQuery.isFetching
+		: recentQuery.isError;
 	const showEmpty =
-		hasActiveSearch &&
-		rows.length === 0 &&
-		!localQuery.isLoading &&
-		!refreshQuery.isFetching &&
-		!showLocalError;
-	const showResultsChrome =
-		hasActiveSearch &&
 		!showInitialSpinner &&
 		!showLocalError &&
-		rows.length > 0;
+		rows.length === 0 &&
+		(hasActiveSearch ? !refreshQuery.isFetching : recentQuery.isSuccess);
+	const showResultsChrome =
+		!showInitialSpinner && !showLocalError && rows.length > 0;
 
 	const handleSearch = (query: string) => {
 		void navigate({ search: { search: query }, replace: true });
 	};
+
+	const errorMessage = hasActiveSearch
+		? localQuery.error?.message
+		: recentQuery.error?.message;
+	const badgeLabel = hasActiveSearch
+		? `Найдено: ${rows.length}`
+		: "Последние релизы";
+	const emptyTitle = hasActiveSearch ? "Ничего не найдено" : "Пока ничего нет";
+	const emptyDescription = hasActiveSearch
+		? undefined
+		: "Сделайте поиск — результаты попадут в кэш";
 
 	return (
 		<VStack gap={3} width="100%">
@@ -309,10 +323,7 @@ function SearchPage() {
 			) : null}
 			{showInitialSpinner ? <Spinner label="Загрузка" /> : null}
 			{showLocalError ? (
-				<EmptyState
-					description={localQuery.error.message}
-					title="Ошибка поиска"
-				/>
+				<EmptyState description={errorMessage} title="Ошибка поиска" />
 			) : null}
 			{showResultsChrome ? (
 				<HStack
@@ -322,7 +333,10 @@ function SearchPage() {
 					vAlign="center"
 					wrap="wrap"
 				>
-					<Badge label={`Найдено: ${rows.length}`} variant="teal" />
+					<Badge
+						label={badgeLabel}
+						variant={hasActiveSearch ? "teal" : "blue"}
+					/>
 					<SegmentedControl
 						label="Вид результатов"
 						onChange={(value) => setViewMode(value as ViewMode)}
@@ -334,8 +348,10 @@ function SearchPage() {
 					</SegmentedControl>
 				</HStack>
 			) : null}
-			{showEmpty ? <EmptyState title="Ничего не найдено" /> : null}
-			{showResultsChrome && rows.length > 0 && viewMode === "table" ? (
+			{showEmpty ? (
+				<EmptyState description={emptyDescription} title={emptyTitle} />
+			) : null}
+			{showResultsChrome && viewMode === "table" ? (
 				<Table
 					columns={columns}
 					data={rows}
@@ -347,7 +363,7 @@ function SearchPage() {
 					textOverflow="wrap"
 				/>
 			) : null}
-			{showResultsChrome && rows.length > 0 && viewMode === "cards" ? (
+			{showResultsChrome && viewMode === "cards" ? (
 				<Section padding={4} paddingBlock={0} variant="transparent">
 					<SearchResultsCards items={rows} onDownload={openDownload} />
 				</Section>

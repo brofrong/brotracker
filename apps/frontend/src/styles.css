@@ -7,3 +7,9 @@
 @import "@astryxdesign/theme-stone/theme.css";
 @import "@astryxdesign/core/tailwind-theme.css";
 @import "tailwindcss/utilities.css" layer(utilities);
+
+/* Keep side nav above title-page fixed backdrop (content paints after nav in DOM). */
+.astryx-app-shell-sidenav {
+	position: relative;
+	z-index: 20;
+}

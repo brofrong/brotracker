@@ -2,6 +2,7 @@ import type {
 	SearchOptions,
 	SearchResult,
 } from "@brotracker/rutracker-ts/tracker/tracker-interface";
+import { compareTorrentQuality } from "../torrent/quality-score";
 
 export type CatalogSearchResult = SearchResult & {
 	imageUrl: string | null;
@@ -28,6 +29,7 @@ export type TrackerSearchOutcome =
 export type CatalogDeps = {
 	normalizeTitle: (query: string) => string;
 	searchLocal: (queryNorm: string) => Promise<LocalCatalogHit[]>;
+	listRecent: (limit: number) => Promise<LocalCatalogHit[]>;
 	searchTracker: (
 		query: string,
 		options: Partial<SearchOptions>,
@@ -69,6 +71,14 @@ export function createCatalog(deps: CatalogDeps) {
 			};
 		},
 
+		listRecent: async (limit: number): Promise<CatalogSearchResponse> => {
+			const recent = await deps.listRecent(limit);
+			return {
+				results: mapLocal(recent),
+				totalResults: recent.length,
+			};
+		},
+
 		searchRefresh: async (
 			query: string,
 			options: Partial<SearchOptions>,
@@ -86,13 +96,15 @@ export function createCatalog(deps: CatalogDeps) {
 			const ids = outcome.results.map((r) => r.torrentId);
 			const imageKeyById = await deps.loadImageKeys(ids);
 
-			const results: CatalogSearchResult[] = outcome.results.map((r) => {
-				const key = imageKeyById.get(r.torrentId) ?? null;
-				return {
-					...r,
-					imageUrl: key ? deps.publicUrl(key) : null,
-				};
-			});
+			const results: CatalogSearchResult[] = outcome.results
+				.map((r) => {
+					const key = imageKeyById.get(r.torrentId) ?? null;
+					return {
+						...r,
+						imageUrl: key ? deps.publicUrl(key) : null,
+					};
+				})
+				.sort(compareTorrentQuality);
 
 			const missingCoverIds = ids.filter((id) => !imageKeyById.get(id));
 			deps.enqueueCoverFetch(missingCoverIds);
