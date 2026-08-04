@@ -18,21 +18,20 @@ import {
 	type TableColumn,
 	useTableColumnResize,
 } from "@astryxdesign/core/Table";
+import { Text } from "@astryxdesign/core/Text";
+import { useToast } from "@astryxdesign/core/Toast";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import z from "zod";
 import {
 	DownloadTorrentDialog,
 	type DownloadTorrentItem,
 } from "#/components/search/download-torrent-dialog";
+import { SearchBar } from "#/components/search/search-bar";
 import {
-	SearchBar,
-	type SearchSource,
-} from "#/components/search/search-bar";
-import {
-	SearchCardTags,
 	type SearchCardItem,
+	SearchCardTags,
 	SearchResultsCards,
 } from "#/components/search/search-results-cards";
 import { formatBytes } from "#/utils/format";
@@ -40,7 +39,6 @@ import { trpc } from "#/utils/trpc";
 
 const searchSchema = z.object({
 	search: z.string().optional(),
-	source: z.enum(["local", "tracker"]).optional(),
 });
 
 export const Route = createFileRoute("/search")({
@@ -174,12 +172,11 @@ function toSearchRows(data: TorrentResult[] | undefined): SearchRow[] {
 
 function SearchPage() {
 	const navigate = useNavigate({ from: "/search" });
-	const { search, source } = Route.useSearch();
-	const hasActiveSearch = Boolean(search?.trim() && source);
+	const { search } = Route.useSearch();
+	const hasActiveSearch = Boolean(search?.trim());
+	const toast = useToast();
 	const [viewMode, setViewMode] = useState<ViewMode>("table");
-	const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
-		{},
-	);
+	const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
 	const [downloadItem, setDownloadItem] = useState<DownloadTorrentItem | null>(
 		null,
 	);
@@ -238,29 +235,61 @@ function SearchPage() {
 		},
 	});
 
-	const { data, isLoading, isError, error, isFetching } = useQuery({
-		...trpc.torrent.search.queryOptions({
-			search,
-			source,
-			options: {
-				sortType: "leechesCount",
-				sortOrder: "descending",
-			},
-		}),
+	const localQuery = useQuery({
+		...trpc.torrent.search.queryOptions({ search }),
 		enabled: hasActiveSearch,
 		refetchOnWindowFocus: false,
 	});
 
-	const results = data?.results ?? [];
-	const resultSource = data?.source;
-	const rows = useMemo(() => toSearchRows(results), [results]);
-	const isSearching = hasActiveSearch && (isLoading || isFetching);
+	const refreshQuery = useQuery({
+		...trpc.torrent.searchRefresh.queryOptions({
+			search,
+			options: { sortType: "leechesCount", sortOrder: "descending" },
+		}),
+		enabled: hasActiveSearch,
+		refetchOnWindowFocus: false,
+		retry: false,
+	});
 
-	const handleSearch = (query: string, nextSource: SearchSource) => {
-		void navigate({
-			search: { search: query, source: nextSource },
-			replace: true,
+	useEffect(() => {
+		if (!refreshQuery.isError) return;
+		toast({
+			type: "error",
+			body:
+				refreshQuery.error.message || "Не удалось получить данные с трекера",
+			uniqueID: "search-refresh-error",
+			collisionBehavior: "ignore",
 		});
+	}, [refreshQuery.isError, refreshQuery.error, toast]);
+
+	const displayData = refreshQuery.isSuccess
+		? refreshQuery.data
+		: localQuery.data;
+	const rows = useMemo(() => toSearchRows(displayData?.results), [displayData]);
+
+	const showInitialSpinner =
+		hasActiveSearch &&
+		localQuery.isLoading &&
+		!localQuery.data &&
+		!refreshQuery.isSuccess;
+	const showTrackerIndicator =
+		hasActiveSearch && refreshQuery.isFetching && !showInitialSpinner;
+	const showLocalError =
+		localQuery.isError && !refreshQuery.isSuccess && !refreshQuery.isFetching;
+	const showEmpty =
+		hasActiveSearch &&
+		rows.length === 0 &&
+		!localQuery.isLoading &&
+		!refreshQuery.isFetching &&
+		!showLocalError;
+	const showResultsChrome =
+		hasActiveSearch &&
+		!showInitialSpinner &&
+		!showLocalError &&
+		rows.length > 0;
+
+	const handleSearch = (query: string) => {
+		void navigate({ search: { search: query }, replace: true });
 	};
 
 	return (
@@ -268,16 +297,24 @@ function SearchPage() {
 			<Section padding={4} variant="transparent">
 				<SearchBar
 					initialQuery={search ?? ""}
-					isSearching={isSearching}
-					searchingSource={source}
+					isSearching={showInitialSpinner}
 					onSearch={handleSearch}
 				/>
 			</Section>
-			{isSearching ? <Spinner label="Загрузка" /> : null}
-			{isError ? (
-				<EmptyState description={error.message} title="Ошибка поиска" />
+			{showTrackerIndicator ? (
+				<HStack gap={2} paddingInline={4} vAlign="center">
+					<Spinner aria-label="Ищем на трекере" size="sm" />
+					<Text type="supporting">Ищем на трекере…</Text>
+				</HStack>
 			) : null}
-			{!isSearching && !isError && hasActiveSearch ? (
+			{showInitialSpinner ? <Spinner label="Загрузка" /> : null}
+			{showLocalError ? (
+				<EmptyState
+					description={localQuery.error.message}
+					title="Ошибка поиска"
+				/>
+			) : null}
+			{showResultsChrome ? (
 				<HStack
 					gap={3}
 					hAlign="between"
@@ -285,31 +322,20 @@ function SearchPage() {
 					vAlign="center"
 					wrap="wrap"
 				>
-					<Badge
-						label={
-							resultSource === "local"
-								? "Найдено локально"
-								: "С трекера"
-						}
-						variant={resultSource === "local" ? "teal" : "blue"}
-					/>
-					{rows.length > 0 ? (
-						<SegmentedControl
-							label="Вид результатов"
-							onChange={(value) => setViewMode(value as ViewMode)}
-							size="sm"
-							value={viewMode}
-						>
-							<SegmentedControlItem label="Таблица" value="table" />
-							<SegmentedControlItem label="Карточки" value="cards" />
-						</SegmentedControl>
-					) : null}
+					<Badge label={`Найдено: ${rows.length}`} variant="teal" />
+					<SegmentedControl
+						label="Вид результатов"
+						onChange={(value) => setViewMode(value as ViewMode)}
+						size="sm"
+						value={viewMode}
+					>
+						<SegmentedControlItem label="Таблица" value="table" />
+						<SegmentedControlItem label="Карточки" value="cards" />
+					</SegmentedControl>
 				</HStack>
 			) : null}
-			{!isSearching && !isError && hasActiveSearch && rows.length === 0 ? (
-				<EmptyState title="Ничего не найдено" />
-			) : null}
-			{!isSearching && !isError && rows.length > 0 && viewMode === "table" ? (
+			{showEmpty ? <EmptyState title="Ничего не найдено" /> : null}
+			{showResultsChrome && rows.length > 0 && viewMode === "table" ? (
 				<Table
 					columns={columns}
 					data={rows}
@@ -321,7 +347,7 @@ function SearchPage() {
 					textOverflow="wrap"
 				/>
 			) : null}
-			{!isSearching && !isError && rows.length > 0 && viewMode === "cards" ? (
+			{showResultsChrome && rows.length > 0 && viewMode === "cards" ? (
 				<Section padding={4} paddingBlock={0} variant="transparent">
 					<SearchResultsCards items={rows} onDownload={openDownload} />
 				</Section>

@@ -8,7 +8,6 @@ export type CatalogSearchResult = SearchResult & {
 };
 
 export type CatalogSearchResponse = {
-	source: "local" | "tracker";
 	results: CatalogSearchResult[];
 	totalResults: number | null;
 };
@@ -42,40 +41,44 @@ export type CatalogDeps = {
 };
 
 export function createCatalog(deps: CatalogDeps) {
+	const mapLocal = (local: LocalCatalogHit[]): CatalogSearchResult[] =>
+		local.map((hit) => ({
+			torrentId: hit.torrentId,
+			title: hit.title,
+			category: hit.category,
+			forumId: hit.forumId,
+			authorId: hit.authorId,
+			size: hit.size,
+			seeds: hit.seeds,
+			leeches: hit.leeches,
+			downloads: hit.downloads,
+			date: hit.date,
+			torrentFileUrl: hit.torrentFileUrl,
+			topicUrl: hit.topicUrl,
+			hdr: hit.hdr,
+			resolution: hit.resolution,
+			imageUrl: hit.imageKey ? deps.publicUrl(hit.imageKey) : null,
+		}));
+
 	return {
-		search: async (
+		search: async (query: string): Promise<CatalogSearchResponse> => {
+			const local = await deps.searchLocal(deps.normalizeTitle(query));
+			return {
+				results: mapLocal(local),
+				totalResults: local.length,
+			};
+		},
+
+		searchRefresh: async (
 			query: string,
 			options: Partial<SearchOptions>,
-			{ source }: { source: "local" | "tracker" },
 		): Promise<CatalogSearchResponse> => {
-			if (source === "local") {
-				const local = await deps.searchLocal(deps.normalizeTitle(query));
-				return {
-					source: "local",
-					results: local.map((hit) => ({
-						torrentId: hit.torrentId,
-						title: hit.title,
-						category: hit.category,
-						forumId: hit.forumId,
-						authorId: hit.authorId,
-						size: hit.size,
-						seeds: hit.seeds,
-						leeches: hit.leeches,
-						downloads: hit.downloads,
-						date: hit.date,
-						torrentFileUrl: hit.torrentFileUrl,
-						topicUrl: hit.topicUrl,
-						hdr: hit.hdr,
-						resolution: hit.resolution,
-						imageUrl: hit.imageKey ? deps.publicUrl(hit.imageKey) : null,
-					})),
-					totalResults: local.length,
-				};
-			}
-
 			const outcome = await deps.searchTracker(query, options);
-			if (outcome.status !== "ok") {
-				return { source: "tracker", results: [], totalResults: null };
+			if (outcome.status === "unavailable") {
+				throw new Error("Tracker unavailable");
+			}
+			if (outcome.status === "error") {
+				throw outcome.error;
 			}
 
 			await deps.upsertFromTracker(outcome.results);
@@ -95,7 +98,6 @@ export function createCatalog(deps: CatalogDeps) {
 			deps.enqueueCoverFetch(missingCoverIds);
 
 			return {
-				source: "tracker",
 				results,
 				totalResults: outcome.totalResults,
 			};
