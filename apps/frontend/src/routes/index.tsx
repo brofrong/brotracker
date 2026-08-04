@@ -42,7 +42,6 @@ export const Route = createFileRoute("/")({
 				to: "/search",
 				search: {
 					search: search.search,
-					source: search.source,
 				},
 			});
 		}
