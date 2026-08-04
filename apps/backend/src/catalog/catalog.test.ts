@@ -22,12 +22,16 @@ const hit = (overrides: Partial<SearchResult> = {}): SearchResult => ({
 
 function unusedTrackerDeps(): Pick<
 	CatalogDeps,
+	| "listRecent"
 	| "searchTracker"
 	| "upsertFromTracker"
 	| "loadImageKeys"
 	| "enqueueCoverFetch"
 > {
 	return {
+		listRecent: async () => {
+			throw new Error("listRecent should not run for this test");
+		},
 		searchTracker: async () => {
 			throw new Error("tracker should not be used for local search");
 		},
@@ -40,6 +44,42 @@ function unusedTrackerDeps(): Pick<
 		},
 	};
 }
+
+describe("catalog.listRecent", () => {
+	test("returns recent hits with cover URLs ordered as provided by listRecent", async () => {
+		const catalog = createCatalog({
+			normalizeTitle: (q) => q,
+			searchLocal: async () => {
+				throw new Error("searchLocal should not run for listRecent");
+			},
+			publicUrl: (key) => `https://app.test/media/${key}`,
+			...unusedTrackerDeps(),
+			listRecent: async (limit) => {
+				expect(limit).toBe(50);
+				return [
+					{ ...hit({ torrentId: "new" }), imageKey: "covers/new.webp" },
+					{ ...hit({ torrentId: "old", title: "Older" }), imageKey: null },
+				];
+			},
+		});
+
+		const response = await catalog.listRecent(50);
+
+		expect(response).toEqual({
+			totalResults: 2,
+			results: [
+				{
+					...hit({ torrentId: "new" }),
+					imageUrl: "https://app.test/media/covers/new.webp",
+				},
+				{
+					...hit({ torrentId: "old", title: "Older" }),
+					imageUrl: null,
+				},
+			],
+		});
+	});
+});
 
 describe("catalog.search", () => {
 	test("returns local hits with cover URLs from image keys", async () => {
@@ -80,6 +120,9 @@ describe("catalog.searchRefresh", () => {
 			normalizeTitle: (q) => q,
 			searchLocal: async () => {
 				throw new Error("local search should not run for refresh");
+			},
+			listRecent: async () => {
+				throw new Error("listRecent should not run for refresh");
 			},
 			searchTracker: async () => ({
 				status: "ok",
@@ -122,10 +165,58 @@ describe("catalog.searchRefresh", () => {
 		});
 	});
 
+	test("sorts tracker results by quality so 4K HDR beats 1080p SDR", async () => {
+		const catalog = createCatalog({
+			normalizeTitle: (q) => q,
+			searchLocal: async () => {
+				throw new Error("local search should not run for refresh");
+			},
+			listRecent: async () => {
+				throw new Error("listRecent should not run for refresh");
+			},
+			searchTracker: async () => ({
+				status: "ok",
+				totalResults: 2,
+				// Tracker order: higher leeches / 1080p first (as RuTracker returns)
+				results: [
+					hit({
+						torrentId: "1080",
+						title: "Andor 1080p",
+						resolution: "1080p",
+						hdr: "SDR",
+						seeds: 168,
+						leeches: 33,
+						size: 28.4e9,
+					}),
+					hit({
+						torrentId: "4k",
+						title: "Andor 4K HDR",
+						resolution: "4K",
+						hdr: "HDR",
+						seeds: 95,
+						leeches: 16,
+						size: 61.4e9,
+					}),
+				],
+			}),
+			upsertFromTracker: async () => {},
+			loadImageKeys: async () => new Map(),
+			publicUrl: (key) => key,
+			enqueueCoverFetch: () => {},
+		});
+
+		const response = await catalog.searchRefresh("Andor", {});
+
+		expect(response.results.map((r) => r.torrentId)).toEqual(["4k", "1080"]);
+	});
+
 	test("throws when tracker is unavailable", async () => {
 		const catalog = createCatalog({
 			normalizeTitle: (q) => q,
 			searchLocal: async () => [],
+			listRecent: async () => {
+				throw new Error("listRecent should not run for refresh");
+			},
 			searchTracker: async () => ({ status: "unavailable" }),
 			upsertFromTracker: async () => {
 				throw new Error("should not upsert when unavailable");
@@ -146,6 +237,9 @@ describe("catalog.searchRefresh", () => {
 		const catalog = createCatalog({
 			normalizeTitle: (q) => q,
 			searchLocal: async () => [],
+			listRecent: async () => {
+				throw new Error("listRecent should not run for refresh");
+			},
 			searchTracker: async () => ({
 				status: "error",
 				error: new Error("timeout"),

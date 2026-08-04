@@ -5,7 +5,7 @@ import { publicUrl } from "../storage/s3";
 import { logger } from "../utils/logger";
 import { enqueueCoverFetch } from "../torrent/cover.queue";
 import { normalizeTitle } from "../torrent/title-norm";
-import { searchLocal, upsertFromTracker } from "../torrent/torrent.repository";
+import { searchLocal, listRecent, upsertFromTracker } from "../torrent/torrent.repository";
 import { getTracker } from "../torrent/torrent.tracker";
 import { createCatalog } from "./catalog";
 
@@ -34,6 +34,7 @@ async function loadImageKeys(
 export const catalog = createCatalog({
 	normalizeTitle,
 	searchLocal,
+	listRecent,
 	upsertFromTracker,
 	loadImageKeys,
 	publicUrl,

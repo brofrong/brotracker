@@ -510,7 +510,7 @@ function TitleHero({
 	watch,
 	onOpenPoster,
 }: TitleHeroProps) {
-	const content = (
+	return (
 		<HStack gap={6} vAlign="center" wrap="nowrap" width="100%">
 			<VStack className="shrink-0" width={208}>
 				{meta.poster ? (
@@ -638,36 +638,6 @@ function TitleHero({
 			</StackItem>
 		</HStack>
 	);
-
-	return (
-		<VStack
-			className="relative isolate overflow-hidden rounded-lg"
-			padding={4}
-			width="100%"
-		>
-			{meta.backdrop ? (
-				<>
-					<img
-						alt=""
-						aria-hidden
-						className="pointer-events-none absolute inset-0 -z-10 size-full scale-125 object-cover blur-3xl"
-						src={meta.backdrop}
-					/>
-					<VStack
-						aria-hidden
-						className="pointer-events-none absolute inset-0 -z-10 bg-overlay opacity-70"
-					/>
-					<MediaTheme mode="dark">
-						<VStack className="relative z-10" width="100%">
-							{content}
-						</VStack>
-					</MediaTheme>
-				</>
-			) : (
-				content
-			)}
-		</VStack>
-	);
 }
 
 function TitlePage() {
@@ -721,8 +691,8 @@ function TitlePage() {
 	const crewGroups = groupCrewByJob(meta.crew);
 	const hasRatings = ratings.some((rating) => rating.status === "ok");
 
-	return (
-		<Section padding={4} variant="transparent">
+	const page = (
+		<Section className="relative z-10" padding={4} variant="transparent">
 			<VStack gap={4} width="100%">
 				{metaStatus === "degraded" ? (
 					<Banner
@@ -824,5 +794,39 @@ function TitlePage() {
 				) : null}
 			</VStack>
 		</Section>
+	);
+
+	if (!meta.backdrop) {
+		return page;
+	}
+
+	return (
+		<>
+			<img
+				alt=""
+				aria-hidden
+				className="pointer-events-none fixed inset-0 z-0 size-full object-cover object-top"
+				src={meta.backdrop}
+			/>
+			<VStack
+				aria-hidden
+				className="pointer-events-none fixed inset-0 z-0 bg-overlay opacity-95"
+			/>
+			<svg
+				aria-hidden
+				className="pointer-events-none fixed inset-0 z-0 size-full opacity-50 mix-blend-overlay"
+			>
+				<filter id="title-backdrop-grain">
+					<feTurbulence
+						baseFrequency="0.85"
+						numOctaves={4}
+						stitchTiles="stitch"
+						type="fractalNoise"
+					/>
+				</filter>
+				<rect filter="url(#title-backdrop-grain)" height="100%" width="100%" />
+			</svg>
+			<MediaTheme mode="dark">{page}</MediaTheme>
+		</>
 	);
 }

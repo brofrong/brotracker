@@ -1,5 +1,5 @@
 import type { SearchResult } from "@brotracker/rutracker-ts/tracker/tracker-interface";
-import { sql } from "drizzle-orm";
+import { desc, sql } from "drizzle-orm";
 import { db } from "../db/db";
 import { torrents } from "../db/torrent/torrent.schema";
 import type { LocalCatalogHit } from "../catalog/catalog";
@@ -89,6 +89,32 @@ export async function searchLocal(
 			),
 		)
 		.map((item) => item.result);
+}
+
+export async function listRecent(limit: number): Promise<LocalCatalogHit[]> {
+	const rows = await db
+		.select()
+		.from(torrents)
+		.orderBy(desc(torrents.registeredAt))
+		.limit(limit);
+
+	return rows.map((row) => ({
+		torrentId: row.torrentId,
+		title: row.title,
+		category: row.category,
+		forumId: row.forumId,
+		authorId: row.authorId,
+		size: row.size,
+		seeds: row.seeds,
+		leeches: row.leeches,
+		downloads: row.downloads,
+		date: row.registeredAt,
+		torrentFileUrl: row.torrentFileUrl,
+		topicUrl: row.topicUrl,
+		hdr: row.hdr,
+		resolution: row.resolution,
+		imageKey: row.imageKey,
+	}));
 }
 
 export async function upsertFromTracker(

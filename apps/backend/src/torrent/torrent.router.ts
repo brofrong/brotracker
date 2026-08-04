@@ -33,6 +33,18 @@ export const torrentRouter = router({
 			return catalog.search(searchText);
 		}),
 
+	recent: protectedProcedure
+		.input(
+			z
+				.object({
+					limit: z.number().int().min(1).max(100).optional(),
+				})
+				.optional(),
+		)
+		.query(async ({ input }) => {
+			return catalog.listRecent(input?.limit ?? 50);
+		}),
+
 	searchRefresh: protectedProcedure
 		.input(
 			z.object({
