@@ -16,7 +16,7 @@ import {
 } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/media-type";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { SearchCardTags } from "#/components/search/search-results-cards";
+import { SearchCardTags } from "#/features/search/search-results-cards";
 import { trpc } from "#/shared/lib/trpc";
 
 export type DownloadTorrentItem = {

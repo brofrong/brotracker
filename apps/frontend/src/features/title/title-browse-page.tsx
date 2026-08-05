@@ -12,8 +12,8 @@ import { VStack } from "@astryxdesign/core/Stack";
 import { skipToken, useInfiniteQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef } from "react";
-import { SearchBar } from "#/components/search/search-bar";
 import { trpc } from "#/shared/lib/trpc";
+import { SearchBar } from "#/shared/ui/search-bar";
 import { TitleCard, type TitleCardData } from "#/shared/ui/title-card";
 import { TmdbAttribution } from "#/shared/ui/tmdb-attribution";
 
