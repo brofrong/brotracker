@@ -12,7 +12,7 @@ import {
 } from "@astryxdesign/core/SideNav";
 import { HStack } from "@astryxdesign/core/Stack";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Download, Film, Home, Search, Settings } from "lucide-react";
+import { Bot, Download, Film, Home, Search, Settings } from "lucide-react";
 import { type ComponentPropsWithoutRef, forwardRef, useState } from "react";
 
 const SIDE_NAV_COLLAPSED_KEY = "side-nav-collapsed";
@@ -85,6 +85,13 @@ export function NavItems() {
 				href="/torrents"
 				icon={Download}
 				isSelected={pathname === "/torrents"}
+			/>
+			<SideNavItem
+				as={SideNavLink}
+				label="Воркеры"
+				href="/workers"
+				icon={Bot}
+				isSelected={pathname === "/workers" || pathname.startsWith("/workers/")}
 			/>
 			<SideNavItem
 				as={SideNavLink}
