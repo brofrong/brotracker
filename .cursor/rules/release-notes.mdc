@@ -1,0 +1,10 @@
+---
+description: Write user-facing release notes; use release skill to cut releases
+alwaysApply: true
+---
+
+# Release notes
+
+- After shipping **user-facing** work, add `changes/unreleased/YYYYMMDD-HHMMSS-<slug>.md` (`type: feature|fix|breaking`, English body). Details: `docs/agents/release-notes.md`.
+- Skip notes for internal-only changes (refactors, types, CI, docs-only ADRs).
+- When the user asks to **release**, read and follow `.agents/skills/release/SKILL.md`. Do not hand-roll tag/`gh` steps outside that skill + `bun run release`.
