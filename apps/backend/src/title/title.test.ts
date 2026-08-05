@@ -69,16 +69,6 @@ function deps(
 		loadWatchByTitleId: async () => null,
 		saveWatch: async () => {},
 		listQbTorrents: async () => [],
-		syncFromQb: async () => {},
-		getSeriesPath: async () => null,
-		fetchTorrentBytes: async () => new Uint8Array(),
-		fetchTopicMeta: async () => ({
-			size: 0,
-			registeredAt: null,
-			torrentFileUrl: "https://rutracker.org/forum/dl.php?t=1",
-		}),
-		replaceInQb: async () => {},
-		isCompletePack: () => false,
 		now: () => "2026-08-02T00:00:00.000Z",
 		enqueueWatchTask: async (input) => ({
 			id: "task-1",

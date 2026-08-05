@@ -197,20 +197,7 @@ export const titleModule = createTitleModule({
 	loadWatchByTitleId: watch.loadByTitleId,
 	saveWatch: watch.save,
 	listQbTorrents,
-	syncFromQb: async () => {
-		await watch.syncFromQb();
-	},
-	getSeriesPath: async () => null,
-	fetchTorrentBytes: async () => new Uint8Array(),
-	fetchTopicMeta: async () => ({
-		size: 0,
-		registeredAt: null,
-		torrentFileUrl: "",
-	}),
-	replaceInQb: async () => {},
-	isCompletePack: watch.isCompletePack,
 	now: watch.now,
-	recordEvent: watch.recordEvent,
 	enqueueWatchTask: watch.enqueueTask,
 	processWatchTask: watch.processTask,
 });

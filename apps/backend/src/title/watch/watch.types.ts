@@ -56,7 +56,7 @@ export type WatchDeps = {
 };
 
 export type Watch = {
-	/** Explicit sync from qb tags/paths — not called from Title.get (step 3). */
+	/** Explicit sync from qb tags/paths — not called from Title.get. */
 	syncFromQb: () => Promise<{ upserted: number }>;
 	processTask: (taskId: string) => Promise<ProcessWatchTaskResult>;
 	checkTopicNow: (input: { topicUrl: string }) => Promise<CheckResult>;
