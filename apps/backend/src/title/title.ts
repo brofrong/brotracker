@@ -1,10 +1,7 @@
 import { scoreTorrentQuality } from "../torrent/quality-score";
 import type { CheckResult, TitleWatchRecord } from "./watch/check-topic-now";
 import { parseEpisodeProgress } from "./watch/episode-progress";
-import {
-	syncWatchesFromQb,
-	type SyncQbTorrent,
-} from "./watch/sync-watches-from-qb";
+import type { SyncQbTorrent } from "./watch/sync-watches-from-qb";
 import type {
 	Title,
 	TitleDeps,
@@ -216,15 +213,7 @@ export function createTitleModule(deps: TitleDeps) {
 		}
 
 		try {
-			await syncWatchesFromQb({
-				listTorrents: async () => qbTorrents,
-				getSeriesPath: deps.getSeriesPath,
-				loadWatch: deps.loadWatchByTopicUrl,
-				saveWatch: deps.saveWatch,
-				isCompletePack: deps.isCompletePack,
-				now: deps.now,
-				recordEvent: deps.recordEvent,
-			});
+			await deps.syncFromQb();
 		} catch {
 			// qB/sync failures must not take down the title card
 		}

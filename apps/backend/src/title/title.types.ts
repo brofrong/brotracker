@@ -221,17 +221,27 @@ export type TitleDeps = {
 	loadWatchByTitleId: (titleId: string) => Promise<TitleWatchRecord | null>;
 	saveWatch: (record: TitleWatchRecord) => Promise<void>;
 	listQbTorrents: () => Promise<SyncQbTorrent[]>;
+	/**
+	 * Temporary (step 2): get() may still sync. Removed in step 3 —
+	 * sync only via nightly worker / watch.syncFromQb.
+	 */
+	syncFromQb: () => Promise<void>;
+	/** @deprecated unused by Title core — kept until TitleDeps collapse */
 	getSeriesPath: () => Promise<string | null>;
+	/** @deprecated unused by Title core — kept until TitleDeps collapse */
 	fetchTorrentBytes: (torrentFileUrl: string) => Promise<Uint8Array>;
+	/** @deprecated unused by Title core — kept until TitleDeps collapse */
 	fetchTopicMeta: (topicUrl: string) => Promise<TopicMeta>;
+	/** @deprecated unused by Title core — kept until TitleDeps collapse */
 	replaceInQb: (input: {
 		topicId: string;
 		torrentBytes: Uint8Array;
 		tags: string[];
 	}) => Promise<void>;
+	/** @deprecated unused by Title core — kept until TitleDeps collapse */
 	isCompletePack: (torrentName: string) => boolean;
 	now: () => string;
-	/** Feeds the home titleWatchFeed widget; optional for tests. */
+	/** @deprecated unused by Title core — kept until TitleDeps collapse */
 	recordEvent?: RecordWatchEvent;
 	/** Enqueues a WatchTask row (manual trigger, always fresh — no dedup). */
 	enqueueWatchTask: (input: {

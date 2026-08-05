@@ -59,6 +59,7 @@ function deps(overrides: Partial<TitleDeps> = {}): TitleDeps {
 		loadWatchByTitleId: async () => null,
 		saveWatch: async () => {},
 		listQbTorrents: async () => [],
+		syncFromQb: async () => {},
 		getSeriesPath: async () => null,
 		fetchTorrentBytes: async () => new Uint8Array(),
 		fetchTopicMeta: async () => ({

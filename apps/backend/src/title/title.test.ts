@@ -69,6 +69,7 @@ function deps(
 		loadWatchByTitleId: async () => null,
 		saveWatch: async () => {},
 		listQbTorrents: async () => [],
+		syncFromQb: async () => {},
 		getSeriesPath: async () => null,
 		fetchTorrentBytes: async () => new Uint8Array(),
 		fetchTopicMeta: async () => ({

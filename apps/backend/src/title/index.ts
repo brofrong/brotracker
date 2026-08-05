@@ -1,13 +1,8 @@
-import { eq } from "drizzle-orm";
 import { catalog } from "../catalog";
 import type { CatalogSearchResult } from "../catalog";
-import { db } from "../db/db";
-import { torrents } from "../db/torrent/torrent.schema";
 import { fetchWithProxy } from "../http/fetch-with-proxy";
 import { toLiveTorrent } from "../qbittorent/live-torrent";
 import {
-	addTorrent,
-	deleteTorrent,
 	getTorrents,
 	QbittorrentNotConfiguredError,
 } from "../qbittorent/qbittorent.client";
@@ -16,8 +11,6 @@ import {
 	resolveTmdbCredentials,
 	type TmdbCredentials,
 } from "../settings/provider-settings";
-import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
-import { getTracker } from "../torrent/torrent.tracker";
 import { logger } from "../utils/logger";
 import { createDefaultRatingsPort } from "./ratings-port";
 import { createTitleModule, TitleAddError, TitleWatchError } from "./title";
@@ -37,31 +30,12 @@ import {
 	type TmdbSimilarResponse,
 	type TmdbTvDetails,
 } from "./tmdb-meta";
-import { extractTopicId, torrentFileUrlFromId } from "./topic-tag";
-import { checkTopicNow, type RecordWatchEventInput } from "./watch/check-topic-now";
-import { enqueueNightlyWatchTasks } from "./watch/enqueue-nightly-tasks";
-import { isCompletePack } from "./watch/episode-progress";
-import { createNightlyWorker } from "./watch/nightly-worker";
-import { processWatchTask } from "./watch/process-watch-task";
-import { createReplaceTorrentInQb } from "./watch/replace-torrent-in-qb";
-import { syncWatchesFromQb } from "./watch/sync-watches-from-qb";
 import {
-	loadWatchByTitleId,
-	loadWatchByTopicUrl,
-	saveWatch,
-} from "./watch/title-watch.repository";
-import {
-	appendWatchEvent,
-	listRecentWatchEvents,
-} from "./watch/title-watch-event.repository";
-import {
-	createWatchTask,
-	hasPendingWatchTask,
-	listPendingWatchTaskIds,
-	listTrackingWatches,
-	loadWatchTask,
-	saveWatchTask,
-} from "./watch/watch-task.repository";
+	getTitleWatchFeed,
+	listQbTorrents,
+	nightlyWorker,
+	watch,
+} from "./watch";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 
@@ -209,114 +183,7 @@ async function listTaggedTorrents() {
 	}
 }
 
-async function listQbTorrents() {
-	try {
-		const qbTorrents = await getTorrents();
-		return qbTorrents.map((torrent) => ({
-			hash: torrent.hash,
-			name: torrent.name,
-			savePath: torrent.save_path,
-			tags: torrent.tags,
-			size: torrent.size,
-		}));
-	} catch (error) {
-		if (error instanceof QbittorrentNotConfiguredError) {
-			return [];
-		}
-		throw error;
-	}
-}
-
-async function getSeriesPath(): Promise<string | null> {
-	const config = await loadQbittorrentConfig();
-	const path = config?.seriesPath?.trim();
-	return path ? path : null;
-}
-
-async function fetchTorrentBytes(torrentFileUrl: string): Promise<Uint8Array> {
-	const tracker = await getTracker();
-	const file = await tracker.getTorrent(torrentFileUrl);
-	if (file.isErr()) {
-		throw file.error;
-	}
-	return file.value;
-}
-
-async function fetchTopicMeta(topicUrl: string) {
-	const topicId = extractTopicId(topicUrl);
-	if (!topicId) {
-		throw new Error("Некорректный topic URL");
-	}
-
-	const rows = await db
-		.select()
-		.from(torrents)
-		.where(eq(torrents.torrentId, topicId))
-		.limit(1);
-	const row = rows[0];
-
-	return {
-		size: row?.size ?? 0,
-		registeredAt: row?.registeredAt?.toISOString() ?? null,
-		torrentFileUrl: row?.torrentFileUrl ?? torrentFileUrlFromId(topicId),
-	};
-}
-
-async function recordWatchEvent(event: RecordWatchEventInput): Promise<void> {
-	await appendWatchEvent({
-		id: crypto.randomUUID(),
-		titleId: event.titleId,
-		topicUrl: event.topicUrl,
-		kind: event.kind,
-		message: event.message,
-		previousSize: event.previousSize ?? null,
-		newSize: event.newSize ?? null,
-		createdAt: new Date().toISOString(),
-	});
-}
-
-const replaceInQb = createReplaceTorrentInQb({
-	listTorrents: async () => {
-		const qbTorrents = await getTorrents();
-		return qbTorrents.map((torrent) => ({
-			hash: torrent.hash,
-			savePath: torrent.save_path,
-			tags: torrent.tags,
-		}));
-	},
-	deleteTorrent: (hash, options) => deleteTorrent(hash, options),
-	addTorrent: (bytes, options) => addTorrent(bytes, options),
-	getSeriesPath,
-});
-
 const ratingsPort = createDefaultRatingsPort();
-
-const now = () => new Date().toISOString();
-
-async function checkTopicNowBound(input: { topicUrl: string }) {
-	return checkTopicNow(input, {
-		loadWatch: loadWatchByTopicUrl,
-		saveWatch,
-		fetchTorrentBytes,
-		fetchTopicMeta,
-		replaceInQb,
-		now,
-		recordEvent: recordWatchEvent,
-	});
-}
-
-/** The single path both the nightly worker and manual checkNow drain through. */
-async function processWatchTaskById(taskId: string) {
-	return processWatchTask(
-		{ taskId },
-		{
-			loadTask: loadWatchTask,
-			saveTask: saveWatchTask,
-			checkTopicNow: checkTopicNowBound,
-			now,
-		},
-	);
-}
 
 export const titleModule = createTitleModule({
 	fetchTmdbMeta: createFetchTmdbMeta(resolveTmdbCredentials),
@@ -326,49 +193,31 @@ export const titleModule = createTitleModule({
 	addFromTracker: async (torrentFileUrl, kind, tags) => {
 		await addFromTracker(torrentFileUrl, kind, tags);
 	},
-	loadWatchByTopicUrl,
-	loadWatchByTitleId,
-	saveWatch,
+	loadWatchByTopicUrl: watch.loadByTopicUrl,
+	loadWatchByTitleId: watch.loadByTitleId,
+	saveWatch: watch.save,
 	listQbTorrents,
-	getSeriesPath,
-	fetchTorrentBytes,
-	fetchTopicMeta,
-	replaceInQb,
-	isCompletePack,
-	now,
-	recordEvent: recordWatchEvent,
-	enqueueWatchTask: createWatchTask,
-	processWatchTask: processWatchTaskById,
+	syncFromQb: async () => {
+		await watch.syncFromQb();
+	},
+	getSeriesPath: async () => null,
+	fetchTorrentBytes: async () => new Uint8Array(),
+	fetchTopicMeta: async () => ({
+		size: 0,
+		registeredAt: null,
+		torrentFileUrl: "",
+	}),
+	replaceInQb: async () => {},
+	isCompletePack: watch.isCompletePack,
+	now: watch.now,
+	recordEvent: watch.recordEvent,
+	enqueueWatchTask: watch.enqueueTask,
+	processWatchTask: watch.processTask,
 });
 
 export const tmdbBrowse = createTmdbBrowse({
 	resolveCredentials: resolveTmdbCredentials,
 });
 
-export function getTitleWatchFeed(limit: number) {
-	return listRecentWatchEvents(limit);
-}
-
-export const nightlyWorker = createNightlyWorker({
-	sync: () =>
-		syncWatchesFromQb({
-			listTorrents: listQbTorrents,
-			getSeriesPath,
-			loadWatch: loadWatchByTopicUrl,
-			saveWatch,
-			isCompletePack,
-			now,
-			recordEvent: recordWatchEvent,
-		}),
-	enqueue: () =>
-		enqueueNightlyWatchTasks({
-			listTrackingWatches,
-			hasPendingTask: hasPendingWatchTask,
-			createTask: createWatchTask,
-		}),
-	listPendingTaskIds: listPendingWatchTaskIds,
-	processTask: processWatchTaskById,
-	now: () => new Date(),
-});
-
+export { getTitleWatchFeed, nightlyWorker };
 export { createTitleModule, TitleAddError, TitleWatchError };
