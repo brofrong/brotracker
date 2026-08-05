@@ -92,16 +92,20 @@ export function createWorkers(deps: WorkersDeps) {
 				startedAt,
 			});
 
-			const log = async (level: WorkerLogLevel, message: string) => {
-				await deps.store.appendLog(record.id, {
+			const pending: Promise<void>[] = [];
+			const log = (level: WorkerLogLevel, message: string) => {
+				const p = deps.store.appendLog(record.id, {
 					ts: deps.now().toISOString(),
 					level,
 					message,
 				});
+				pending.push(p);
+				return p;
 			};
 
 			try {
 				const { summary } = await definition.execute({ log });
+				await Promise.all(pending);
 				const finished = await deps.store.finish(record.id, {
 					status: "succeeded",
 					finishedAt: deps.now(),
@@ -111,6 +115,7 @@ export function createWorkers(deps: WorkersDeps) {
 				await prune(workerId);
 				return finished;
 			} catch (err) {
+				await Promise.all(pending);
 				const message =
 					err instanceof Error ? err.message : String(err);
 				const finished = await deps.store.finish(record.id, {
