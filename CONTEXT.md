@@ -1,6 +1,6 @@
 # BroTracker
 
-Self-hosted torrent search and download helper: search RuTracker, cache locally, resolve Title metadata, and watch downloads in qBittorrent.
+Self-hosted torrent search and download helper: search enabled torrent trackers (RuTracker, Kinozal), cache locally, resolve Title metadata, and watch downloads in qBittorrent.
 
 ## Language
 
@@ -15,7 +15,7 @@ A persisted tracker hit (topic, title text, size, seeds, quality signals) stored
 _Avoid_: Download, transfer (those are qBittorrent runtime state)
 
 **Topic**:
-A RuTracker forum topic identified by topic URL / topic id — the tracker-side identity of a torrent listing.
+A tracker-side torrent listing identified by topic URL / namespaced torrent id (`rutracker:…` / `kinozal:…`).
 _Avoid_: Thread, post
 
 ### Titles & metadata
@@ -57,5 +57,5 @@ Live qBittorrent download/session state (progress, speeds, pause).
 _Avoid_: Torrent (when meaning runtime qb state — use Transfer)
 
 **Provider**:
-A configured external system: RuTracker, qBittorrent, TMDB (credentials, proxy, base URL).
+A configured external system: RuTracker, Kinozal, qBittorrent, TMDB (credentials, proxy, enabled flag where applicable).
 _Avoid_: Integration, connector

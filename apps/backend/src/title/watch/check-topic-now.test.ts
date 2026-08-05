@@ -92,7 +92,7 @@ describe("checkTopicNow", () => {
 			newSize: 4,
 			applied: true,
 		});
-		expect(replaceCalls).toEqual(["55"]);
+		expect(replaceCalls).toEqual(["rutracker:55"]);
 		expect(saved[0]?.contentHash).toBe(
 			"9f64a747e1b97f131fabb6b447296c9b6f0201e79fb3c5356e6c77e89b6a806a",
 		);
