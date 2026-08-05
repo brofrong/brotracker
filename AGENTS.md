@@ -56,3 +56,7 @@ Defaults: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `w
 ### Domain docs
 
 Single-context: root `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.
+
+### Release notes
+
+User-facing change notes live in `changes/unreleased/`. See `docs/agents/release-notes.md`. For cutting a release, use the release skill.
