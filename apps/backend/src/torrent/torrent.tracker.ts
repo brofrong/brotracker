@@ -5,7 +5,7 @@ import { db } from "../db/db";
 import { rutrackerStore } from "../db/rutracker-store/rutracker-store.schema";
 import { loadRutrackerConfig } from "../settings/rutracker-config";
 import { env } from "../utils/env";
-import { createProxyAgent } from "./proxy-agent";
+import { createProxyAgent } from "../http/proxy-agent";
 import { createRutrackerDbStore } from "./rutracker-db-store";
 
 const STORE_ID = "default";
