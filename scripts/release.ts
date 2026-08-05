@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Bump version, commit, tag, and push to trigger Docker Hub publish.
+ * Bump version, commit, tag, push, create GitHub Release, and archive notes.
  *
  * Usage:
  *   bun run release              # interactive: patch / minor / major
@@ -10,37 +10,68 @@
  *   bun run release 1.2.3
  *   bun run release patch --dry-run
  *   bun run release patch --yes   # skip confirmation
+ *   bun run release patch --notes-file path/to/notes.md
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	readFileSync,
+	unlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { resolve } from "node:path";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import {
+	archiveNotes,
+	loadUnreleasedNotes,
+	renderReleaseNotes,
+	type BumpKind,
+} from "./release-notes";
 
 const ROOT = resolve(import.meta.dir, "..");
 const PKG_PATH = resolve(ROOT, "package.json");
-
-type BumpKind = "patch" | "minor" | "major";
+const UNRELEASED_DIR = resolve(ROOT, "changes/unreleased");
+const GH_NOTES_PATH = resolve(ROOT, "changes/.release-notes.md");
 
 function usage(): never {
 	console.log(`Usage:
-  bun run release [patch|minor|major|x.y.z] [--dry-run] [--yes]
+  bun run release [patch|minor|major|x.y.z] [--dry-run] [--yes] [--notes-file <path>]
 
 Examples:
   bun run release patch
   bun run release 1.4.0 --yes
+  bun run release patch --notes-file /tmp/draft-notes.md
 `);
 	process.exit(1);
 }
 
 function parseArgs(argv: string[]) {
-	const flags = new Set(argv.filter((a) => a.startsWith("-")));
-	const positional = argv.filter((a) => !a.startsWith("-"));
-	const bump = positional[0];
+	const dryRun = argv.includes("--dry-run") || argv.includes("-n");
+	const yes = argv.includes("--yes") || argv.includes("-y");
+	let notesFile: string | undefined;
+	const positional: string[] = [];
+
+	for (let i = 0; i < argv.length; i++) {
+		const arg = argv[i];
+		if (arg === "--notes-file") {
+			notesFile = argv[++i];
+			if (!notesFile) usage();
+		} else if (arg === "--dry-run" || arg === "-n" || arg === "--yes" || arg === "-y") {
+			continue;
+		} else if (arg.startsWith("-")) {
+			console.error(`Unknown flag: ${arg}`);
+			usage();
+		} else {
+			positional.push(arg);
+		}
+	}
+
 	return {
-		bump,
-		dryRun: flags.has("--dry-run") || flags.has("-n"),
-		yes: flags.has("--yes") || flags.has("-y"),
+		bump: positional[0],
+		dryRun,
+		yes,
+		notesFile: notesFile ? resolve(notesFile) : undefined,
 	};
 }
 
@@ -57,6 +88,28 @@ function bumpVersion(current: string, kind: BumpKind): string {
 	if (kind === "major") return `${major + 1}.0.0`;
 	if (kind === "minor") return `${major}.${minor + 1}.0`;
 	return `${major}.${minor}.${patch + 1}`;
+}
+
+function assembleReleaseNotes(notesFile: string | undefined): {
+	body: string;
+	fromUnreleased: boolean;
+} {
+	if (notesFile) {
+		if (!existsSync(notesFile)) {
+			throw new Error(`Notes file not found: ${notesFile}`);
+		}
+		const body = readFileSync(notesFile, "utf8").trim();
+		if (!body) {
+			throw new Error(`Notes file is empty: ${notesFile}`);
+		}
+		return { body: `${body}\n`, fromUnreleased: false };
+	}
+
+	const notes = loadUnreleasedNotes(UNRELEASED_DIR);
+	if (notes.length === 0) {
+		return { body: "", fromUnreleased: true };
+	}
+	return { body: renderReleaseNotes(notes), fromUnreleased: true };
 }
 
 async function run(
@@ -92,7 +145,7 @@ async function promptLine(question: string): Promise<string> {
 }
 
 async function main() {
-	const { bump, dryRun, yes } = parseArgs(Bun.argv.slice(2));
+	const { bump, dryRun, yes, notesFile } = parseArgs(Bun.argv.slice(2));
 
 	const pkg = JSON.parse(readFileSync(PKG_PATH, "utf8")) as {
 		name: string;
@@ -136,6 +189,16 @@ async function main() {
 	}
 
 	const tag = `v${next}`;
+	const { body: releaseNotes, fromUnreleased } = assembleReleaseNotes(notesFile);
+	const notesMissing = !releaseNotes;
+
+	if (notesMissing && !dryRun) {
+		console.error(
+			"No release notes found. Add markdown files to changes/unreleased/ or pass --notes-file <path>.",
+		);
+		process.exit(1);
+	}
+
 	const { stdout: branch } = await run(["git", "branch", "--show-current"]);
 	const { stdout: status } = await run(["git", "status", "--porcelain"]);
 
@@ -146,6 +209,18 @@ async function main() {
 	console.log(`  tag:      ${tag}`);
 	console.log(`  branch:   ${branch || "(detached)"}`);
 	console.log(`  dry-run:  ${dryRun}`);
+	if (notesFile) {
+		console.log(`  notes:    ${notesFile}`);
+	} else if (fromUnreleased) {
+		console.log(`  notes:    changes/unreleased/`);
+	}
+	console.log("");
+	if (releaseNotes) {
+		console.log("Release notes:");
+		console.log(releaseNotes);
+	} else {
+		console.log("Warning: no release notes (changes/unreleased/ is empty).");
+	}
 	if (status && !dryRun) {
 		console.log("");
 		console.log("Working tree is not clean:");
@@ -180,9 +255,38 @@ async function main() {
 	await run(["git", "push", "origin", "HEAD"]);
 	await run(["git", "push", "origin", tag]);
 
+	writeFileSync(GH_NOTES_PATH, releaseNotes);
+	try {
+		await run([
+			"gh",
+			"release",
+			"create",
+			tag,
+			"--title",
+			tag,
+			"--notes-file",
+			GH_NOTES_PATH,
+		]);
+	} finally {
+		if (existsSync(GH_NOTES_PATH)) {
+			unlinkSync(GH_NOTES_PATH);
+		}
+		if (notesFile && existsSync(notesFile)) {
+			unlinkSync(notesFile);
+		}
+	}
+
+	const archiveDir = resolve(ROOT, "changes", tag);
+	const archived = archiveNotes(UNRELEASED_DIR, archiveDir);
+	if (archived.length > 0) {
+		await run(["git", "add", "changes"]);
+		await run(["git", "commit", "-m", `chore: archive release notes for ${tag}`]);
+		await run(["git", "push", "origin", "HEAD"]);
+	}
+
 	console.log("");
 	console.log(`Released ${tag}`);
-	console.log("CI will build and push Docker image for this tag.");
+	console.log("GitHub Release created; CI will build and push Docker image for this tag.");
 	console.log(`  https://hub.docker.com/r/brofrong/brotracker`);
 }
 

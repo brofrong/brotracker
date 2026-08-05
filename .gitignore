@@ -52,3 +52,6 @@ apps/backend/public
 
 # Runtime data (session cookies, local stores)
 **/.data/
+
+# Ephemeral release notes draft for gh CLI
+changes/.release-notes.md
