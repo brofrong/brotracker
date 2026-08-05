@@ -55,11 +55,11 @@ export type TrackerInterface = {
 	getImage(torrentId: string): Promise<Result<string, Error>>;
 };
 
-const trackers = ["Rutracker"] as const;
+const trackers = ["Rutracker", "Kinozal"] as const;
 
 export type Tracker = (typeof trackers)[number];
 
-export type RutrackerOptions = {
+export type TrackerAuthOptions = {
 	auth: {
 		login: string;
 		password: string;
@@ -73,7 +73,12 @@ export type RutrackerOptions = {
 	cfSolverUrl?: string;
 };
 
+/** @deprecated Use TrackerAuthOptions */
+export type RutrackerOptions = TrackerAuthOptions;
+
+export type KinozalOptions = TrackerAuthOptions;
+
 export type CreateTracker = (
 	tracker: Tracker,
-	options: RutrackerOptions,
+	options: TrackerAuthOptions,
 ) => Promise<TrackerInterface>;

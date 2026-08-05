@@ -1,6 +1,7 @@
 import { ok } from "neverthrow";
 import parse, { type HTMLElement } from "node-html-parser";
 import type { SearchPage, SearchResult } from "../../tracker-interface";
+import { formatTorrentId } from "../../torrent-id";
 import { checkHDR, checkResolution, formatDate, formatSize } from "./format";
 import { RUTRACKER_URL } from "./constants";
 
@@ -89,14 +90,15 @@ function parseDate(dateCell: HTMLElement | null): Date {
 function parseRow(row: HTMLElement): SearchResult | null {
 	const titleLink = row.querySelector("a.tLink");
 	const title = titleLink?.textContent?.trim() ?? "";
-	const torrentId =
+	const rawTorrentId =
 		row.getAttribute("data-topic_id")?.trim() ||
 		titleLink?.getAttribute("data-topic_id")?.trim() ||
 		"";
 
-	if (!torrentId || !title) {
+	if (!rawTorrentId || !title) {
 		return null;
 	}
+	const torrentId = formatTorrentId("rutracker", rawTorrentId);
 
 	const cells = [...row.querySelectorAll("td")];
 	const forumLink = row.querySelector("td.f-name-col a");
@@ -128,9 +130,10 @@ function parseRow(row: HTMLElement): SearchResult | null {
 
 	const dlHref =
 		row.querySelector("a.tr-dl")?.getAttribute("href")?.trim() ||
-		`dl.php?t=${torrentId}`;
+		`dl.php?t=${rawTorrentId}`;
 	const topicHref =
-		titleLink?.getAttribute("href")?.trim() || `viewtopic.php?t=${torrentId}`;
+		titleLink?.getAttribute("href")?.trim() ||
+		`viewtopic.php?t=${rawTorrentId}`;
 
 	return {
 		torrentId,
