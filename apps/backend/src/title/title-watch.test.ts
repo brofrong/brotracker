@@ -3,6 +3,7 @@ import { checkTopicNow } from "./watch/check-topic-now";
 import type { CheckResult, TitleWatchRecord } from "./watch/check-topic-now";
 import { processWatchTask } from "./watch/process-watch-task";
 import type { WatchTask } from "./watch/process-watch-task";
+import { syncWatchesFromQb } from "./watch/sync-watches-from-qb";
 import { createTitleModule, type TitleDeps } from "./title";
 import type { TitleRating, TmdbMeta } from "./title.types";
 
@@ -57,6 +58,7 @@ function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 			store.set(record.topicUrl, record);
 		},
 		listQbTorrents: async () => [],
+		syncFromQb: async () => {},
 		getSeriesPath: async () => "/data/tv",
 		fetchTorrentBytes: async () => new Uint8Array([1, 2, 3, 4]),
 		fetchTopicMeta: async () => ({
@@ -108,6 +110,20 @@ function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 			),
 		...overrides,
 	};
+
+	if (!overrides.syncFromQb) {
+		deps.syncFromQb = async () => {
+			await syncWatchesFromQb({
+				listTorrents: deps.listQbTorrents,
+				getSeriesPath: deps.getSeriesPath,
+				loadWatch: deps.loadWatchByTopicUrl,
+				saveWatch: deps.saveWatch,
+				isCompletePack: deps.isCompletePack,
+				now: deps.now,
+				recordEvent: deps.recordEvent,
+			});
+		};
+	}
 
 	return { module: createTitleModule(deps), store, deps };
 }
