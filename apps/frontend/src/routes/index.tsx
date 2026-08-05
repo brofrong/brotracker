@@ -18,9 +18,9 @@ import {
 	type TransferStatsData,
 	TransferStatsWidget,
 } from "#/components/home/transfer-stats-widget";
-import { TitleCard, type TitleCardData } from "#/components/title-card";
-import { TmdbAttribution } from "#/components/tmdb-attribution";
-import { trpc } from "#/utils/trpc";
+import { trpc } from "#/shared/lib/trpc";
+import { TitleCard, type TitleCardData } from "#/shared/ui/title-card";
+import { TmdbAttribution } from "#/shared/ui/tmdb-attribution";
 
 /** Legacy search params lived on `/` — keep bookmarks working. */
 const legacySearchSchema = z.object({

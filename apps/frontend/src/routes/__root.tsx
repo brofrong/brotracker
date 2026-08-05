@@ -10,12 +10,12 @@ import {
 	useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { AuthGate } from "#/components/AuthGate";
+import { queryClient } from "#/shared/lib/trpc";
+import { AuthGate } from "#/shared/ui/AuthGate";
 import Navigation, {
 	MobileNavigation,
-} from "#/components/navigation/navigation";
-import { ThemeProvider } from "#/components/theme-provider";
-import { queryClient } from "#/utils/trpc";
+} from "#/shared/ui/navigation/navigation";
+import { ThemeProvider } from "#/shared/ui/theme-provider";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({

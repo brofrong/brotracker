@@ -7,8 +7,8 @@ import { VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { authClient } from "#/utils/auth-client";
-import { unauthorizedRedirect } from "#/utils/unauthorized-redirect";
+import { authClient } from "#/shared/lib/auth-client";
+import { unauthorizedRedirect } from "#/shared/lib/unauthorized-redirect";
 
 type GateStatus = "checking" | "authenticated" | "redirecting";
 

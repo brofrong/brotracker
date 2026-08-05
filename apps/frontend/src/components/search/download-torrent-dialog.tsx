@@ -17,7 +17,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { SearchCardTags } from "#/components/search/search-results-cards";
-import { trpc } from "#/utils/trpc";
+import { trpc } from "#/shared/lib/trpc";
 
 export type DownloadTorrentItem = {
 	title: string;
