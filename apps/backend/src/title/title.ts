@@ -212,12 +212,6 @@ export function createTitleModule(deps: TitleDeps) {
 			qbTorrents = [];
 		}
 
-		try {
-			await deps.syncFromQb();
-		} catch {
-			// qB/sync failures must not take down the title card
-		}
-
 		const byTitle = await deps.loadWatchByTitleId(titleId);
 		if (byTitle) {
 			return toWatchView(byTitle, qbTorrents);

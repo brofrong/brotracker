@@ -3,7 +3,6 @@ import { checkTopicNow } from "./watch/check-topic-now";
 import type { CheckResult, TitleWatchRecord } from "./watch/check-topic-now";
 import { processWatchTask } from "./watch/process-watch-task";
 import type { WatchTask } from "./watch/process-watch-task";
-import { syncWatchesFromQb } from "./watch/sync-watches-from-qb";
 import { createTitleModule, type TitleDeps } from "./title";
 import type { TitleRating, TmdbMeta } from "./title.types";
 
@@ -31,9 +30,29 @@ const tvMeta = (): TmdbMeta => ({
 	voteCount: 10,
 });
 
+type CheckAdapters = {
+	fetchTorrentBytes: () => Promise<Uint8Array>;
+	fetchTopicMeta: () => Promise<{
+		size: number;
+		registeredAt: string | null;
+		torrentFileUrl: string;
+	}>;
+	replaceInQb: () => Promise<void>;
+};
+
 function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 	const store = new Map<string, TitleWatchRecord>();
 	const tasks = new Map<string, WatchTask>();
+
+	const checkAdapters: CheckAdapters = {
+		fetchTorrentBytes: async () => new Uint8Array([1, 2, 3, 4]),
+		fetchTopicMeta: async () => ({
+			size: 4,
+			registeredAt: "2024-01-01T00:00:00.000Z",
+			torrentFileUrl: "https://rutracker.org/forum/dl.php?t=55",
+		}),
+		replaceInQb: async () => {},
+	};
 
 	const deps: TitleDeps = {
 		fetchTmdbMeta: async () => ({ status: "ok", meta: tvMeta() }),
@@ -58,20 +77,9 @@ function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 			store.set(record.topicUrl, record);
 		},
 		listQbTorrents: async () => [],
-		syncFromQb: async () => {},
-		getSeriesPath: async () => "/data/tv",
-		fetchTorrentBytes: async () => new Uint8Array([1, 2, 3, 4]),
-		fetchTopicMeta: async () => ({
-			size: 4,
-			registeredAt: "2024-01-01T00:00:00.000Z",
-			torrentFileUrl: "https://rutracker.org/forum/dl.php?t=55",
-		}),
-		replaceInQb: async () => {},
-		isCompletePack: () => false,
 		now: () => "2026-08-02T14:00:00.000Z",
-		// Mirrors the real bootstrap in title/index.ts: checkNow enqueues a
-		// WatchTask and drains it through the same processWatchTask path the
-		// nightly worker uses, backed here by an in-memory task store.
+		// Mirrors the real bootstrap: checkNow enqueues a WatchTask and drains
+		// it through processWatchTask (same path as the nightly worker).
 		enqueueWatchTask: async (input) => {
 			const id = `task-${tasks.size + 1}`;
 			const created: WatchTask = {
@@ -100,9 +108,9 @@ function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 						checkTopicNow(input, {
 							loadWatch: deps.loadWatchByTopicUrl,
 							saveWatch: deps.saveWatch,
-							fetchTorrentBytes: deps.fetchTorrentBytes,
-							fetchTopicMeta: deps.fetchTopicMeta,
-							replaceInQb: deps.replaceInQb,
+							fetchTorrentBytes: checkAdapters.fetchTorrentBytes,
+							fetchTopicMeta: checkAdapters.fetchTopicMeta,
+							replaceInQb: checkAdapters.replaceInQb,
 							now: deps.now,
 						}),
 					now: deps.now,
@@ -111,21 +119,12 @@ function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 		...overrides,
 	};
 
-	if (!overrides.syncFromQb) {
-		deps.syncFromQb = async () => {
-			await syncWatchesFromQb({
-				listTorrents: deps.listQbTorrents,
-				getSeriesPath: deps.getSeriesPath,
-				loadWatch: deps.loadWatchByTopicUrl,
-				saveWatch: deps.saveWatch,
-				isCompletePack: deps.isCompletePack,
-				now: deps.now,
-				recordEvent: deps.recordEvent,
-			});
-		};
-	}
-
-	return { module: createTitleModule(deps), store, deps };
+	return {
+		module: createTitleModule(deps),
+		store,
+		deps,
+		checkAdapters,
+	};
 }
 
 describe("title.setWatch", () => {
@@ -203,11 +202,10 @@ describe("title.setWatch", () => {
 describe("title.checkNow", () => {
 	test("returns failed CheckResult when tracker errors without throwing", async () => {
 		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=55";
-		const { module, store } = createWatchDeps({
-			fetchTorrentBytes: async () => {
-				throw new Error("boom");
-			},
-		});
+		const { module, store, checkAdapters } = createWatchDeps();
+		checkAdapters.fetchTorrentBytes = async () => {
+			throw new Error("boom");
+		};
 		store.set(topicUrl, {
 			topicUrl,
 			titleId: "tmdb:tv:1",
@@ -271,16 +269,9 @@ describe("title.checkNow", () => {
 describe("title.get watch", () => {
 	test("links auto-followed topic watch onto the matching tv title", async () => {
 		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=55";
+		// Nightly / explicit syncFromQb already created the auto-qb watch;
+		// get() only reads + links — it must not sync from qb.
 		const { module, store } = createWatchDeps({
-			listQbTorrents: async () => [
-				{
-					hash: "h1",
-					name: "Test Show",
-					savePath: "/data/tv",
-					tags: "brotracker:topic:55",
-					size: 100,
-				},
-			],
 			listTaggedTorrents: async () => [
 				{
 					hash: "h1",
@@ -310,6 +301,19 @@ describe("title.get watch", () => {
 				],
 				trackerError: "unavailable",
 			}),
+		});
+		store.set(topicUrl, {
+			topicUrl,
+			titleId: null,
+			watch: "tracking",
+			source: "auto-qb",
+			size: 100,
+			registeredAt: null,
+			contentHash: null,
+			qbHash: "h1",
+			lastCheckedAt: null,
+			lastChangedAt: null,
+			lastError: null,
 		});
 
 		const title = await module.get({ id: "tmdb:tv:1" });
@@ -353,10 +357,10 @@ describe("title.get watch", () => {
 			listQbTorrents: async () => [
 				{
 					hash: "h1",
-					name: "Test Show 1-8 из 10",
+					name: "Show. 1-8 из 10. WEB-DL 1080p",
 					savePath: "/data/tv",
 					tags: "brotracker:topic:55",
-					size: 100,
+					size: 1,
 				},
 			],
 		});
@@ -398,10 +402,10 @@ describe("title.get watch", () => {
 			listQbTorrents: async () => [
 				{
 					hash: "h1",
-					name: "Test Show S01 WEB-DL",
+					name: "Show S01 WEB-DL 1080p",
 					savePath: "/data/tv",
 					tags: "brotracker:topic:55",
-					size: 100,
+					size: 1,
 				},
 			],
 		});
