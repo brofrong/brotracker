@@ -1,6 +1,6 @@
 import type { RecordWatchEvent, TitleWatchRecord } from "./check-topic-now";
 import { parseEpisodeProgress } from "./episode-progress";
-import { extractTopicIdFromTags, topicUrlFromId } from "./topic-tag";
+import { extractTopicIdFromTags, topicUrlFromId } from "../topic-tag";
 
 export type SyncQbTorrent = {
 	hash: string;

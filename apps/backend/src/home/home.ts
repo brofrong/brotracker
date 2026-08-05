@@ -1,7 +1,7 @@
 import type {
 	TitleWatchEvent,
 	TitleWatchEventKind,
-} from "../title/title-watch-event";
+} from "../title/watch/title-watch-event";
 
 export type TransferDay = {
 	/** UTC calendar day, YYYY-MM-DD. */

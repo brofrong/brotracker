@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { TitleWatchEvent } from "../title/title-watch-event";
+import type { TitleWatchEvent } from "../title/watch/title-watch-event";
 import { averageSpeedsByDay, buildTransferDays, createHome } from "./home";
 
 function watchEvent(partial: Partial<TitleWatchEvent> = {}): TitleWatchEvent {

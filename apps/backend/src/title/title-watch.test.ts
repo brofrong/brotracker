@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { checkTopicNow } from "./check-topic-now";
-import type { CheckResult, TitleWatchRecord } from "./check-topic-now";
-import { processWatchTask } from "./process-watch-task";
-import type { WatchTask } from "./process-watch-task";
+import { checkTopicNow } from "./watch/check-topic-now";
+import type { CheckResult, TitleWatchRecord } from "./watch/check-topic-now";
+import { processWatchTask } from "./watch/process-watch-task";
+import type { WatchTask } from "./watch/process-watch-task";
 import { createTitleModule, type TitleDeps } from "./title";
 import type { TitleRating, TmdbMeta } from "./title.types";
 

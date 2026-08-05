@@ -19,14 +19,7 @@ import {
 import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
 import { getTracker } from "../torrent/torrent.tracker";
 import { logger } from "../utils/logger";
-import { checkTopicNow, type RecordWatchEventInput } from "./check-topic-now";
-import { enqueueNightlyWatchTasks } from "./enqueue-nightly-tasks";
-import { isCompletePack } from "./episode-progress";
-import { createNightlyWorker } from "./nightly-worker";
-import { processWatchTask } from "./process-watch-task";
 import { createDefaultRatingsPort } from "./ratings-port";
-import { createReplaceTorrentInQb } from "./replace-torrent-in-qb";
-import { syncWatchesFromQb } from "./sync-watches-from-qb";
 import { createTitleModule, TitleAddError, TitleWatchError } from "./title";
 import type {
 	FetchTmdbMetaOutcome,
@@ -34,16 +27,7 @@ import type {
 	TitleTorrentCandidate,
 	TitleTorrentsSearch,
 } from "./title.types";
-import {
-	loadWatchByTitleId,
-	loadWatchByTopicUrl,
-	saveWatch,
-} from "./title-watch.repository";
 import { createTmdbBrowse } from "../tmdb/browse";
-import {
-	appendWatchEvent,
-	listRecentWatchEvents,
-} from "./title-watch-event.repository";
 import {
 	parseMovieDetails,
 	parseSimilar,
@@ -54,6 +38,22 @@ import {
 	type TmdbTvDetails,
 } from "./tmdb-meta";
 import { extractTopicId, torrentFileUrlFromId } from "./topic-tag";
+import { checkTopicNow, type RecordWatchEventInput } from "./watch/check-topic-now";
+import { enqueueNightlyWatchTasks } from "./watch/enqueue-nightly-tasks";
+import { isCompletePack } from "./watch/episode-progress";
+import { createNightlyWorker } from "./watch/nightly-worker";
+import { processWatchTask } from "./watch/process-watch-task";
+import { createReplaceTorrentInQb } from "./watch/replace-torrent-in-qb";
+import { syncWatchesFromQb } from "./watch/sync-watches-from-qb";
+import {
+	loadWatchByTitleId,
+	loadWatchByTopicUrl,
+	saveWatch,
+} from "./watch/title-watch.repository";
+import {
+	appendWatchEvent,
+	listRecentWatchEvents,
+} from "./watch/title-watch-event.repository";
 import {
 	createWatchTask,
 	hasPendingWatchTask,
@@ -61,7 +61,7 @@ import {
 	listTrackingWatches,
 	loadWatchTask,
 	saveWatchTask,
-} from "./watch-task.repository";
+} from "./watch/watch-task.repository";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 

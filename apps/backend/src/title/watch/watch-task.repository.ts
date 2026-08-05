@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../db/db";
-import { titleWatches } from "../db/title/title-watch.schema";
-import { watchTasks } from "../db/title/watch-task.schema";
+import { db } from "../../db/db";
+import { titleWatches } from "../../db/title/title-watch.schema";
+import { watchTasks } from "../../db/title/watch-task.schema";
 import type { WatchTask, WatchTaskTrigger } from "./process-watch-task";
 
 function toIso(value: Date | null | undefined): string | null {

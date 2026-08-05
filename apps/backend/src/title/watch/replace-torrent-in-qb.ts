@@ -1,4 +1,4 @@
-import { topicTag } from "./topic-tag";
+import { topicTag } from "../topic-tag";
 
 export class ReplaceTorrentError extends Error {
 	constructor(message: string) {
