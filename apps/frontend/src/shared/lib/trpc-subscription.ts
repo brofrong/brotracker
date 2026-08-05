@@ -1,9 +1,5 @@
-import {
-	createTRPCClient,
-	createWSClient,
-	wsLink,
-} from "@trpc/client";
 import type { AppRouter } from "@brotracker/backend/appRouter";
+import { createTRPCClient, createWSClient, wsLink } from "@trpc/client";
 import type { inferRouterOutputs } from "@trpc/server";
 import { env } from "./env";
 
@@ -35,7 +31,9 @@ let subscriptionClient: ReturnType<typeof createTRPCClient<AppRouter>> | null =
 
 function getSubscriptionClient() {
 	if (typeof window === "undefined") {
-		throw new Error("WebSocket subscriptions are only available in the browser");
+		throw new Error(
+			"WebSocket subscriptions are only available in the browser",
+		);
 	}
 
 	if (!subscriptionClient) {

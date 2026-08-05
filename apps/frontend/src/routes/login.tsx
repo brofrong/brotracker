@@ -17,8 +17,8 @@ import {
 	authClient,
 	getAuthBaseURL,
 	redirectToAuthentikSignIn,
-} from "#/utils/auth-client";
-import { fetchAuthMode } from "#/utils/auth-mode";
+} from "#/shared/lib/auth-client";
+import { fetchAuthMode } from "#/shared/lib/auth-mode";
 
 export const Route = createFileRoute("/login")({
 	component: LoginPage,
@@ -214,9 +214,7 @@ function LocalAuthForm({
 					width="100%"
 					isLoading={isSubmitting}
 					isDisabled={
-						!email.trim() ||
-						!password ||
-						(registrationOpen && !confirmPassword)
+						!email.trim() || !password || (registrationOpen && !confirmPassword)
 					}
 				/>
 			</VStack>

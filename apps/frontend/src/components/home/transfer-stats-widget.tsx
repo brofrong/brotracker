@@ -33,7 +33,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { formatBytes, formatSpeed } from "#/utils/format";
+import { formatBytes, formatSpeed } from "#/shared/lib/format";
 
 export type TransferDayData = {
 	date: string;

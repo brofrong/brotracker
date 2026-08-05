@@ -34,8 +34,8 @@ import {
 	SearchCardTags,
 	SearchResultsCards,
 } from "#/components/search/search-results-cards";
-import { formatBytes } from "#/utils/format";
-import { trpc } from "#/utils/trpc";
+import { formatBytes } from "#/shared/lib/format";
+import { trpc } from "#/shared/lib/trpc";
 
 const searchSchema = z.object({
 	search: z.string().optional(),
