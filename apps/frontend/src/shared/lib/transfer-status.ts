@@ -14,19 +14,19 @@ import {
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 
-export type TorrentStatusIconColor =
+export type TransferStatusIconColor =
 	| "success"
 	| "warning"
 	| "error"
 	| "accent"
 	| "tertiary";
 
-type TorrentStateVisual = {
+type TransferStateVisual = {
 	icon: ComponentType<SVGProps<SVGSVGElement>>;
-	color: TorrentStatusIconColor;
+	color: TransferStatusIconColor;
 };
 
-const torrentStateVisuals: Record<string, TorrentStateVisual> = {
+const transferStateVisuals: Record<string, TransferStateVisual> = {
 	error: { icon: CircleAlert, color: "error" },
 	missingFiles: { icon: FileX, color: "error" },
 	uploading: { icon: Upload, color: "success" },
@@ -50,17 +50,17 @@ const torrentStateVisuals: Record<string, TorrentStateVisual> = {
 	unknown: { icon: CircleHelp, color: "tertiary" },
 };
 
-const fallbackVisual: TorrentStateVisual = {
+const fallbackVisual: TransferStateVisual = {
 	icon: CircleHelp,
 	color: "tertiary",
 };
 
-export function getTorrentStateVisual(state: string): TorrentStateVisual {
-	return torrentStateVisuals[state] ?? fallbackVisual;
+export function getTransferStateVisual(state: string): TransferStateVisual {
+	return transferStateVisuals[state] ?? fallbackVisual;
 }
 
-/** Whether the torrent is paused/stopped (download or seeding). */
-export function isTorrentPaused(stateKind: string): boolean {
+/** Whether the Transfer is paused/stopped (download or seeding). */
+export function isTransferPaused(stateKind: string): boolean {
 	return (
 		stateKind === "pausedDL" ||
 		stateKind === "pausedUP" ||
@@ -69,33 +69,33 @@ export function isTorrentPaused(stateKind: string): boolean {
 	);
 }
 
-function isSeedingLike(torrent: {
+function isSeedingLike(transfer: {
 	progress: number;
 	stateKind: string;
 }): boolean {
 	return (
-		torrent.progress >= 1 ||
-		torrent.stateKind.endsWith("UP") ||
-		torrent.stateKind === "uploading"
+		transfer.progress >= 1 ||
+		transfer.stateKind.endsWith("UP") ||
+		transfer.stateKind === "uploading"
 	);
 }
 
 /** Optimistic status after stop (qBittorrent 5 uses stopped*). */
-export function getOptimisticStoppedState(torrent: {
+export function getOptimisticStoppedState(transfer: {
 	progress: number;
 	stateKind: string;
 }): { stateKind: string; stateLabel: string } {
-	return isSeedingLike(torrent)
+	return isSeedingLike(transfer)
 		? { stateKind: "stoppedUP", stateLabel: "На паузе (готов)" }
 		: { stateKind: "stoppedDL", stateLabel: "На паузе" };
 }
 
 /** Optimistic status after start. */
-export function getOptimisticStartedState(torrent: {
+export function getOptimisticStartedState(transfer: {
 	progress: number;
 	stateKind: string;
 }): { stateKind: string; stateLabel: string } {
-	return isSeedingLike(torrent)
+	return isSeedingLike(transfer)
 		? { stateKind: "uploading", stateLabel: "Раздача" }
 		: { stateKind: "downloading", stateLabel: "Загрузка" };
 }

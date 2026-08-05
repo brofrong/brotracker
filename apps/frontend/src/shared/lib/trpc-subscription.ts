@@ -3,7 +3,8 @@ import { createTRPCClient, createWSClient, wsLink } from "@trpc/client";
 import type { inferRouterOutputs } from "@trpc/server";
 import { env } from "./env";
 
-export type LiveTorrent =
+/** Live qBittorrent Transfer (runtime session state). */
+export type LiveTransfer =
 	inferRouterOutputs<AppRouter>["qbittorent"]["list"][number];
 
 function getBackendWsUrl(): string {
@@ -49,8 +50,8 @@ function getSubscriptionClient() {
 	return subscriptionClient;
 }
 
-export function subscribeToTorrentUpdates(handlers: {
-	onData: (torrents: LiveTorrent[]) => void;
+export function subscribeToTransferUpdates(handlers: {
+	onData: (transfers: LiveTransfer[]) => void;
 	onError: (error: Error) => void;
 }) {
 	return getSubscriptionClient().qbittorent.listUpdates.subscribe(undefined, {

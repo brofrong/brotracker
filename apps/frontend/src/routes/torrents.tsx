@@ -1,8 +1,8 @@
 "use client";
 
 import { createFileRoute } from "@tanstack/react-router";
-import { TorrentsPage } from "#/features/torrents/torrents-page";
+import { TransfersPage } from "#/features/torrents/transfers-page";
 
 export const Route = createFileRoute("/torrents")({
-	component: TorrentsPage,
+	component: TransfersPage,
 });

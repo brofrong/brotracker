@@ -1,6 +1,6 @@
 type ProgressVariant = "accent" | "success";
 
-interface TorrentProgressBarProps {
+interface TransferProgressBarProps {
 	label: string;
 	/** Progress in the range 0–100. */
 	value: number;
@@ -22,12 +22,12 @@ const fillToken: Record<ProgressVariant, string> = {
 };
 
 /** Progress bar with centered %; clipped dual labels stay contrasted on track and fill. */
-export function TorrentProgressBar({
+export function TransferProgressBar({
 	label,
 	value,
 	valueLabel,
 	variant = "accent",
-}: TorrentProgressBarProps) {
+}: TransferProgressBarProps) {
 	const pct = Math.min(100, Math.max(0, value));
 	const unfilled = Math.max(0, 100 - pct);
 

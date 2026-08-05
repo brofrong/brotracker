@@ -40,15 +40,15 @@ import {
 import {
 	getOptimisticStartedState,
 	getOptimisticStoppedState,
-	getTorrentStateVisual,
-	isTorrentPaused,
-} from "#/shared/lib/torrent-status";
+	getTransferStateVisual,
+	isTransferPaused,
+} from "#/shared/lib/transfer-status";
 import { handleTrpcUnauthorized, trpc } from "#/shared/lib/trpc";
 import {
-	type LiveTorrent,
-	subscribeToTorrentUpdates,
+	type LiveTransfer,
+	subscribeToTransferUpdates,
 } from "#/shared/lib/trpc-subscription";
-import { TorrentProgressBar } from "#/shared/ui/torrent-progress-bar";
+import { TransferProgressBar } from "#/shared/ui/transfer-progress-bar";
 
 type SortKey =
 	| "name"
@@ -63,7 +63,7 @@ type SortKey =
 
 type SortDirection = "asc" | "desc";
 
-interface TorrentRow extends Record<string, unknown> {
+interface TransferRow extends Record<string, unknown> {
 	id: string;
 	name: string;
 	stateKind: string;
@@ -89,19 +89,19 @@ const sortLabels: Record<SortKey, string> = {
 	savePath: "Путь сохранения",
 };
 
-function toTorrentRow(torrent: LiveTorrent): TorrentRow {
+function toTransferRow(transfer: LiveTransfer): TransferRow {
 	return {
-		id: torrent.id,
-		name: torrent.name,
-		stateKind: torrent.stateKind,
-		stateLabel: torrent.stateLabel,
-		progress: torrent.progress,
-		size: torrent.size,
-		downloadSpeed: torrent.downloadSpeed,
-		uploadSpeed: torrent.uploadSpeed,
-		etaSeconds: torrent.etaSeconds,
-		addedOn: torrent.addedOn,
-		savePath: torrent.savePath,
+		id: transfer.id,
+		name: transfer.name,
+		stateKind: transfer.stateKind,
+		stateLabel: transfer.stateLabel,
+		progress: transfer.progress,
+		size: transfer.size,
+		downloadSpeed: transfer.downloadSpeed,
+		uploadSpeed: transfer.uploadSpeed,
+		etaSeconds: transfer.etaSeconds,
+		addedOn: transfer.addedOn,
+		savePath: transfer.savePath,
 	};
 }
 
@@ -114,7 +114,7 @@ const SKELETON_ROW_COUNT = 10;
 /** Compact table body content height for skeleton rows. */
 const ROW_CONTENT_HEIGHT = 20;
 
-function TorrentProgressCell({
+function TransferProgressCell({
 	name,
 	progress,
 }: {
@@ -125,7 +125,7 @@ function TorrentProgressCell({
 	const isComplete = pct >= 100;
 
 	return (
-		<TorrentProgressBar
+		<TransferProgressBar
 			label={name}
 			value={pct}
 			valueLabel={formatProgress(progress)}
@@ -134,7 +134,7 @@ function TorrentProgressCell({
 	);
 }
 
-function TorrentsTableSkeleton() {
+function TransfersTableSkeleton() {
 	const data = useMemo(
 		(): SkeletonRow[] =>
 			Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
@@ -281,7 +281,7 @@ function diskFreeTooltip(freeBytes: number): string {
 	return `Свободное место на диске qBittorrent: ${amount}`;
 }
 
-export function TorrentsPage() {
+export function TransfersPage() {
 	const navigate = useNavigate();
 	const toast = useToast();
 	const qbSettingsQuery = useQuery(
@@ -295,14 +295,14 @@ export function TorrentsPage() {
 		refetchInterval: isConfigured ? 5000 : false,
 	});
 
-	const [torrents, setTorrents] = useState<LiveTorrent[]>([]);
+	const [transfers, setTransfers] = useState<LiveTransfer[]>([]);
 	const [search, setSearch] = useState("");
 	const [sortKey, setSortKey] = useState<SortKey>("addedOn");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [isLoading, setIsLoading] = useState(true);
 	const [isConnected, setIsConnected] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [pendingDelete, setPendingDelete] = useState<TorrentRow | null>(null);
+	const [pendingDelete, setPendingDelete] = useState<TransferRow | null>(null);
 
 	const pauseMutation = useMutation({
 		...trpc.qbittorent.pause.mutationOptions(),
@@ -331,14 +331,14 @@ export function TorrentsPage() {
 			setIsLoading(false);
 			setIsConnected(false);
 			setError(null);
-			setTorrents([]);
+			setTransfers([]);
 			return;
 		}
 
 		setIsLoading(true);
-		const subscription = subscribeToTorrentUpdates({
+		const subscription = subscribeToTransferUpdates({
 			onData(data) {
-				setTorrents(data);
+				setTransfers(data);
 				setIsLoading(false);
 				setIsConnected(true);
 				setError(null);
@@ -359,17 +359,17 @@ export function TorrentsPage() {
 		};
 	}, [isConfigured, qbSettingsQuery.isLoading]);
 
-	const filteredTorrents = useMemo(() => {
+	const filteredTransfers = useMemo(() => {
 		const query = search.trim().toLowerCase();
 		const filtered = query
-			? torrents.filter((torrent) => {
+			? transfers.filter((transfer) => {
 					return (
-						torrent.name.toLowerCase().includes(query) ||
-						torrent.savePath.toLowerCase().includes(query) ||
-						torrent.stateLabel.toLowerCase().includes(query)
+						transfer.name.toLowerCase().includes(query) ||
+						transfer.savePath.toLowerCase().includes(query) ||
+						transfer.stateLabel.toLowerCase().includes(query)
 					);
 				})
-			: torrents;
+			: transfers;
 
 		return [...filtered].sort((left, right) => {
 			let comparison = 0;
@@ -406,11 +406,11 @@ export function TorrentsPage() {
 
 			return sortDirection === "asc" ? comparison : -comparison;
 		});
-	}, [torrents, search, sortKey, sortDirection]);
+	}, [transfers, search, sortKey, sortDirection]);
 
 	const rows = useMemo(
-		() => filteredTorrents.map(toTorrentRow),
-		[filteredTorrents],
+		() => filteredTransfers.map(toTransferRow),
+		[filteredTransfers],
 	);
 
 	const toggleSort = (key: SortKey) => {
@@ -437,24 +437,24 @@ export function TorrentsPage() {
 		);
 	};
 
-	const handleTogglePause = async (item: TorrentRow) => {
-		const paused = isTorrentPaused(item.stateKind);
-		const snapshot = torrents;
+	const handleTogglePause = async (item: TransferRow) => {
+		const paused = isTransferPaused(item.stateKind);
+		const snapshot = transfers;
 		const next = paused
 			? getOptimisticStartedState(item)
 			: getOptimisticStoppedState(item);
 
-		setTorrents((current) =>
-			current.map((torrent) => {
-				if (torrent.id !== item.id) {
-					return torrent;
+		setTransfers((current) =>
+			current.map((transfer) => {
+				if (transfer.id !== item.id) {
+					return transfer;
 				}
 				return {
-					...torrent,
-					stateKind: next.stateKind as LiveTorrent["stateKind"],
+					...transfer,
+					stateKind: next.stateKind as LiveTransfer["stateKind"],
 					stateLabel: next.stateLabel,
-					downloadSpeed: paused ? torrent.downloadSpeed : 0,
-					uploadSpeed: paused ? torrent.uploadSpeed : 0,
+					downloadSpeed: paused ? transfer.downloadSpeed : 0,
+					uploadSpeed: paused ? transfer.uploadSpeed : 0,
 				};
 			}),
 		);
@@ -466,7 +466,7 @@ export function TorrentsPage() {
 				await pauseMutation.mutateAsync({ id: item.id });
 			}
 		} catch (err) {
-			setTorrents(snapshot);
+			setTransfers(snapshot);
 			toast({
 				type: "error",
 				body:
@@ -484,10 +484,10 @@ export function TorrentsPage() {
 			return;
 		}
 
-		const snapshot = torrents;
+		const snapshot = transfers;
 		const deletingId = pendingDelete.id;
-		setTorrents((current) =>
-			current.filter((torrent) => torrent.id !== deletingId),
+		setTransfers((current) =>
+			current.filter((transfer) => transfer.id !== deletingId),
 		);
 		setPendingDelete(null);
 
@@ -495,7 +495,7 @@ export function TorrentsPage() {
 			await deleteMutation.mutateAsync({ id: deletingId });
 			toast({ body: "Торрент и файлы удалены" });
 		} catch (err) {
-			setTorrents(snapshot);
+			setTransfers(snapshot);
 			toast({
 				type: "error",
 				body: err instanceof Error ? err.message : "Не удалось удалить торрент",
@@ -504,13 +504,13 @@ export function TorrentsPage() {
 	};
 
 	const handlePauseAll = async () => {
-		const snapshot = torrents;
-		setTorrents((current) =>
-			current.map((torrent) => {
-				const next = getOptimisticStoppedState(torrent);
+		const snapshot = transfers;
+		setTransfers((current) =>
+			current.map((transfer) => {
+				const next = getOptimisticStoppedState(transfer);
 				return {
-					...torrent,
-					stateKind: next.stateKind as LiveTorrent["stateKind"],
+					...transfer,
+					stateKind: next.stateKind as LiveTransfer["stateKind"],
 					stateLabel: next.stateLabel,
 					downloadSpeed: 0,
 					uploadSpeed: 0,
@@ -521,7 +521,7 @@ export function TorrentsPage() {
 		try {
 			await pauseAllMutation.mutateAsync();
 		} catch (err) {
-			setTorrents(snapshot);
+			setTransfers(snapshot);
 			toast({
 				type: "error",
 				body:
@@ -533,13 +533,13 @@ export function TorrentsPage() {
 	};
 
 	const handleResumeAll = async () => {
-		const snapshot = torrents;
-		setTorrents((current) =>
-			current.map((torrent) => {
-				const next = getOptimisticStartedState(torrent);
+		const snapshot = transfers;
+		setTransfers((current) =>
+			current.map((transfer) => {
+				const next = getOptimisticStartedState(transfer);
 				return {
-					...torrent,
-					stateKind: next.stateKind as LiveTorrent["stateKind"],
+					...transfer,
+					stateKind: next.stateKind as LiveTransfer["stateKind"],
 					stateLabel: next.stateLabel,
 				};
 			}),
@@ -548,7 +548,7 @@ export function TorrentsPage() {
 		try {
 			await resumeAllMutation.mutateAsync();
 		} catch (err) {
-			setTorrents(snapshot);
+			setTransfers(snapshot);
 			toast({
 				type: "error",
 				body:
@@ -560,7 +560,7 @@ export function TorrentsPage() {
 	};
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: sortKey/sortDirection drive header icons; action handlers stay current via closure
-	const columns = useMemo((): TableColumn<TorrentRow>[] => {
+	const columns = useMemo((): TableColumn<TransferRow>[] => {
 		const sortableHeader = (key: SortKey) => (
 			<Button
 				endContent={renderSortIcon(key)}
@@ -602,7 +602,7 @@ export function TorrentsPage() {
 				width: pixel(72),
 				align: "center",
 				renderCell: (item) => {
-					const { icon, color } = getTorrentStateVisual(item.stateKind);
+					const { icon, color } = getTransferStateVisual(item.stateKind);
 					return (
 						<HStack hAlign="center" width="100%">
 							<Tooltip content={item.stateLabel} placement="above">
@@ -622,7 +622,7 @@ export function TorrentsPage() {
 				header: sortableHeader("progress"),
 				width: pixel(180),
 				renderCell: (item) => (
-					<TorrentProgressCell name={item.name} progress={item.progress} />
+					<TransferProgressCell name={item.name} progress={item.progress} />
 				),
 			},
 			{
@@ -691,7 +691,7 @@ export function TorrentsPage() {
 				width: pixel(96),
 				align: "center",
 				renderCell: (item) => {
-					const paused = isTorrentPaused(item.stateKind);
+					const paused = isTransferPaused(item.stateKind);
 					const actionLabel = paused
 						? "Продолжить скачивание"
 						: "Перевести на паузу";
@@ -859,7 +859,7 @@ export function TorrentsPage() {
 			<Layout
 				content={
 					<LayoutContent padding={0}>
-						<TorrentsTableSkeleton />
+						<TransfersTableSkeleton />
 					</LayoutContent>
 				}
 				footer={pageFooter}
@@ -908,7 +908,7 @@ export function TorrentsPage() {
 			<Layout
 				content={
 					<LayoutContent padding={0}>
-						{isLoading ? <TorrentsTableSkeleton /> : null}
+						{isLoading ? <TransfersTableSkeleton /> : null}
 
 						{error ? (
 							<Section padding={4} variant="transparent">
