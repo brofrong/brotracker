@@ -255,7 +255,18 @@ async function main() {
 	await run(["git", "push", "origin", "HEAD"]);
 	await run(["git", "push", "origin", tag]);
 
-	writeFileSync(GH_NOTES_PATH, releaseNotes);
+	const usingExistingNotesFile =
+		notesFile !== undefined && notesFile === GH_NOTES_PATH;
+
+	let ghNotesPath: string;
+	if (usingExistingNotesFile) {
+		ghNotesPath = GH_NOTES_PATH;
+	} else {
+		writeFileSync(GH_NOTES_PATH, releaseNotes);
+		ghNotesPath = GH_NOTES_PATH;
+	}
+	const wroteTemp = !usingExistingNotesFile;
+
 	try {
 		await run([
 			"gh",
@@ -265,12 +276,19 @@ async function main() {
 			"--title",
 			tag,
 			"--notes-file",
-			GH_NOTES_PATH,
+			ghNotesPath,
 		]);
-	} finally {
-		if (existsSync(GH_NOTES_PATH)) {
+		if (wroteTemp && existsSync(GH_NOTES_PATH)) {
 			unlinkSync(GH_NOTES_PATH);
 		}
+	} catch (err) {
+		console.error(
+			`gh release create failed. Notes preserved at ${ghNotesPath} for retry:`,
+		);
+		console.error(
+			`  gh release create ${tag} --title ${tag} --notes-file ${ghNotesPath}`,
+		);
+		throw err;
 	}
 
 	const archiveDir = resolve(ROOT, "changes", tag);
