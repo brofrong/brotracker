@@ -15,6 +15,7 @@ import {
 } from "@astryxdesign/core/MetadataList";
 import { Section } from "@astryxdesign/core/Section";
 import { Spinner } from "@astryxdesign/core/Spinner";
+import { Switch } from "@astryxdesign/core/Switch";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { TextInput } from "@astryxdesign/core/TextInput";
@@ -33,8 +34,11 @@ export type SettingsSection =
 	| "account"
 	| "appearance"
 	| "rutracker"
+	| "kinozal"
 	| "qbittorrent"
 	| "tmdb";
+
+type TrackerProvider = "rutracker" | "kinozal";
 
 export function SettingsPage({ section }: { section?: SettingsSection }) {
 	const { t } = useTranslation("settings");
@@ -59,7 +63,14 @@ export function SettingsPage({ section }: { section?: SettingsSection }) {
 					</VStack>
 					<AccountSettings highlighted={section === "account"} />
 					<AppearanceSettings highlighted={section === "appearance"} />
-					<RutrackerSettingsForm highlighted={section === "rutracker"} />
+					<TrackerProviderSettingsForm
+						highlighted={section === "rutracker"}
+						provider="rutracker"
+					/>
+					<TrackerProviderSettingsForm
+						highlighted={section === "kinozal"}
+						provider="kinozal"
+					/>
 					<QbittorrentSettingsForm highlighted={section === "qbittorrent"} />
 					<TmdbSettingsForm highlighted={section === "tmdb"} />
 				</VStack>
@@ -214,16 +225,25 @@ function SecretInput({
 	);
 }
 
-function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
+function TrackerProviderSettingsForm({
+	provider,
+	highlighted,
+}: {
+	provider: TrackerProvider;
+	highlighted: boolean;
+}) {
 	const { t } = useTranslation(["settings", "common"]);
 	const queryClient = useQueryClient();
 	const settingsQuery = useQuery(
-		trpc.settings.providers.rutracker.get.queryOptions(),
+		provider === "rutracker"
+			? trpc.settings.providers.rutracker.get.queryOptions()
+			: trpc.settings.providers.kinozal.get.queryOptions(),
 	);
 
 	const [login, setLogin] = useState("");
 	const [password, setPassword] = useState("");
 	const [proxyUrl, setProxyUrl] = useState("");
+	const [enabled, setEnabled] = useState(true);
 	const [message, setMessage] = useState<StatusMessage>(null);
 
 	useEffect(() => {
@@ -233,17 +253,24 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 		setLogin(settingsQuery.data.login);
 		setPassword(settingsQuery.data.password);
 		setProxyUrl(settingsQuery.data.proxyUrl ?? "");
+		setEnabled(settingsQuery.data.enabled);
 	}, [settingsQuery.data]);
 
 	const saveMutation = useMutation({
-		...trpc.settings.providers.rutracker.set.mutationOptions(),
+		...(provider === "rutracker"
+			? trpc.settings.providers.rutracker.set.mutationOptions()
+			: trpc.settings.providers.kinozal.set.mutationOptions()),
 		onSuccess: async (data) => {
 			await queryClient.invalidateQueries({
-				queryKey: trpc.settings.providers.rutracker.get.queryKey(),
+				queryKey:
+					provider === "rutracker"
+						? trpc.settings.providers.rutracker.get.queryKey()
+						: trpc.settings.providers.kinozal.get.queryKey(),
 			});
 			setLogin(data.login);
 			setPassword(data.password);
 			setProxyUrl(data.proxyUrl ?? "");
+			setEnabled(data.enabled);
 			setMessage({ status: "success", text: t("saved", { ns: "common" }) });
 		},
 		onError: (error) => {
@@ -255,11 +282,13 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 	});
 
 	const testMutation = useMutation({
-		...trpc.settings.providers.rutracker.test.mutationOptions(),
+		...(provider === "rutracker"
+			? trpc.settings.providers.rutracker.test.mutationOptions()
+			: trpc.settings.providers.kinozal.test.mutationOptions()),
 		onSuccess: () => {
 			setMessage({
 				status: "success",
-				text: t("rutracker.testSuccess"),
+				text: t(`${provider}.testSuccess`),
 			});
 		},
 		onError: (error) => {
@@ -277,6 +306,7 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 			login: login.trim(),
 			password,
 			proxyUrl: proxyUrl.trim() === "" ? null : proxyUrl.trim(),
+			enabled,
 		});
 	};
 
@@ -288,7 +318,7 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 		return (
 			<Banner
 				status="error"
-				title={t("rutracker.loadFailed")}
+				title={t(`${provider}.loadFailed`)}
 				description={settingsQuery.error.message}
 			/>
 		);
@@ -299,24 +329,32 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 	const canSave = Boolean(login.trim()) && Boolean(password.trim());
 
 	return (
-		<form id="settings-rutracker" onSubmit={onSubmit}>
+		<form id={`settings-${provider}`} onSubmit={onSubmit}>
 			<Card elevation={highlighted ? "med" : "low"} padding={5} width="100%">
 				<VStack gap={4} width="100%">
 					<VStack gap={1}>
-						<Heading level={2}>{t("rutracker.title")}</Heading>
-						<Text type="supporting">{t("rutracker.description")}</Text>
+						<Heading level={2}>{t(`${provider}.title`)}</Heading>
+						<Text type="supporting">{t(`${provider}.description`)}</Text>
 					</VStack>
 
 					<FormLayout>
+						<Switch
+							label={t("enabled")}
+							description={t(`${provider}.enabledDescription`)}
+							value={enabled}
+							onChange={setEnabled}
+							width="100%"
+							labelSpacing="spread"
+						/>
 						<TextInput
-							label={t("rutracker.login")}
+							label={t(`${provider}.login`)}
 							value={login}
 							onChange={setLogin}
 							isRequired
 							width="100%"
 						/>
 						<SecretInput
-							label={t("rutracker.password")}
+							label={t(`${provider}.password`)}
 							value={password}
 							onChange={setPassword}
 							isRequired

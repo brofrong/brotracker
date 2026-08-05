@@ -11,9 +11,11 @@ import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { ImageOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { TrackerSourceBadge } from "#/shared/ui/tracker-source-badge";
 
 export type SearchCardItem = {
 	id: string;
+	torrentId: string;
 	cover: string | null;
 	title: string;
 	resolution: "4K" | "1080p" | "720p" | "SD" | null;
@@ -28,7 +30,8 @@ export type SearchCardItem = {
 	forumId: string;
 };
 
-export type SearchCardTagsItem = Pick<SearchCardItem, "resolution" | "hdr">;
+export type SearchCardTagsItem = Pick<SearchCardItem, "resolution" | "hdr"> &
+	Partial<Pick<SearchCardItem, "torrentId">>;
 
 function resolutionVariant(
 	resolution: SearchCardItem["resolution"],
@@ -48,6 +51,9 @@ function resolutionVariant(
 function SearchCardTags({ item }: { item: SearchCardTagsItem }) {
 	return (
 		<HStack gap={1} wrap="wrap">
+			{item.torrentId ? (
+				<TrackerSourceBadge torrentId={item.torrentId} />
+			) : null}
 			{item.resolution ? (
 				<Badge
 					label={item.resolution}

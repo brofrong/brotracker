@@ -29,6 +29,10 @@
 		"proxyPlaceholder": "socks5://user:pass@host:1080",
 		"proxyDescription": "http://, https:// или socks5://, с optional user:pass@",
 		"apiKey": "API key",
+		"trackerSource": {
+			"rutracker": "RuTracker",
+			"kinozal": "Kinozal"
+		},
 		"tmdb": {
 			"linkLabel": "The Movie Database (TMDB)",
 			"newTabLabel": "(откроется в новой вкладке)",
@@ -108,6 +112,7 @@
 	"settings": {
 		"title": "Настройки",
 		"buildVersion": "Версия сборки {{version}}",
+		"enabled": "Включено",
 		"account": {
 			"title": "Аккаунт",
 			"description": "Информация о текущем пользователе и выход из системы",
@@ -131,12 +136,22 @@
 			}
 		},
 		"rutracker": {
-			"title": "Rutracker",
+			"title": "RuTracker",
 			"description": "Учётные данные и прокси для поиска на трекере",
 			"login": "Login",
 			"password": "Password",
-			"loadFailed": "Не удалось загрузить настройки Rutracker",
-			"testSuccess": "Подключение к Rutracker успешно"
+			"enabledDescription": "Учитывать RuTracker в поиске и списках торрентов",
+			"loadFailed": "Не удалось загрузить настройки RuTracker",
+			"testSuccess": "Подключение к RuTracker успешно"
+		},
+		"kinozal": {
+			"title": "Kinozal",
+			"description": "Учётные данные и прокси для поиска на Kinozal",
+			"login": "Login",
+			"password": "Password",
+			"enabledDescription": "Учитывать Kinozal в поиске и списках торрентов",
+			"loadFailed": "Не удалось загрузить настройки Kinozal",
+			"testSuccess": "Подключение к Kinozal успешно"
 		},
 		"qbittorrent": {
 			"title": "qBittorrent",
