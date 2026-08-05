@@ -1,7 +1,7 @@
 import { fetchWithProxy } from "../http/fetch-with-proxy";
 import type { TmdbCredentials } from "../settings/provider-settings";
 import { logger } from "../utils/logger";
-import { yearFromDate } from "../title/tmdb-meta";
+import { yearFromDate } from "./dates";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 /** Slightly smaller poster for dense grids / carousels. */
