@@ -1,7 +1,7 @@
 import http from "node:http";
 import https from "node:https";
 import type { IncomingMessage } from "node:http";
-import { createProxyAgent } from "../torrent/proxy-agent";
+import { createProxyAgent } from "./proxy-agent";
 
 type FetchWithProxyOptions = {
 	headers?: Record<string, string>;
