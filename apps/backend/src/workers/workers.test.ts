@@ -272,6 +272,43 @@ describe("workers.run", () => {
 		expect(run.finishedAt).not.toBeNull();
 	});
 
+	test("recordFinishedRun clears running when appendLog throws", async () => {
+		const base = createMemoryWorkerRunStore();
+		const store: WorkerRunStore = {
+			...base,
+			async appendLog() {
+				throw new Error("log write failed");
+			},
+		};
+		const workers = createWorkers({
+			store,
+			now: () => new Date("2026-08-05T12:00:00.000Z"),
+			id: () => "sched-stuck",
+			definitions: [baseDef()],
+			retainRuns: 50,
+		});
+
+		await expect(
+			workers.recordFinishedRun({
+				workerId,
+				trigger: "scheduled",
+				summary: "should not stick",
+				log: [
+					{
+						ts: "2026-08-05T12:00:00.000Z",
+						level: "info",
+						message: "will fail",
+					},
+				],
+			}),
+		).rejects.toThrow(/log write failed/i);
+
+		expect(await store.findRunning(workerId)).toBeNull();
+		const run = await store.get("sched-stuck");
+		expect(run?.status).toBe("failed");
+		expect(run?.error).toBe("log write failed");
+	});
+
 	test("recordFinishedRun throws when a run is already running", async () => {
 		let release!: () => void;
 		const gate = new Promise<void>((r) => {

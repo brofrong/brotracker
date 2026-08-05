@@ -7,6 +7,7 @@
  */
 
 import { nightlyWorker } from "../title/watch";
+import { logger } from "../utils/logger";
 import { startScheduledNightlyWorker } from "./scheduled-nightly";
 import { createWorkerRunStore } from "./worker-run.repository";
 import { createWorkers } from "./workers";
@@ -44,7 +45,16 @@ export function startWorkers(
 ): () => void {
 	return startScheduledNightlyWorker({
 		intervalMs,
-		tick: () => nightlyWorker.tick(),
+		tick: async () => {
+			const detail = await workers.get(NIGHTLY_TORRENT_CHECK_ID);
+			if (detail?.status === "running") {
+				logger.info(
+					"Skipping scheduled nightly tick; worker already running",
+				);
+				return { ran: false };
+			}
+			return nightlyWorker.tick();
+		},
 		onRan: async (result) => {
 			await workers.recordFinishedRun({
 				workerId: NIGHTLY_TORRENT_CHECK_ID,

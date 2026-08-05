@@ -143,19 +143,36 @@ export function createWorkers(deps: WorkersDeps) {
 				startedAt,
 			});
 
-			for (const line of input.log) {
-				await deps.store.appendLog(record.id, line);
-			}
+			try {
+				for (const line of input.log) {
+					await deps.store.appendLog(record.id, line);
+				}
 
-			const status = input.status ?? "succeeded";
-			const finished = await deps.store.finish(record.id, {
-				status,
-				finishedAt: deps.now(),
-				summary: input.summary,
-				error: status === "failed" ? (input.error ?? null) : null,
-			});
-			await prune(input.workerId);
-			return finished;
+				const status = input.status ?? "succeeded";
+				const finished = await deps.store.finish(record.id, {
+					status,
+					finishedAt: deps.now(),
+					summary: input.summary,
+					error: status === "failed" ? (input.error ?? null) : null,
+				});
+				await prune(input.workerId);
+				return finished;
+			} catch (err) {
+				const message =
+					err instanceof Error ? err.message : String(err);
+				try {
+					await deps.store.finish(record.id, {
+						status: "failed",
+						finishedAt: deps.now(),
+						summary: null,
+						error: message,
+					});
+					await prune(input.workerId);
+				} catch {
+					// Best-effort cleanup; rethrow the original failure.
+				}
+				throw err;
+			}
 		},
 	};
 }
