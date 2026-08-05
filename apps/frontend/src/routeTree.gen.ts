@@ -14,8 +14,10 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TorrentsRouteImport } from './routes/torrents'
+import { Route as WorkersRouteImport } from './routes/workers'
 import { Route as TitleIndexRouteImport } from './routes/title.index'
 import { Route as TitleIdRouteImport } from './routes/title.$id'
+import { Route as WorkersIdRouteImport } from './routes/workers.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -42,6 +44,11 @@ const TorrentsRoute = TorrentsRouteImport.update({
   path: '/torrents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkersRoute = WorkersRouteImport.update({
+  id: '/workers',
+  path: '/workers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TitleIndexRoute = TitleIndexRouteImport.update({
   id: '/title/',
   path: '/title/',
@@ -52,6 +59,11 @@ const TitleIdRoute = TitleIdRouteImport.update({
   path: '/title/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkersIdRoute = WorkersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => WorkersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,7 +71,9 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/torrents': typeof TorrentsRoute
+  '/workers': typeof WorkersRouteWithChildren
   '/title/$id': typeof TitleIdRoute
+  '/workers/$id': typeof WorkersIdRoute
   '/title/': typeof TitleIndexRoute
 }
 export interface FileRoutesByTo {
@@ -68,7 +82,9 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/torrents': typeof TorrentsRoute
+  '/workers': typeof WorkersRouteWithChildren
   '/title/$id': typeof TitleIdRoute
+  '/workers/$id': typeof WorkersIdRoute
   '/title': typeof TitleIndexRoute
 }
 export interface FileRoutesById {
@@ -78,7 +94,9 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/torrents': typeof TorrentsRoute
+  '/workers': typeof WorkersRouteWithChildren
   '/title/$id': typeof TitleIdRoute
+  '/workers/$id': typeof WorkersIdRoute
   '/title/': typeof TitleIndexRoute
 }
 export interface FileRouteTypes {
@@ -89,7 +107,9 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/torrents'
+    | '/workers'
     | '/title/$id'
+    | '/workers/$id'
     | '/title/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -98,7 +118,9 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/torrents'
+    | '/workers'
     | '/title/$id'
+    | '/workers/$id'
     | '/title'
   id:
     | '__root__'
@@ -107,7 +129,9 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/torrents'
+    | '/workers'
     | '/title/$id'
+    | '/workers/$id'
     | '/title/'
   fileRoutesById: FileRoutesById
 }
@@ -117,6 +141,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   TorrentsRoute: typeof TorrentsRoute
+  WorkersRoute: typeof WorkersRouteWithChildren
   TitleIdRoute: typeof TitleIdRoute
   TitleIndexRoute: typeof TitleIndexRoute
 }
@@ -158,6 +183,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TorrentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workers': {
+      id: '/workers'
+      path: '/workers'
+      fullPath: '/workers'
+      preLoaderRoute: typeof WorkersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/title/': {
       id: '/title/'
       path: '/title'
@@ -172,8 +204,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TitleIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workers/$id': {
+      id: '/workers/$id'
+      path: '/$id'
+      fullPath: '/workers/$id'
+      preLoaderRoute: typeof WorkersIdRouteImport
+      parentRoute: typeof WorkersRoute
+    }
   }
 }
+
+interface WorkersRouteChildren {
+  WorkersIdRoute: typeof WorkersIdRoute
+}
+
+const WorkersRouteChildren: WorkersRouteChildren = {
+  WorkersIdRoute: WorkersIdRoute,
+}
+
+const WorkersRouteWithChildren =
+  WorkersRoute._addFileChildren(WorkersRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -181,6 +231,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   TorrentsRoute: TorrentsRoute,
+  WorkersRoute: WorkersRouteWithChildren,
   TitleIdRoute: TitleIdRoute,
   TitleIndexRoute: TitleIndexRoute,
 }
