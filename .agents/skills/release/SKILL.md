@@ -61,13 +61,26 @@ Cut a semver release: assemble user-facing notes, bump `package.json`, tag, push
 
    Omit `--notes-file` when notes come straight from `changes/unreleased/` and the human did not edit the body.
 
+   When `changes/unreleased/*.md` existed at release time, the script makes **two commits**:
+   1. `chore: release vX.Y.Z` — bumps `package.json`, tags, pushes
+   2. `chore: archive release notes for vX.Y.Z` — moves unreleased notes into `changes/vX.Y.Z/`
+
+   A release from `--notes-file` or a git-log draft with an empty `changes/unreleased/` produces only the first commit.
+
 8. **Verify.**
 
    ```bash
    gh release view vX.Y.Z
-   ls changes/vX.Y.Z/
-   ls changes/unreleased/    # only .gitkeep should remain
    ```
+
+   **If unreleased `.md` files existed at release time** (notes were not solely from `--notes-file` / git-log draft):
+
+   ```bash
+   ls changes/vX.Y.Z/          # archived note files
+   ls changes/unreleased/      # only .gitkeep should remain
+   ```
+
+   Skip the archive checks when notes came only from `--notes-file` or a git-log draft and `changes/unreleased/` had no `.md` files.
 
 9. **Recover from `gh` failure.** If `git push` and the tag succeeded but `gh release create` failed, **do not delete the tag**. The script preserves notes at `changes/.release-notes.md`. Retry:
 
@@ -75,4 +88,15 @@ Cut a semver release: assemble user-facing notes, bump `package.json`, tag, push
    gh release create vX.Y.Z --title vX.Y.Z --notes-file changes/.release-notes.md
    ```
 
-   Then finish archiving if the release script exited before that step.
+   After a successful retry, finish archiving **if unreleased `.md` files still remain** (the release script exited before that step):
+
+   ```bash
+   bun -e "
+   import { archiveNotes } from './scripts/release-notes.ts';
+   const moved = archiveNotes('changes/unreleased', 'changes/vX.Y.Z');
+   console.log('Archived:', moved);
+   "
+   git add changes
+   git commit -m 'chore: archive release notes for vX.Y.Z'
+   git push origin HEAD
+   ```
