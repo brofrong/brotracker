@@ -6,7 +6,14 @@ import { SettingsPage } from "#/features/settings/settings-page";
 
 const settingsSearchSchema = z.object({
 	section: z
-		.enum(["account", "appearance", "rutracker", "qbittorrent", "tmdb"])
+		.enum([
+			"account",
+			"appearance",
+			"rutracker",
+			"kinozal",
+			"qbittorrent",
+			"tmdb",
+		])
 		.optional(),
 });
 

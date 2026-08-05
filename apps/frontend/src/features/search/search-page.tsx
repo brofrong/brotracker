@@ -43,6 +43,7 @@ type ViewMode = "table" | "cards";
 
 interface SearchRow extends Record<string, unknown> {
 	id: string;
+	torrentId: string;
 	cover: string | null;
 	title: string;
 	author: string;
@@ -101,6 +102,7 @@ function toSearchRows(
 ): SearchRow[] {
 	return (data ?? []).map((torrent) => ({
 		id: torrent.torrentId || torrent.torrentFileUrl,
+		torrentId: torrent.torrentId,
 		cover: torrent.imageUrl,
 		title: torrent.title,
 		author: torrent.authorId,

@@ -42,6 +42,7 @@ import {
 import { trpc } from "#/shared/lib/trpc";
 import { TitleCard } from "#/shared/ui/title-card";
 import { TmdbAttribution } from "#/shared/ui/tmdb-attribution";
+import { TrackerSourceBadge } from "#/shared/ui/tracker-source-badge";
 
 function formatRuntime(
 	minutes: number,
@@ -364,6 +365,7 @@ function TitleTorrentsList({
 								description={
 									<VStack gap={2} width="100%">
 										<HStack gap={1} wrap="wrap">
+											<TrackerSourceBadge torrentId={item.torrentId} />
 											{item.badges.map((badge) => (
 												<Badge
 													key={badge}
