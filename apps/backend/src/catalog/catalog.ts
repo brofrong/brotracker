@@ -3,6 +3,9 @@ import type {
 	SearchResult,
 } from "@brotracker/rutracker-ts/tracker/tracker-interface";
 import { compareTorrentQuality } from "../torrent/quality-score";
+import type { LocalCatalogHit } from "../torrent/torrent.types";
+
+export type { LocalCatalogHit } from "../torrent/torrent.types";
 
 export type CatalogSearchResult = SearchResult & {
 	imageUrl: string | null;
@@ -11,10 +14,6 @@ export type CatalogSearchResult = SearchResult & {
 export type CatalogSearchResponse = {
 	results: CatalogSearchResult[];
 	totalResults: number | null;
-};
-
-export type LocalCatalogHit = SearchResult & {
-	imageKey: string | null;
 };
 
 export type TrackerSearchOutcome =

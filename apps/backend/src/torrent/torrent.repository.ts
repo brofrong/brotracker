@@ -2,9 +2,9 @@ import type { SearchResult } from "@brotracker/rutracker-ts/tracker/tracker-inte
 import { desc, sql } from "drizzle-orm";
 import { db } from "../db/db";
 import { torrents } from "../db/torrent/torrent.schema";
-import type { LocalCatalogHit } from "../catalog/catalog";
 import { compareTorrentQuality } from "./quality-score";
 import { normalizeTitle } from "./title-norm";
+import type { LocalCatalogHit } from "./torrent.types";
 
 export const TITLE_SIMILARITY_THRESHOLD = 0.3;
 
