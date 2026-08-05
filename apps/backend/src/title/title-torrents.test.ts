@@ -244,7 +244,7 @@ describe("title.add", () => {
 			{
 				torrentFileUrl: "https://rutracker.org/forum/dl.php?t=100",
 				kind: "films",
-				tags: [topicTag("100")],
+				tags: [topicTag("rutracker:100")],
 			},
 		]);
 	});
