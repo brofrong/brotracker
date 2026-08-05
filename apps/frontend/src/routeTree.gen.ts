@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TorrentsRouteImport } from './routes/torrents'
+import { Route as TitleIndexRouteImport } from './routes/title.index'
 import { Route as TitleIdRouteImport } from './routes/title.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const TorrentsRoute = TorrentsRouteImport.update({
   path: '/torrents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TitleIndexRoute = TitleIndexRouteImport.update({
+  id: '/title/',
+  path: '/title/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TitleIdRoute = TitleIdRouteImport.update({
   id: '/title/$id',
   path: '/title/$id',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/torrents': typeof TorrentsRoute
   '/title/$id': typeof TitleIdRoute
+  '/title/': typeof TitleIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/torrents': typeof TorrentsRoute
   '/title/$id': typeof TitleIdRoute
+  '/title': typeof TitleIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/torrents': typeof TorrentsRoute
   '/title/$id': typeof TitleIdRoute
+  '/title/': typeof TitleIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +90,16 @@ export interface FileRouteTypes {
     | '/settings'
     | '/torrents'
     | '/title/$id'
+    | '/title/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/search' | '/settings' | '/torrents' | '/title/$id'
+  to:
+    | '/'
+    | '/login'
+    | '/search'
+    | '/settings'
+    | '/torrents'
+    | '/title/$id'
+    | '/title'
   id:
     | '__root__'
     | '/'
@@ -91,6 +108,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/torrents'
     | '/title/$id'
+    | '/title/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,6 +118,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TorrentsRoute: typeof TorrentsRoute
   TitleIdRoute: typeof TitleIdRoute
+  TitleIndexRoute: typeof TitleIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -139,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TorrentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/title/': {
+      id: '/title/'
+      path: '/title'
+      fullPath: '/title/'
+      preLoaderRoute: typeof TitleIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/title/$id': {
       id: '/title/$id'
       path: '/title/$id'
@@ -156,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TorrentsRoute: TorrentsRoute,
   TitleIdRoute: TitleIdRoute,
+  TitleIndexRoute: TitleIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
