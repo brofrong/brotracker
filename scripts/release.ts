@@ -271,9 +271,6 @@ async function main() {
 		if (existsSync(GH_NOTES_PATH)) {
 			unlinkSync(GH_NOTES_PATH);
 		}
-		if (notesFile && existsSync(notesFile)) {
-			unlinkSync(notesFile);
-		}
 	}
 
 	const archiveDir = resolve(ROOT, "changes", tag);
