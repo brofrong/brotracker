@@ -46,7 +46,7 @@ function isKinozalCookieDomain(domain: string | undefined): boolean {
 	return d === "kinozal.me" || d.endsWith(".kinozal.me");
 }
 
-function extractKinozalCfClearance(
+export function extractKinozalCfClearance(
 	cookies: z.infer<typeof solverCookieSchema>[],
 ): StoredCookie | null {
 	const candidates = cookies.filter((c) => c.name === "cf_clearance" && c.value);
@@ -56,6 +56,10 @@ function extractKinozalCfClearance(
 	return forSite ? toStoredCookie(forSite) : null;
 }
 
+/**
+ * Asks Byparr to open Kinozal and solve Cloudflare when a challenge is present.
+ * Call only after detecting a CF challenge — Kinozal often works without one.
+ */
 export async function acquireKinozalCfClearance(
 	options: KinozalCfClearanceOptions,
 ): Promise<Result<{ cfClearance: StoredCookie; userAgent: string }, Error>> {
@@ -123,6 +127,11 @@ export async function acquireKinozalCfClearance(
 			);
 		}
 
+		const userAgent =
+			body.solution.userAgent ??
+			body.solution.user_agent ??
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
+
 		const cfClearance = extractKinozalCfClearance(body.solution.cookies);
 		if (!cfClearance) {
 			return err(
@@ -131,11 +140,6 @@ export async function acquireKinozalCfClearance(
 				),
 			);
 		}
-
-		const userAgent =
-			body.solution.userAgent ??
-			body.solution.user_agent ??
-			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
 		const current = await options.fileStore.read();
 		if (current.isErr()) {

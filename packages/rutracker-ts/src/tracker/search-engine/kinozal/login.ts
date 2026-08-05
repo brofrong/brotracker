@@ -170,6 +170,10 @@ async function authorizeOnce(
 	return ok({ cookies: header.value, userAgent });
 }
 
+/**
+ * Ensures Kinozal session cookies (`uid` + `pass`).
+ * Cloudflare is optional: try login first; call Byparr only on CF challenge.
+ */
 export async function kinozalGetCookies(
 	login: string,
 	password: string,
@@ -189,32 +193,20 @@ export async function kinozalGetCookies(
 		...stored.value.sessionCookies,
 	]);
 
-	if (
-		hasValidCfClearance(stored.value.cfClearance) &&
-		hasKinozalSession(stored.value.sessionCookies) &&
-		existingHeader
-	) {
+	if (hasKinozalSession(stored.value.sessionCookies) && existingHeader) {
 		return ok({
 			cookies: existingHeader,
 			userAgent: stored.value.userAgent ?? DEFAULT_UA,
 		});
 	}
 
-	const cf = await ensureCfClearance(
-		fileStore,
-		!hasValidCfClearance(stored.value.cfClearance),
-		cfSolverUrl,
-	);
-	if (cf.isErr()) {
-		return err(cf.error);
-	}
-
+	const userAgent = stored.value.userAgent ?? DEFAULT_UA;
 	let attempt = await authorizeOnce(
 		login,
 		password,
 		fileStore,
 		proxyAgent,
-		cf.value.userAgent,
+		userAgent,
 	);
 
 	if (attempt.isErr() && attempt.error.message === "CF_CHALLENGE") {
