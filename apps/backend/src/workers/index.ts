@@ -3,7 +3,7 @@
  * that records durable WorkerRuns when the night window pipeline actually runs.
  *
  * Manual runs go through `workers.run("nightly-torrent-check")` → `runNow()`.
- * Task 5 mounts the tRPC router on this module.
+ * tRPC surface: `workers.router.ts` (mounted on appRouter as `workers`).
  */
 
 import { nightlyWorker } from "../title/watch";

@@ -4,6 +4,7 @@ import { settingsRouter } from "./settings/settings.router";
 import { titleRouter } from "./title/title.router";
 import { torrentRouter } from "./torrent/torrent.router";
 import { protectedProcedure, router } from "./trpc";
+import { workersRouter } from "./workers/workers.router";
 
 export const appRouter = router({
 	hello: protectedProcedure.query(() => "Hello, World!"),
@@ -12,6 +13,7 @@ export const appRouter = router({
 	qbittorent: qbittorentRouter,
 	settings: settingsRouter,
 	title: titleRouter,
+	workers: workersRouter,
 });
 
 export type AppRouter = typeof appRouter;
