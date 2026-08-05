@@ -1,0 +1,32 @@
+---
+description: BroTracker architecture — domain docs, DAG, where code goes
+alwaysApply: true
+---
+
+# Architecture
+
+Before changing structure or adding modules, read:
+
+- `CONTEXT.md` — domain vocabulary (use these terms; avoid listed synonyms)
+- `docs/adr/0001-module-boundaries.md` — backend module DAG
+- `docs/adr/0002-frontend-vertical-slices.md` — frontend feature slices
+
+## Quick map
+
+| Concern | Lives in |
+|---|---|
+| Domain words | `CONTEXT.md` |
+| Backend feature | `apps/backend/src/<feature>/` deep module |
+| Frontend feature UI | `apps/frontend/src/features/<name>/` |
+| Thin routes | `apps/frontend/src/routes/` compose only |
+| Shared FE infra/UI | `apps/frontend/src/shared/` |
+| Hard decisions | `docs/adr/` |
+
+## Non-negotiables
+
+1. **Import DAG, no cycles** — dependencies point down (routers → cores → adapters → infra). Features do not import other features’ implementations.
+2. **Deep modules** — small `createX(deps)` interface; composition only in `index.ts`.
+3. **Thin edges** — tRPC routers and FE routes carry no business UI/logic.
+4. **Vocabulary** — say Title, Catalog, WatchTask, Transfer, Topic as in `CONTEXT.md`.
+
+When a new term or seam is decided, update `CONTEXT.md` / add an ADR — don’t leave it only in chat.
