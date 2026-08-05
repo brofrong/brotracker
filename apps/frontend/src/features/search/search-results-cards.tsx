@@ -136,7 +136,10 @@ type SearchResultsCardsProps = {
 	onDownload: (item: SearchCardItem) => void;
 };
 
-export function SearchResultsCards({ items, onDownload }: SearchResultsCardsProps) {
+export function SearchResultsCards({
+	items,
+	onDownload,
+}: SearchResultsCardsProps) {
 	return (
 		<Grid columns={{ minWidth: 260, max: 4 }} gap={3} width="100%">
 			{items.map((item) => (

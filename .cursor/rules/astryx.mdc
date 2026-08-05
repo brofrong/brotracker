@@ -1,4 +1,4 @@
-# AGENTS
+# astryx
 
 Project-specific guidance for AI coding agents.
 
@@ -32,27 +32,3 @@ MORE CLI:
   swizzle <Name>     eject component source for deep customization
   upgrade --apply    run after any @astryxdesign/core bump
 <!-- ASTRYX:END -->
-
-## Architecture
-
-Read before structural or cross-feature work:
-
-- `CONTEXT.md` — domain vocabulary
-- `docs/adr/0001-module-boundaries.md` — backend modules + import DAG
-- `docs/adr/0002-frontend-vertical-slices.md` — frontend vertical feature slices
-- `.cursor/rules/` — `architecture.mdc` (always), `frontend-features.mdc`, `backend-modules.mdc`
-- `docs/plans/2026-08-05-architecture-rules-design.md` — migration phases A→B→C
-
-## Agent skills
-
-### Issue tracker
-
-Issues live in this repo's GitHub Issues (via `gh`). See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Defaults: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: root `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.

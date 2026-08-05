@@ -7,10 +7,7 @@ export type AuthModeResponse = {
 
 export async function fetchAuthMode(
 	baseURL: string,
-	fetchImpl: (
-		input: string,
-		init?: RequestInit,
-	) => Promise<Response> = fetch,
+	fetchImpl: (input: string, init?: RequestInit) => Promise<Response> = fetch,
 ): Promise<AuthModeResponse> {
 	const root = baseURL.replace(/\/+$/, "");
 	const url = `${root}/api/auth/mode`;

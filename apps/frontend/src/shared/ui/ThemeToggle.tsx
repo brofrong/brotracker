@@ -5,10 +5,7 @@ import {
 	SegmentedControlItem,
 } from "@astryxdesign/core/SegmentedControl";
 import { Moon, Sun, SunMoon } from "lucide-react";
-import {
-	type StoredThemeMode,
-	useThemeMode,
-} from "#/components/theme-provider";
+import { type StoredThemeMode, useThemeMode } from "#/shared/ui/theme-provider";
 
 export function ThemeToggle() {
 	const { storedMode, setStoredMode } = useThemeMode();
