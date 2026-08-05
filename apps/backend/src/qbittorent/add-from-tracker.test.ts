@@ -4,6 +4,7 @@ import {
 	AddFromTrackerPreconditionError,
 	createAddFromTracker,
 	isAllowedRutrackerTorrentUrl,
+	isAllowedTrackerTorrentUrl,
 } from "./add-from-tracker";
 
 describe("isAllowedRutrackerTorrentUrl", () => {
@@ -25,6 +26,27 @@ describe("isAllowedRutrackerTorrentUrl", () => {
 		expect(
 			isAllowedRutrackerTorrentUrl(
 				"https://rutracker.org/forum/viewtopic.php?t=1",
+			),
+		).toBe(false);
+	});
+});
+
+describe("isAllowedTrackerTorrentUrl", () => {
+	test("accepts kinozal download URL", () => {
+		expect(
+			isAllowedTrackerTorrentUrl(
+				"https://dl.kinozal.me/download.php?id=12345",
+			),
+		).toBe(true);
+	});
+
+	test("rejects non-tracker download hosts", () => {
+		expect(
+			isAllowedTrackerTorrentUrl("https://evil.example/download.php?id=1"),
+		).toBe(false);
+		expect(
+			isAllowedTrackerTorrentUrl(
+				"http://dl.kinozal.me/download.php?id=1",
 			),
 		).toBe(false);
 	});
@@ -74,6 +96,34 @@ describe("addFromTracker", () => {
 		expect(calls).toEqual([
 			"fetch:https://rutracker.org/forum/dl.php?t=99",
 			"add:/data/films:3",
+		]);
+	});
+
+	test("downloads kinozal torrent and adds to qBittorrent with series path", async () => {
+		const calls: string[] = [];
+		const bytes = new Uint8Array([4, 5, 6]);
+		const addFromTracker = createAddFromTracker({
+			loadConfig: async () => ({
+				filmsPath: "/data/films",
+				seriesPath: "/data/tv",
+			}),
+			fetchTorrentFile: async (url) => {
+				calls.push(`fetch:${url}`);
+				return bytes;
+			},
+			addTorrent: async (file, options) => {
+				calls.push(`add:${options.pathToSave}:${file.length}`);
+			},
+		});
+
+		await addFromTracker(
+			"https://dl.kinozal.me/download.php?id=77",
+			"tv",
+		);
+
+		expect(calls).toEqual([
+			"fetch:https://dl.kinozal.me/download.php?id=77",
+			"add:/data/tv:3",
 		]);
 	});
 

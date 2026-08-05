@@ -1,5 +1,10 @@
 import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
-import { getTracker } from "../torrent/torrent.tracker";
+import { extractTopicId } from "../title/topic-tag";
+import {
+	getTracker,
+	getTrackerForTorrentId,
+	TrackerNotConfiguredError,
+} from "../torrent/torrent.tracker";
 import {
 	AddFromTrackerGatewayError,
 	AddFromTrackerPreconditionError,
@@ -11,12 +16,16 @@ export {
 	AddFromTrackerGatewayError,
 	AddFromTrackerPreconditionError,
 	isAllowedRutrackerTorrentUrl,
+	isAllowedTrackerTorrentUrl,
 } from "./add-from-tracker";
 
 async function fetchTorrentFile(torrentFileUrl: string): Promise<Uint8Array> {
+	const topicId = extractTopicId(torrentFileUrl);
 	let tracker;
 	try {
-		tracker = await getTracker();
+		tracker = topicId
+			? await getTrackerForTorrentId(topicId)
+			: await getTracker();
 	} catch (error) {
 		throw new AddFromTrackerPreconditionError(
 			error instanceof Error ? error.message : String(error),
@@ -35,3 +44,5 @@ export const addFromTracker = createAddFromTracker({
 	fetchTorrentFile,
 	addTorrent: (bytes, options) => addTorrent(bytes, options),
 });
+
+export { TrackerNotConfiguredError };
