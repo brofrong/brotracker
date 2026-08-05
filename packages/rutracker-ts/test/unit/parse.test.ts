@@ -14,7 +14,7 @@ async function loadFixture(name: string) {
 }
 
 function expectValidResult(result: SearchResult) {
-	expect(result.torrentId).toMatch(/^\d+$/);
+	expect(result.torrentId).toMatch(/^rutracker:\d+$/);
 	expect(result.forumId).toMatch(/^\d+$/);
 	expect(result.category.length).toBeGreaterThan(0);
 	expect(result.title.length).toBeGreaterThan(0);
@@ -65,7 +65,7 @@ test("parse У Марго проблемы с деньгами fixture", async (
 	if (!first) throw new Error("No results");
 
 	expectValidResult(first);
-	expect(first.torrentId).toBe("6847857");
+	expect(first.torrentId).toBe("rutracker:6847857");
 	expect(first.forumId).toBe("1803");
 	expect(first.category).toBe(
 		"Новинки и сериалы в стадии показа (HD Video)",
@@ -109,7 +109,7 @@ const movieFixtures: {
 		titleNeedle: /Интерстеллар|Interstellar/i,
 		totalResults: 25,
 		first: {
-			torrentId: "5014745",
+			torrentId: "rutracker:5014745",
 			forumId: "2093",
 			category: "Фильмы 2011-2015",
 			authorId: "13980964",
@@ -125,7 +125,7 @@ const movieFixtures: {
 		titleNeedle: /Побег из Шоушенка|Shawshank/i,
 		totalResults: 51,
 		first: {
-			torrentId: "3186952",
+			torrentId: "rutracker:3186952",
 			forumId: "2221",
 			category: "Фильмы 1991-2000",
 			authorId: "7047815",
@@ -141,7 +141,7 @@ const movieFixtures: {
 		titleNeedle: /Джентльмены|Gentlemen/i,
 		totalResults: 91,
 		first: {
-			torrentId: "5873327",
+			torrentId: "rutracker:5873327",
 			forumId: "2200",
 			category: "Фильмы 2016-2020",
 			authorId: "8679101",
@@ -157,7 +157,7 @@ const movieFixtures: {
 		titleNeedle: /Зелёная миля|Green Mile/i,
 		totalResults: 42,
 		first: {
-			torrentId: "3211716",
+			torrentId: "rutracker:3211716",
 			forumId: "2221",
 			category: "Фильмы 1991-2000",
 			authorId: "8937813",
@@ -173,7 +173,7 @@ const movieFixtures: {
 		titleNeedle: /Властелин колец|Return of the King/i,
 		totalResults: 29,
 		first: {
-			torrentId: "5310634",
+			torrentId: "rutracker:5310634",
 			forumId: "2091",
 			category: "Фильмы 2001-2005",
 			authorId: "23968065",
@@ -189,7 +189,7 @@ const movieFixtures: {
 		titleNeedle: /Остров проклятых|Shutter Island/i,
 		totalResults: 34,
 		first: {
-			torrentId: "4524967",
+			torrentId: "rutracker:4524967",
 			forumId: "2092",
 			category: "Фильмы 2006-2010",
 			authorId: "7047815",
@@ -205,7 +205,7 @@ const movieFixtures: {
 		titleNeedle: /Бойцовский клуб|Fight Club/i,
 		totalResults: 65,
 		first: {
-			torrentId: "4212145",
+			torrentId: "rutracker:4212145",
 			forumId: "2221",
 			category: "Фильмы 1991-2000",
 			authorId: "20407743",
@@ -221,7 +221,7 @@ const movieFixtures: {
 		titleNeedle: /1\+1|Intouchables|Неприкасаемые/i,
 		totalResults: 20,
 		first: {
-			torrentId: "4081476",
+			torrentId: "rutracker:4081476",
 			forumId: "2093",
 			category: "Фильмы 2011-2015",
 			authorId: "7047815",
@@ -237,7 +237,7 @@ const movieFixtures: {
 		titleNeedle: /Форрест Гамп|Forrest Gump/i,
 		totalResults: 51,
 		first: {
-			torrentId: "3836653",
+			torrentId: "rutracker:3836653",
 			forumId: "2221",
 			category: "Фильмы 1991-2000",
 			authorId: "7047815",
@@ -253,7 +253,7 @@ const movieFixtures: {
 		titleNeedle: /Терминатор 2|Judgment Day/i,
 		totalResults: 143,
 		first: {
-			torrentId: "1912465",
+			torrentId: "rutracker:1912465",
 			forumId: "313",
 			category: "Зарубежное кино (HD Video)",
 			authorId: "227280",
@@ -298,11 +298,14 @@ describe("parse movie search fixtures", () => {
 			expect(first.downloads).toBe(fixture.first.downloads);
 			expect(first.size).toBe(fixture.first.sizeBytes);
 			expect(first.date.getTime()).toBe(fixture.first.dateUnix * 1000);
+			const rawTorrentId = fixture.first.torrentId.includes(":")
+				? fixture.first.torrentId.split(":")[1]
+				: fixture.first.torrentId;
 			expect(first.torrentFileUrl).toBe(
-				`https://rutracker.org/forum/dl.php?t=${fixture.first.torrentId}`,
+				`https://rutracker.org/forum/dl.php?t=${rawTorrentId}`,
 			);
 			expect(first.topicUrl).toBe(
-				`https://rutracker.org/forum/viewtopic.php?t=${fixture.first.torrentId}`,
+				`https://rutracker.org/forum/viewtopic.php?t=${rawTorrentId}`,
 			);
 			expect(fixture.titleNeedle.test(first.title)).toBe(true);
 		});
@@ -372,7 +375,7 @@ test("skips broken rows instead of failing the whole page", () => {
 	expect(page.isOk()).toBe(true);
 	if (!page.isOk()) return;
 	expect(page.value.results.length).toBe(1);
-	expect(page.value.results[0]?.torrentId).toBe("2");
+	expect(page.value.results[0]?.torrentId).toBe("rutracker:2");
 	expect(page.value.results[0]?.title).toBe("Good Row");
 	expect(page.value.totalResults).toBe(2);
 });
