@@ -1,5 +1,5 @@
 import type { TitleWatchEventKind } from "./title-watch-event";
-import { extractTopicId, topicTag } from "./topic-tag";
+import { extractTopicId, topicTag } from "../topic-tag";
 import {
 	fingerprintsEqual,
 	hashTorrentBytes,

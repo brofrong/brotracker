@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import { db } from "../db/db";
-import { titleWatches } from "../db/title/title-watch.schema";
+import { db } from "../../db/db";
+import { titleWatches } from "../../db/title/title-watch.schema";
 import type { TitleWatchRecord } from "./check-topic-now";
 
 function toIso(value: Date | null | undefined): string | null {

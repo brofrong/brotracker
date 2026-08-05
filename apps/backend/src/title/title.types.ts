@@ -1,12 +1,12 @@
-import type { TitleWatchRecord, TopicMeta } from "./check-topic-now";
-import type { RecordWatchEvent } from "./check-topic-now";
-import type { EpisodeProgress } from "./episode-progress";
+import type { TitleWatchRecord, TopicMeta } from "./watch/check-topic-now";
+import type { RecordWatchEvent } from "./watch/check-topic-now";
+import type { EpisodeProgress } from "./watch/episode-progress";
 import type {
 	ProcessWatchTaskResult,
 	WatchTask,
 	WatchTaskTrigger,
-} from "./process-watch-task";
-import type { SyncQbTorrent } from "./sync-watches-from-qb";
+} from "./watch/process-watch-task";
+import type { SyncQbTorrent } from "./watch/sync-watches-from-qb";
 
 /** Matches RuTracker MediaType / app domain: films | tv. */
 export type TitleKind = "films" | "tv";

@@ -1,6 +1,6 @@
 import { desc } from "drizzle-orm";
-import { db } from "../db/db";
-import { titleWatchEvents } from "../db/title/title-watch-event.schema";
+import { db } from "../../db/db";
+import { titleWatchEvents } from "../../db/title/title-watch-event.schema";
 import type { TitleWatchEvent, WatchEventStore } from "./title-watch-event";
 
 function fromRow(row: typeof titleWatchEvents.$inferSelect): TitleWatchEvent {

@@ -1,7 +1,10 @@
 import { scoreTorrentQuality } from "../torrent/quality-score";
-import type { CheckResult, TitleWatchRecord } from "./check-topic-now";
-import { parseEpisodeProgress } from "./episode-progress";
-import { syncWatchesFromQb, type SyncQbTorrent } from "./sync-watches-from-qb";
+import type { CheckResult, TitleWatchRecord } from "./watch/check-topic-now";
+import { parseEpisodeProgress } from "./watch/episode-progress";
+import {
+	syncWatchesFromQb,
+	type SyncQbTorrent,
+} from "./watch/sync-watches-from-qb";
 import type {
 	Title,
 	TitleDeps,
@@ -557,5 +560,5 @@ export function createTitleModule(deps: TitleDeps) {
 
 export type TitleModule = ReturnType<typeof createTitleModule>;
 
-export type { CheckResult } from "./check-topic-now";
+export type { CheckResult } from "./watch/check-topic-now";
 export type { FetchTmdbMetaOutcome, TitleDeps } from "./title.types";
