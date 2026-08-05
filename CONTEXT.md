@@ -40,6 +40,16 @@ _Avoid_: Job, cron item (say WatchTask)
 A recorded outcome from a watch check (found, replaced, unchanged, failed).
 _Avoid_: Log line, notification (domain event first)
 
+### Workers
+
+**Worker**:
+A registered background process (e.g. nightly Topic/TitleWatch checker) with optional manual trigger and durable run history.
+_Avoid_: Job, cron (as the UI/API entity name)
+
+**WorkerRun**:
+One persisted execution of a Worker (`scheduled` or `manual`), with status, summary, and leveled log lines.
+_Avoid_: Job run, cron execution (prefer WorkerRun)
+
 ### Downloads
 
 **Transfer**:
