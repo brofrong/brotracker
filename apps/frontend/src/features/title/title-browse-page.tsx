@@ -9,6 +9,7 @@ import { Heading } from "@astryxdesign/core/Heading";
 import { Section } from "@astryxdesign/core/Section";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { VStack } from "@astryxdesign/core/Stack";
+import { Text } from "@astryxdesign/core/Text";
 import { skipToken, useInfiniteQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef } from "react";
@@ -90,7 +91,12 @@ export function TitleBrowsePage({ q }: { q?: string }) {
 	return (
 		<Section padding={4} variant="transparent">
 			<VStack gap={4} width="100%">
-				<Heading level={1}>Фильмы и сериалы</Heading>
+				<VStack gap={1} width="100%">
+					<Heading level={1}>Фильмы и сериалы</Heading>
+					<Text type="supporting">
+						Поиск по TMDB — фильмы и сериалы
+					</Text>
+				</VStack>
 				<SearchBar
 					initialQuery={query}
 					isSearching={showInitialSpinner}

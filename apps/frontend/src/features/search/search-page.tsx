@@ -4,6 +4,7 @@ import { AspectRatio } from "@astryxdesign/core/AspectRatio";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Button } from "@astryxdesign/core/Button";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
+import { Heading } from "@astryxdesign/core/Heading";
 import { Icon } from "@astryxdesign/core/Icon";
 import { Section } from "@astryxdesign/core/Section";
 import {
@@ -298,11 +299,17 @@ export function SearchPage({ search }: { search?: string }) {
 	return (
 		<VStack gap={3} width="100%">
 			<Section padding={4} variant="transparent">
-				<SearchBar
-					initialQuery={search ?? ""}
-					isSearching={showInitialSpinner}
-					onSearch={handleSearch}
-				/>
+				<VStack gap={3} width="100%">
+					<VStack gap={1} width="100%">
+						<Heading level={1}>Поиск</Heading>
+						<Text type="supporting">Поиск по трекеру</Text>
+					</VStack>
+					<SearchBar
+						initialQuery={search ?? ""}
+						isSearching={showInitialSpinner}
+						onSearch={handleSearch}
+					/>
+				</VStack>
 			</Section>
 			{showTrackerIndicator ? (
 				<HStack gap={2} paddingInline={4} vAlign="center">
