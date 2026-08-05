@@ -191,6 +191,29 @@ describe("title.torrents", () => {
 
 		expect(result).toEqual({ status: "empty", items: [] });
 	});
+	test("uses optional query override instead of title name", async () => {
+		const title = createTitleModule(
+			deps({
+				searchTorrents: async (query) => {
+					expect(query).toBe("Inception сезон 2");
+					return {
+						status: "ok",
+						local: [],
+						tracker: [candidate({ torrentId: "42" })],
+					};
+				},
+			}),
+		);
+
+		const result = await title.torrents({
+			id: "tmdb:films:1",
+			query: "Inception сезон 2",
+		});
+
+		expect(result.status).toBe("ok");
+		expect(result.items).toHaveLength(1);
+		expect(result.items[0]?.torrentId).toBe("42");
+	});
 });
 
 describe("title.add", () => {

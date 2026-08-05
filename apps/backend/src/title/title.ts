@@ -365,9 +365,12 @@ export function createTitleModule(deps: TitleDeps) {
 			};
 		},
 
-		async torrents(input: { id: string }): Promise<TitleTorrentsResult> {
+		async torrents(input: {
+			id: string;
+			query?: string;
+		}): Promise<TitleTorrentsResult> {
 			const title = await this.get({ id: input.id });
-			const query = title.meta.name?.trim();
+			const query = input.query?.trim() || title.meta.name?.trim();
 			if (!query) {
 				return { status: "empty", items: [] };
 			}
