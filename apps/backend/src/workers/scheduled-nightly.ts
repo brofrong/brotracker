@@ -1,12 +1,15 @@
-import type { NightlyTickResult } from "../title/watch/nightly-worker";
 import { logger } from "../utils/logger";
 
 const DEFAULT_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 
+export type ScheduledTickResult =
+	| { ran: false }
+	| { ran: true; enqueued: number; processed: number };
+
 export type StartScheduledNightlyWorkerOptions = {
-	tick: () => Promise<NightlyTickResult>;
+	tick: () => Promise<ScheduledTickResult>;
 	onRan: (
-		result: Extract<NightlyTickResult, { ran: true }>,
+		result: Extract<ScheduledTickResult, { ran: true }>,
 	) => Promise<void>;
 	intervalMs?: number;
 };

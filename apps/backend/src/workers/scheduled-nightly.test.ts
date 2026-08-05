@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { startScheduledNightlyWorker } from "./scheduled-nightly";
-import type { NightlyTickResult } from "../title/watch/nightly-worker";
+import {
+	startScheduledNightlyWorker,
+	type ScheduledTickResult,
+} from "./scheduled-nightly";
 
 describe("startScheduledNightlyWorker", () => {
 	test("records a finished run when tick ran", async () => {
-		const recorded: NightlyTickResult[] = [];
+		const recorded: ScheduledTickResult[] = [];
 		let resolveTick!: () => void;
 		const tickDone = new Promise<void>((r) => {
 			resolveTick = r;
