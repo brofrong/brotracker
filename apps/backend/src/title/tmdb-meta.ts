@@ -5,6 +5,7 @@ import type {
 	TitleSimilarItem,
 	TmdbMeta,
 } from "./title.types";
+import { yearFromDate } from "../tmdb/dates";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
 const BACKDROP_BASE = "https://image.tmdb.org/t/p/w1280";
@@ -98,14 +99,6 @@ export function profileUrl(
 		return null;
 	}
 	return `${PROFILE_BASE}${profilePath}`;
-}
-
-export function yearFromDate(date: string | undefined): number | null {
-	if (!date || date.length < 4) {
-		return null;
-	}
-	const year = Number(date.slice(0, 4));
-	return Number.isFinite(year) ? year : null;
 }
 
 export function parseCast(cast: TmdbCastMember[] | undefined): TitleCastMember[] {
