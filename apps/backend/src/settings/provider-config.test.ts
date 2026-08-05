@@ -33,6 +33,7 @@ describe("provider-config rutracker", () => {
 			login: "alice",
 			password: "secret",
 			proxyUrl: "socks5://127.0.0.1:1080",
+			enabled: true,
 		});
 	});
 
@@ -56,6 +57,7 @@ describe("provider-config rutracker", () => {
 			login: "alice",
 			password: "secret",
 			proxyUrl: "http://proxy:8080",
+			enabled: true,
 		});
 		expect(result.effects).toEqual({
 			clearSession: true,
@@ -65,6 +67,7 @@ describe("provider-config rutracker", () => {
 			login: "alice",
 			password: "secret",
 			proxyUrl: "http://proxy:8080",
+			enabled: true,
 		});
 	});
 
@@ -99,6 +102,83 @@ describe("provider-config rutracker", () => {
 		expect(result.effects).toEqual({
 			clearSession: false,
 			invalidateTracker: false,
+		});
+	});
+});
+
+describe("provider-config kinozal", () => {
+	test("get defaults enabled to false when unset", async () => {
+		const providers = createProviderConfig(memoryStore());
+
+		await expect(providers.getKinozal()).resolves.toEqual({
+			login: "",
+			password: "",
+			proxyUrl: null,
+			enabled: false,
+		});
+	});
+
+	test("get returns stored kinozal config", async () => {
+		const store = memoryStore({
+			kinozal: {
+				login: "kuser",
+				password: "kpass",
+				proxyUrl: null,
+				enabled: true,
+			},
+		});
+		const providers = createProviderConfig(store);
+
+		await expect(providers.getKinozal()).resolves.toEqual({
+			login: "kuser",
+			password: "kpass",
+			proxyUrl: null,
+			enabled: true,
+		});
+	});
+
+	test("save keeps existing password when incoming password is empty", async () => {
+		const store = memoryStore({
+			kinozal: {
+				login: "kuser",
+				password: "secret",
+				proxyUrl: null,
+				enabled: false,
+			},
+		});
+		const providers = createProviderConfig(store);
+
+		const result = await providers.saveKinozal({
+			login: "kuser",
+			password: "",
+			proxyUrl: "http://proxy:8080",
+			enabled: true,
+		});
+
+		expect(result.public).toEqual({
+			login: "kuser",
+			password: "secret",
+			proxyUrl: "http://proxy:8080",
+			enabled: true,
+		});
+		expect(result.effects).toEqual({
+			clearSession: true,
+			invalidateTracker: true,
+		});
+	});
+
+	test("legacy rutracker rows without enabled default to enabled true", async () => {
+		const store = memoryStore({
+			rutracker: {
+				login: "alice",
+				password: "secret",
+				proxyUrl: null,
+			},
+		});
+		const providers = createProviderConfig(store);
+
+		await expect(providers.getRutracker()).resolves.toMatchObject({
+			enabled: true,
 		});
 	});
 });

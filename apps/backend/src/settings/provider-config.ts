@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type {
+	KinozalProviderConfig,
 	QbittorrentProviderConfig,
 	RutrackerProviderConfig,
 	TmdbProviderConfig,
@@ -8,9 +9,11 @@ import {
 	proxyUrlSchema,
 	rutrackerConfigSchema,
 } from "./rutracker-config";
+import { kinozalConfigSchema } from "./kinozal-config";
 import { qbittorrentConfigSchema } from "./qbittorrent-config";
 
 export const RUTRACKER_PROVIDER = "rutracker";
+export const KINOZAL_PROVIDER = "kinozal";
 export const QBITTORRENT_PROVIDER = "qbittorrent";
 export const TMDB_PROVIDER = "tmdb";
 
@@ -30,6 +33,14 @@ export type RutrackerPublic = {
 	login: string;
 	password: string;
 	proxyUrl: string | null;
+	enabled: boolean;
+};
+
+export type KinozalPublic = {
+	login: string;
+	password: string;
+	proxyUrl: string | null;
+	enabled: boolean;
 };
 
 export type QbittorrentPublic = {
@@ -46,15 +57,26 @@ export type TmdbPublic = {
 	isConfigured: boolean;
 };
 
-export type RutrackerEffects = {
+export type TrackerProviderEffects = {
 	clearSession: boolean;
 	invalidateTracker: boolean;
 };
+
+/** @deprecated Use TrackerProviderEffects */
+export type RutrackerEffects = TrackerProviderEffects;
 
 const rutrackerStoredSchema = z.object({
 	login: z.string(),
 	password: z.string(),
 	proxyUrl: z.string().nullable(),
+	enabled: z.boolean().optional(),
+});
+
+const kinozalStoredSchema = z.object({
+	login: z.string(),
+	password: z.string(),
+	proxyUrl: z.string().nullable(),
+	enabled: z.boolean().optional(),
 });
 
 const qbittorrentStoredSchema = z.object({
@@ -82,12 +104,25 @@ function toRutrackerPublic(
 	config: RutrackerProviderConfig | null,
 ): RutrackerPublic {
 	if (!config) {
-		return { login: "", password: "", proxyUrl: null };
+		return { login: "", password: "", proxyUrl: null, enabled: true };
 	}
 	return {
 		login: config.login,
 		password: config.password,
 		proxyUrl: config.proxyUrl,
+		enabled: config.enabled,
+	};
+}
+
+function toKinozalPublic(config: KinozalProviderConfig | null): KinozalPublic {
+	if (!config) {
+		return { login: "", password: "", proxyUrl: null, enabled: false };
+	}
+	return {
+		login: config.login,
+		password: config.password,
+		proxyUrl: config.proxyUrl,
+		enabled: config.enabled,
 	};
 }
 
@@ -135,6 +170,23 @@ function parseRutracker(raw: unknown): RutrackerProviderConfig | null {
 		login: parsed.data.login,
 		password: parsed.data.password,
 		proxyUrl: parsed.data.proxyUrl,
+		enabled: parsed.data.enabled ?? true,
+	};
+}
+
+function parseKinozal(raw: unknown): KinozalProviderConfig | null {
+	const parsed = kinozalStoredSchema.safeParse(raw);
+	if (!parsed.success) {
+		return null;
+	}
+	if (!parsed.data.login || !parsed.data.password) {
+		return null;
+	}
+	return {
+		login: parsed.data.login,
+		password: parsed.data.password,
+		proxyUrl: parsed.data.proxyUrl,
+		enabled: parsed.data.enabled ?? false,
 	};
 }
 
@@ -174,17 +226,25 @@ export function createProviderConfig(store: ProviderStore) {
 		return parseQbittorrent(await store.load(QBITTORRENT_PROVIDER));
 	}
 
+	async function loadKinozal(): Promise<KinozalProviderConfig | null> {
+		return parseKinozal(await store.load(KINOZAL_PROVIDER));
+	}
+
 	async function loadTmdb(): Promise<TmdbProviderConfig | null> {
 		return parseTmdb(await store.load(TMDB_PROVIDER));
 	}
 
 	return {
 		loadRutracker,
+		loadKinozal,
 		loadQbittorrent,
 		loadTmdb,
 
 		getRutracker: async (): Promise<RutrackerPublic> =>
 			toRutrackerPublic(await loadRutracker()),
+
+		getKinozal: async (): Promise<KinozalPublic> =>
+			toKinozalPublic(await loadKinozal()),
 
 		getQbittorrent: async (): Promise<QbittorrentPublic> =>
 			toQbittorrentPublic(await loadQbittorrent()),
@@ -196,10 +256,11 @@ export function createProviderConfig(store: ProviderStore) {
 			login: string;
 			password: string;
 			proxyUrl: string | null | undefined;
+			enabled?: boolean;
 		}): Promise<{
 			config: RutrackerProviderConfig;
 			public: RutrackerPublic;
-			effects: RutrackerEffects;
+			effects: TrackerProviderEffects;
 		}> => {
 			const existing = await loadRutracker();
 			const password =
@@ -215,6 +276,7 @@ export function createProviderConfig(store: ProviderStore) {
 				login: input.login,
 				password,
 				proxyUrl: input.proxyUrl,
+				enabled: input.enabled ?? existing?.enabled ?? true,
 			});
 
 			const credentialsChanged =
@@ -228,6 +290,51 @@ export function createProviderConfig(store: ProviderStore) {
 			return {
 				config,
 				public: toRutrackerPublic(config),
+				effects: {
+					clearSession: credentialsChanged,
+					invalidateTracker: credentialsChanged,
+				},
+			};
+		},
+
+		saveKinozal: async (input: {
+			login: string;
+			password: string;
+			proxyUrl: string | null | undefined;
+			enabled?: boolean;
+		}): Promise<{
+			config: KinozalProviderConfig;
+			public: KinozalPublic;
+			effects: TrackerProviderEffects;
+		}> => {
+			const existing = await loadKinozal();
+			const password =
+				input.password.length > 0
+					? input.password
+					: (existing?.password ?? "");
+
+			if (!password) {
+				throw new MissingSecretError("Password is required");
+			}
+
+			const config = kinozalConfigSchema.parse({
+				login: input.login,
+				password,
+				proxyUrl: input.proxyUrl,
+				enabled: input.enabled ?? existing?.enabled ?? false,
+			});
+
+			const credentialsChanged =
+				!existing ||
+				existing.login !== config.login ||
+				existing.password !== config.password ||
+				(existing.proxyUrl ?? null) !== (config.proxyUrl ?? null);
+
+			await store.save(KINOZAL_PROVIDER, config);
+
+			return {
+				config,
+				public: toKinozalPublic(config),
 				effects: {
 					clearSession: credentialsChanged,
 					invalidateTracker: credentialsChanged,

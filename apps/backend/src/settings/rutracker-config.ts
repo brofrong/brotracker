@@ -26,6 +26,7 @@ export const rutrackerConfigSchema = z.object({
 	login: z.string().min(1),
 	password: z.string().min(1),
 	proxyUrl: proxyUrlSchema,
+	enabled: z.boolean().optional().default(true),
 });
 
 export {

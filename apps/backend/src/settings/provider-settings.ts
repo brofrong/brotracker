@@ -1,8 +1,10 @@
 import {
+	clearKinozalSession,
 	clearRutrackerSession,
 	invalidateTracker,
 } from "../torrent/torrent.tracker";
 import {
+	loadKinozalConfig,
 	loadQbittorrentConfig,
 	loadRutrackerConfig,
 	loadTmdbConfig,
@@ -10,6 +12,7 @@ import {
 } from "./provider-config.live";
 
 export {
+	loadKinozalConfig,
 	loadQbittorrentConfig,
 	loadRutrackerConfig,
 	loadTmdbConfig,
@@ -21,13 +24,30 @@ export async function saveRutrackerSettings(input: {
 	login: string;
 	password: string;
 	proxyUrl: string | null | undefined;
+	enabled?: boolean;
 }) {
 	const result = await providerConfig.saveRutracker(input);
 	if (result.effects.clearSession) {
 		await clearRutrackerSession();
 	}
 	if (result.effects.invalidateTracker) {
-		invalidateTracker();
+		invalidateTracker("rutracker");
+	}
+	return result.public;
+}
+
+export async function saveKinozalSettings(input: {
+	login: string;
+	password: string;
+	proxyUrl: string | null | undefined;
+	enabled?: boolean;
+}) {
+	const result = await providerConfig.saveKinozal(input);
+	if (result.effects.clearSession) {
+		await clearKinozalSession();
+	}
+	if (result.effects.invalidateTracker) {
+		invalidateTracker("kinozal");
 	}
 	return result.public;
 }

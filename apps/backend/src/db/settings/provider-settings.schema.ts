@@ -4,6 +4,14 @@ export type RutrackerProviderConfig = {
 	login: string;
 	password: string;
 	proxyUrl: string | null;
+	enabled: boolean;
+};
+
+export type KinozalProviderConfig = {
+	login: string;
+	password: string;
+	proxyUrl: string | null;
+	enabled: boolean;
 };
 
 export type QbittorrentProviderConfig = {
