@@ -1,0 +1,41 @@
+---
+description: Vertical feature slices — thin routes, features own UI and data hooks
+globs: apps/frontend/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend features
+
+## Layout
+
+```
+apps/frontend/src/
+  routes/                 # thin only
+  features/<name>/        # page UI, hooks, feature helpers
+  shared/ui/              # cross-feature components
+  shared/lib/             # trpc client, env, format
+```
+
+## Thin routes
+
+```tsx
+// ✅ routes/torrents.tsx
+export const Route = createFileRoute("/torrents")({
+  component: () => <TorrentsPage />,
+});
+
+// ❌ No forms, tables, trpc hooks, or private subcomponents in route files
+```
+
+Pass `$id` / search params from the route into the page as props. Features should not read router internals directly.
+
+## Feature rules
+
+- One feature folder per product area: `search`, `torrents`, `title`, `settings`, `home`.
+- Colocate data hooks (`useTorrentList`, …) and invalidation with the feature.
+- Do not import another feature. Promote shared pieces to `shared/ui` or `shared/lib`.
+- Keep `shared/lib/trpc.ts` as the client only — no feature queries there.
+
+## Migration
+
+When touching a god route (`torrents.tsx`, `title.$id.tsx`, `settings.tsx`), extract into `features/<name>/` instead of growing the route file. Prefer the existing `components/search/` pattern as the target shape under `features/`.

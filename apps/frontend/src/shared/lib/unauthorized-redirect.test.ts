@@ -58,9 +58,9 @@ describe("unauthorized redirect policy", () => {
 
 describe("isUnauthorizedTrpcError", () => {
 	test("detects UNAUTHORIZED code on TRPC-shaped errors", () => {
-		expect(
-			isUnauthorizedTrpcError({ data: { code: "UNAUTHORIZED" } }),
-		).toBe(true);
+		expect(isUnauthorizedTrpcError({ data: { code: "UNAUTHORIZED" } })).toBe(
+			true,
+		);
 		expect(isUnauthorizedTrpcError(new Error("nope"))).toBe(false);
 	});
 });

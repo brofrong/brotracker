@@ -1,0 +1,48 @@
+---
+description: Backend deep modules, import DAG, thin routers
+globs: apps/backend/**/*.ts
+alwaysApply: false
+---
+
+# Backend modules
+
+## Feature skeleton
+
+```
+<feature>/
+  <feature>.ts           # createX(deps) — deep core
+  <feature>.types.ts     # ports + public types
+  index.ts               # composition only
+  <feature>.router.ts    # Zod → core → map errors
+  <feature>.repository.ts
+  *.test.ts              # test through the interface
+```
+
+Watch pipeline: keep under `title/watch/` with its own entry — don’t scatter new watch files at `title/` root.
+
+## Import DAG (down only)
+
+```
+router / worker
+  → feature core (via createX)
+    → adapters (db/*, qbittorrent, storage, tracker)
+      → infra (http, env)
+```
+
+**Forbidden**
+
+- Feature A imports Feature B implementation (repos, internals)
+- Router contains business logic
+- Infra (proxy agent, generic fetch) living under `torrent/` — use `http/`
+- `*.repository` importing Catalog (or any feature core) for types — types stay with the data owner
+
+**Allowed**
+
+- `index.ts` wires adapters + settings ports into `createX`
+- Home reads feed/watch data via ports or read-model helpers, not title repositories
+- Catalog owns search orchestration; tRPC `torrent.*` may alias into Catalog
+
+## Naming
+
+- Prefer `<entity>.<role>.ts` (`title.repository.ts`, `torrent.router.ts`)
+- Folder `qbittorent` is legacy spelling — when renaming, use `qbittorrent` only
