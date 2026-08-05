@@ -11,7 +11,7 @@ import {
 	titleModule,
 	tmdbBrowse,
 } from "./index";
-import type { BrowseOutcome } from "./tmdb-browse";
+import type { BrowseOutcome } from "../tmdb/browse";
 
 function browseOrThrow(outcome: BrowseOutcome) {
 	if (outcome.status === "unavailable") {

@@ -3,7 +3,7 @@ import {
 	createTmdbBrowse,
 	mapBrowseItem,
 	type TmdbBrowseItem,
-} from "./tmdb-browse";
+} from "./browse";
 
 describe("mapBrowseItem", () => {
 	test("maps movie row to films title card", () => {

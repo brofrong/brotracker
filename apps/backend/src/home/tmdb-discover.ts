@@ -3,7 +3,7 @@ import {
 	createTmdbBrowse,
 	mapBrowseItem,
 	type TmdbBrowseItem,
-} from "../title/tmdb-browse";
+} from "../tmdb/browse";
 import type { DiscoverCard } from "./home";
 
 export function mapTrendingItem(item: TmdbBrowseItem): DiscoverCard | null {
