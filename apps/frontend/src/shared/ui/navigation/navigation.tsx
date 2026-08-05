@@ -12,7 +12,15 @@ import {
 } from "@astryxdesign/core/SideNav";
 import { HStack } from "@astryxdesign/core/Stack";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bot, Download, Film, Home, Search, Settings } from "lucide-react";
+import {
+	Bot,
+	ChartLine,
+	Download,
+	Film,
+	Home,
+	Search,
+	Settings,
+} from "lucide-react";
 import { type ComponentPropsWithoutRef, forwardRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -88,6 +96,13 @@ export function NavItems() {
 				href="/torrents"
 				icon={Download}
 				isSelected={pathname === "/torrents"}
+			/>
+			<SideNavItem
+				as={SideNavLink}
+				label={t("stats")}
+				href="/stats"
+				icon={ChartLine}
+				isSelected={pathname === "/stats"}
 			/>
 			<SideNavItem
 				as={SideNavLink}

@@ -66,6 +66,7 @@
 		"films": "Movies",
 		"search": "Search",
 		"torrents": "Torrents",
+		"stats": "Stats",
 		"workers": "Workers",
 		"settings": "Settings",
 		"ariaLabel": "Navigation",
@@ -399,6 +400,25 @@
 			"ok": "qBittorrent free disk space: {{amount}}",
 			"unknown": "Free disk space unknown"
 		}
+	},
+	"stats": {
+		"title": "Stats",
+		"description": "Daily average Transfer speeds while activity was happening, with min–max range.",
+		"rangeLabel": "Period",
+		"preset30d": "Last 30 days",
+		"preset90d": "Last 90 days",
+		"preset1y": "Last year",
+		"rangeTooLong": "Choose a range of at most 3 years.",
+		"loading": "Loading speed history",
+		"loadFailedTitle": "Could not load stats",
+		"loadFailed": "Failed to load speed history. Try again later.",
+		"emptyTitle": "No speed data yet",
+		"emptyDescription": "Daily speeds appear after the backend samples active uploads or downloads. History starts from when sampling began.",
+		"chartHeading": "Average speed",
+		"chartSubheading": "{{from}} – {{to}}",
+		"download": "Download",
+		"upload": "Upload",
+		"tooltipHint": "min · avg · max"
 	},
 	"workers": {
 		"list": {

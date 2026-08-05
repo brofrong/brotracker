@@ -12,6 +12,7 @@ export const namespaces = [
 	"search",
 	"title",
 	"transfers",
+	"stats",
 	"workers",
 	"auth",
 ] as const;
