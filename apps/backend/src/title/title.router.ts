@@ -100,10 +100,18 @@ export const titleRouter = router({
 		}),
 
 	torrents: protectedProcedure
-		.input(z.object({ id: z.string().min(1) }))
+		.input(
+			z.object({
+				id: z.string().min(1),
+				query: z.string().min(1).optional(),
+			}),
+		)
 		.query(async ({ input }) => {
 			assertTitleId(input.id);
-			return titleModule.torrents({ id: input.id });
+			return titleModule.torrents({
+				id: input.id,
+				query: input.query,
+			});
 		}),
 
 	add: protectedProcedure

@@ -18,16 +18,18 @@ import {
 	SegmentedControl,
 	SegmentedControlItem,
 } from "@astryxdesign/core/SegmentedControl";
+import { Selector } from "@astryxdesign/core/Selector";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Text } from "@astryxdesign/core/Text";
+import { TextInput } from "@astryxdesign/core/TextInput";
 import { useToast } from "@astryxdesign/core/Toast";
 import { MediaTheme } from "@astryxdesign/core/theme";
 import { detectMediaType } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/media-type";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImageOff, Star } from "lucide-react";
-import { type SVGProps, useState } from "react";
+import { type SVGProps, useEffect, useMemo, useState } from "react";
 import {
 	formatBytes,
 	formatEta,
@@ -149,17 +151,68 @@ type TitleTorrentItem = {
 	} | null;
 };
 
+function buildTorrentsQuery(titleName: string, season: number | null): string {
+	const name = titleName.trim();
+	if (!name) {
+		return "";
+	}
+	if (season == null) {
+		return name;
+	}
+	return `${name} сезон ${season}`;
+}
+
 function TitleTorrentsList({
 	titleId,
+	titleName,
 	facet,
+	seasons,
 }: {
 	titleId: string;
+	titleName: string;
 	facet: "films" | "tv" | null;
+	seasons: number | null;
 }) {
 	const toast = useToast();
 	const queryClient = useQueryClient();
+	const isTv = facet === "tv";
+	const seasonCount = seasons != null && seasons > 0 ? seasons : null;
+
+	const [season, setSeason] = useState<string | null>(
+		isTv && seasonCount != null ? "1" : null,
+	);
+	const [queryDraft, setQueryDraft] = useState(() =>
+		buildTorrentsQuery(
+			titleName,
+			isTv && seasonCount != null ? 1 : null,
+		),
+	);
+	const [searchQuery, setSearchQuery] = useState(queryDraft);
+
+	useEffect(() => {
+		const trimmed = queryDraft.trim();
+		const timer = window.setTimeout(() => {
+			setSearchQuery(trimmed);
+		}, 400);
+		return () => window.clearTimeout(timer);
+	}, [queryDraft]);
+
+	const seasonOptions = useMemo(() => {
+		if (seasonCount == null) {
+			return [];
+		}
+		return Array.from({ length: seasonCount }, (_, index) => {
+			const value = String(index + 1);
+			return { value, label: `Сезон ${value}` };
+		});
+	}, [seasonCount]);
+
 	const torrentsQuery = useQuery({
-		...trpc.title.torrents.queryOptions({ id: titleId }),
+		...trpc.title.torrents.queryOptions({
+			id: titleId,
+			query: searchQuery || undefined,
+		}),
+		enabled: searchQuery.length > 0,
 		refetchOnWindowFocus: false,
 		refetchInterval: (query) => {
 			const items = query.state.data?.items ?? [];
@@ -172,7 +225,7 @@ function TitleTorrentsList({
 		onSuccess: async () => {
 			toast({ body: "Торрент добавлен в qBittorrent" });
 			await queryClient.invalidateQueries({
-				queryKey: trpc.title.torrents.queryKey({ id: titleId }),
+				queryKey: trpc.title.torrents.pathKey(),
 			});
 			await queryClient.invalidateQueries({
 				queryKey: trpc.title.get.queryKey({ id: titleId }),
@@ -185,6 +238,16 @@ function TitleTorrentsList({
 			});
 		},
 	});
+
+	const onSeasonChange = (value: string | null) => {
+		setSeason(value);
+		const next = buildTorrentsQuery(
+			titleName,
+			value != null ? Number(value) : null,
+		);
+		setQueryDraft(next);
+		setSearchQuery(next);
+	};
 
 	const onAdd = (item: TitleTorrentItem) => {
 		const kind = facet ?? detectMediaType(item.forumId);
@@ -203,10 +266,49 @@ function TitleTorrentsList({
 		});
 	};
 
+	const controls = (
+		<VStack gap={2} width="100%">
+			<Heading level={2}>Раздачи</Heading>
+			{isTv && seasonCount != null ? (
+				<Selector
+					hasClear
+					label="Сезон"
+					onChange={onSeasonChange}
+					options={seasonOptions}
+					placeholder="Все сезоны"
+					size="sm"
+					value={season ?? undefined}
+					width={200}
+				/>
+			) : null}
+			<TextInput
+				hasClear
+				label="Запрос"
+				onChange={setQueryDraft}
+				placeholder="Поисковый запрос"
+				size="sm"
+				value={queryDraft}
+				width="100%"
+			/>
+		</VStack>
+	);
+
+	if (!searchQuery) {
+		return (
+			<VStack gap={3} width="100%">
+				{controls}
+				<EmptyState
+					description="Введите запрос, чтобы найти раздачи."
+					title="Нет запроса"
+				/>
+			</VStack>
+		);
+	}
+
 	if (torrentsQuery.isLoading) {
 		return (
-			<VStack gap={2} width="100%">
-				<Heading level={2}>Раздачи</Heading>
+			<VStack gap={3} width="100%">
+				{controls}
 				<Skeleton height={48} width="100%" />
 				<Skeleton height={48} width="100%" />
 			</VStack>
@@ -215,26 +317,24 @@ function TitleTorrentsList({
 
 	if (torrentsQuery.isError) {
 		return (
-			<EmptyState
-				description={torrentsQuery.error.message}
-				title="Не удалось загрузить раздачи"
-			/>
+			<VStack gap={3} width="100%">
+				{controls}
+				<EmptyState
+					description={torrentsQuery.error.message}
+					title="Не удалось загрузить раздачи"
+				/>
+			</VStack>
 		);
 	}
 
 	const result = torrentsQuery.data;
-	if (!result || result.status === "empty" || result.items.length === 0) {
-		return (
-			<EmptyState
-				description="Когда появятся кандидаты на трекере или в локальном кэше — они будут здесь."
-				title="Раздач пока нет"
-			/>
-		);
-	}
+	const items = result?.items ?? [];
 
 	return (
-		<VStack gap={2} width="100%">
-			{result.status === "degraded" ? (
+		<VStack gap={3} width="100%">
+			{controls}
+
+			{result?.status === "degraded" ? (
 				<Banner
 					container="section"
 					description="Показан локальный кэш. Трекер временно недоступен."
@@ -243,76 +343,90 @@ function TitleTorrentsList({
 				/>
 			) : null}
 
-			<List
-				density="compact"
-				hasDividers
-				header={<Heading level={2}>Раздачи</Heading>}
-			>
-				{result.items.map((item) => {
-					const transfer = item.transfer;
-					const progressPct = transfer
-						? Math.round(transfer.progress * 100)
-						: 0;
-					const done = transfer != null && transfer.progress >= 0.999;
+			{!result || result.status === "empty" || items.length === 0 ? (
+				<EmptyState
+					description="Когда появятся кандидаты на трекере или в локальном кэше — они будут здесь."
+					title="Раздач пока нет"
+				/>
+			) : (
+				<List density="compact" hasDividers>
+					{items.map((item) => {
+						const transfer = item.transfer;
+						const progressPct = transfer
+							? Math.round(transfer.progress * 100)
+							: 0;
+						const done = transfer != null && transfer.progress >= 0.999;
 
-					return (
-						<ListItem
-							key={item.torrentId}
-							description={
-								<VStack gap={2} width="100%">
-									<HStack gap={1} wrap="wrap">
-										{item.badges.map((badge) => (
-											<Badge
-												key={badge}
-												label={badge}
-												variant={badgeVariant(badge)}
-											/>
-										))}
-										<Text hasTabularNumbers type="supporting">
-											{formatBytes(item.size)}
-										</Text>
-										<Text hasTabularNumbers type="supporting">
-											↑ {item.seeds} · ↓ {item.leeches}
-										</Text>
-									</HStack>
-									{transfer ? (
-										<VStack gap={1} width="100%">
-											<ProgressBar
-												hasValueLabel
-												isLabelHidden
-												label={`Прогресс ${item.title}`}
-												max={100}
-												value={progressPct}
-												variant={done ? "success" : "accent"}
-												formatValueLabel={() =>
-													formatProgress(transfer.progress)
-												}
-											/>
+						return (
+							<ListItem
+								key={item.torrentId}
+								description={
+									<VStack gap={2} width="100%">
+										<HStack gap={1} wrap="wrap">
+											{item.badges.map((badge) => (
+												<Badge
+													key={badge}
+													label={badge}
+													variant={badgeVariant(badge)}
+												/>
+											))}
 											<Text hasTabularNumbers type="supporting">
-												{done
-													? `${transfer.stateLabel} · Готово`
-													: `${transfer.stateLabel} · ${formatSpeed(transfer.downloadSpeed)} · ETA ${formatEta(transfer.etaSeconds)}`}
+												{formatBytes(item.size)}
 											</Text>
-										</VStack>
-									) : null}
-								</VStack>
-							}
-							endContent={
-								transfer ? null : (
-									<Button
-										label="Скачать"
-										size="sm"
-										variant="secondary"
-										isDisabled={addMutation.isPending}
-										onClick={() => onAdd(item)}
-									/>
-								)
-							}
-							label={item.title}
-						/>
-					);
-				})}
-			</List>
+											<Text hasTabularNumbers type="supporting">
+												↑ {item.seeds} · ↓ {item.leeches}
+											</Text>
+										</HStack>
+										{transfer ? (
+											<VStack gap={1} width="100%">
+												<ProgressBar
+													hasValueLabel
+													isLabelHidden
+													label={`Прогресс ${item.title}`}
+													max={100}
+													value={progressPct}
+													variant={done ? "success" : "accent"}
+													formatValueLabel={() =>
+														formatProgress(transfer.progress)
+													}
+												/>
+												<Text hasTabularNumbers type="supporting">
+													{done
+														? `${transfer.stateLabel} · Готово`
+														: `${transfer.stateLabel} · ${formatSpeed(transfer.downloadSpeed)} · ETA ${formatEta(transfer.etaSeconds)}`}
+												</Text>
+											</VStack>
+										) : null}
+									</VStack>
+								}
+								endContent={
+									<HStack gap={1}>
+										{transfer ? null : (
+											<Button
+												label="Скачать"
+												size="sm"
+												variant="secondary"
+												isDisabled={addMutation.isPending}
+												onClick={() => onAdd(item)}
+											/>
+										)}
+										<Button
+											href={item.topicUrl}
+											icon={<Icon icon="externalLink" size="sm" />}
+											isExternalLink
+											label="На трекере"
+											size="sm"
+											target="_blank"
+											variant="ghost"
+										/>
+									</HStack>
+								}
+								label={item.title}
+							/>
+						);
+					})}
+				</List>
+			)}
 		</VStack>
 	);
 }
@@ -375,7 +489,7 @@ function TitleWatchPanel({
 				queryKey: trpc.title.get.queryKey({ id: titleId }),
 			});
 			await queryClient.invalidateQueries({
-				queryKey: trpc.title.torrents.queryKey({ id: titleId }),
+				queryKey: trpc.title.torrents.pathKey(),
 			});
 
 			if (result.status === "unchanged") {
@@ -770,7 +884,13 @@ export function TitlePage({ id }: { id: string }) {
 					</VStack>
 				) : null}
 
-				<TitleTorrentsList facet={facet} titleId={id} />
+				<TitleTorrentsList
+					key={id}
+					facet={facet}
+					seasons={meta.seasons}
+					titleId={id}
+					titleName={titleName}
+				/>
 
 				{meta.similar.length > 0 ? (
 					<VStack gap={3} width="100%">
