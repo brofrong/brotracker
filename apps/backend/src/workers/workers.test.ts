@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { createMemoryWorkerRunStore } from "./worker-run.memory";
 import { createWorkers } from "./workers";
-import type { WorkerDefinition, WorkerLogLine } from "./workers.types";
+import type {
+	WorkerDefinition,
+	WorkerLogLine,
+	WorkerRunStore,
+} from "./workers.types";
 
 const workerId = "nightly-torrent-check";
 
@@ -66,6 +70,42 @@ describe("workers.run", () => {
 			level: "info",
 			message: "start",
 		});
+	});
+
+	test("awaits fire-and-forget log writes before finish", async () => {
+		const base = createMemoryWorkerRunStore();
+		const store: WorkerRunStore = {
+			...base,
+			async appendLog(id, line) {
+				await Bun.sleep(20);
+				return base.appendLog(id, line);
+			},
+		};
+		const workers = createWorkers({
+			store,
+			now: () => new Date("2026-08-05T12:00:00.000Z"),
+			id: () => "run-1",
+			definitions: [
+				baseDef({
+					execute: async ({ log }) => {
+						log("info", "fire-and-forget");
+						return { summary: "ok" };
+					},
+				}),
+			],
+			retainRuns: 50,
+		});
+
+		const run = await workers.run(workerId);
+
+		expect(run.status).toBe("succeeded");
+		expect(run.log).toEqual([
+			{
+				ts: "2026-08-05T12:00:00.000Z",
+				level: "info",
+				message: "fire-and-forget",
+			},
+		]);
 	});
 
 	test("rejects second run while one is running", async () => {
@@ -171,6 +211,35 @@ describe("workers.run", () => {
 		expect(run.finishedAt).not.toBeNull();
 		expect(await store.findRunning(workerId)).toBeNull();
 		expect(await workers.getRun("sched-1")).toEqual(run);
+	});
+
+	test("recordFinishedRun can record a failed run", async () => {
+		const log: WorkerLogLine[] = [
+			{
+				ts: "2026-08-05T12:00:00.000Z",
+				level: "error",
+				message: "boom",
+			},
+		];
+		const { workers } = createTestWorkers({ id: () => "sched-fail" });
+
+		const run = await workers.recordFinishedRun({
+			workerId,
+			trigger: "scheduled",
+			summary: "failed mid-run",
+			log,
+			status: "failed",
+			error: "pipeline exploded",
+		});
+
+		expect(run).toMatchObject({
+			id: "sched-fail",
+			status: "failed",
+			summary: "failed mid-run",
+			error: "pipeline exploded",
+			log,
+		});
+		expect(run.finishedAt).not.toBeNull();
 	});
 
 	test("recordFinishedRun throws when a run is already running", async () => {
