@@ -1,4 +1,6 @@
 import { eq } from "drizzle-orm";
+import { catalog } from "../catalog";
+import type { CatalogSearchResult } from "../catalog";
 import { db } from "../db/db";
 import { torrents } from "../db/torrent/torrent.schema";
 import { fetchWithProxy } from "../http/fetch-with-proxy";
@@ -15,8 +17,6 @@ import {
 	type TmdbCredentials,
 } from "../settings/provider-settings";
 import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
-import { normalizeTitle } from "../torrent/title-norm";
-import { searchLocal, upsertFromTracker } from "../torrent/torrent.repository";
 import { getTracker } from "../torrent/torrent.tracker";
 import { logger } from "../utils/logger";
 import { checkTopicNow, type RecordWatchEventInput } from "./check-topic-now";
@@ -32,7 +32,7 @@ import type {
 	FetchTmdbMetaOutcome,
 	TitleKind,
 	TitleTorrentCandidate,
-	TrackerSearchForTitle,
+	TitleTorrentsSearch,
 } from "./title.types";
 import {
 	loadWatchByTitleId,
@@ -136,18 +136,7 @@ export function createFetchTmdbMeta(
 	};
 }
 
-function toCandidate(hit: {
-	torrentId: string;
-	title: string;
-	size: number;
-	seeds: number;
-	leeches: number;
-	torrentFileUrl: string;
-	topicUrl: string;
-	hdr: "HDR" | "SDR" | null;
-	resolution: "4K" | "1080p" | "720p" | "SD" | null;
-	forumId: string;
-}): TitleTorrentCandidate {
+function toCandidate(hit: CatalogSearchResult): TitleTorrentCandidate {
 	return {
 		torrentId: hit.torrentId,
 		title: hit.title,
@@ -162,41 +151,39 @@ function toCandidate(hit: {
 	};
 }
 
-async function searchLocalForTitle(
+async function searchTorrentsForTitle(
 	query: string,
-): Promise<TitleTorrentCandidate[]> {
-	const hits = await searchLocal(normalizeTitle(query));
-	return hits.map(toCandidate);
-}
+): Promise<TitleTorrentsSearch> {
+	const localPromise = catalog.search(query).then((page) =>
+		page.results.map(toCandidate),
+	);
 
-async function searchTrackerForTitle(
-	query: string,
-): Promise<TrackerSearchForTitle> {
-	let tracker;
 	try {
-		tracker = await getTracker();
+		const [local, trackerPage] = await Promise.all([
+			localPromise,
+			catalog.searchRefresh(query, {}),
+		]);
+		return {
+			status: "ok",
+			local,
+			tracker: trackerPage.results.map(toCandidate),
+		};
 	} catch (err) {
+		const local = await localPromise;
+		const trackerError =
+			err instanceof Error && err.message === "Tracker unavailable"
+				? "unavailable"
+				: "error";
 		logger.warn(
-			{ err: err instanceof Error ? err.message : String(err), query },
-			"title.torrents: tracker unavailable",
+			{
+				err: err instanceof Error ? err.message : String(err),
+				query,
+				trackerError,
+			},
+			"title.torrents: tracker search degraded",
 		);
-		return { status: "unavailable" };
+		return { status: "degraded", local, trackerError };
 	}
-
-	const page = await tracker.search(query, {});
-	if (page.isErr()) {
-		logger.warn(
-			{ err: page.error.message, query },
-			"title.torrents: tracker search failed",
-		);
-		return { status: "error" };
-	}
-
-	await upsertFromTracker(page.value.results);
-	return {
-		status: "ok",
-		results: page.value.results.map(toCandidate),
-	};
 }
 
 async function listTaggedTorrents() {
@@ -334,8 +321,7 @@ async function processWatchTaskById(taskId: string) {
 export const titleModule = createTitleModule({
 	fetchTmdbMeta: createFetchTmdbMeta(resolveTmdbCredentials),
 	getRatings: ratingsPort.getRatings,
-	searchLocal: searchLocalForTitle,
-	searchTracker: searchTrackerForTitle,
+	searchTorrents: searchTorrentsForTitle,
 	listTaggedTorrents,
 	addFromTracker: async (torrentFileUrl, kind, tags) => {
 		await addFromTracker(torrentFileUrl, kind, tags);

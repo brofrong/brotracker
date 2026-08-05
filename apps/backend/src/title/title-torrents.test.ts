@@ -48,8 +48,11 @@ function deps(overrides: Partial<TitleDeps> = {}): TitleDeps {
 			},
 		}),
 		getRatings: async () => stubRatings(),
-		searchLocal: async () => [],
-		searchTracker: async () => ({ status: "unavailable" }),
+		searchTorrents: async () => ({
+			status: "degraded",
+			local: [],
+			trackerError: "unavailable",
+		}),
 		listTaggedTorrents: async () => [],
 		addFromTracker: async () => {},
 		loadWatchByTopicUrl: async () => null,
@@ -86,11 +89,12 @@ describe("title.torrents", () => {
 	test("returns scored candidates from tracker sorted by quality", async () => {
 		const title = createTitleModule(
 			deps({
-				searchTracker: async (query) => {
+				searchTorrents: async (query) => {
 					expect(query).toBe("Inception");
 					return {
 						status: "ok",
-						results: [
+						local: [],
+						tracker: [
 							candidate({
 								torrentId: "1",
 								topicUrl: "https://rutracker.org/forum/viewtopic.php?t=1",
@@ -129,9 +133,10 @@ describe("title.torrents", () => {
 	test("attaches transfer when topic tag matches a live torrent", async () => {
 		const title = createTitleModule(
 			deps({
-				searchTracker: async () => ({
+				searchTorrents: async () => ({
 					status: "ok",
-					results: [candidate()],
+					local: [],
+					tracker: [candidate()],
 				}),
 				listTaggedTorrents: async () => [
 					{
@@ -162,10 +167,13 @@ describe("title.torrents", () => {
 	test("falls back to local when tracker is unavailable (degraded)", async () => {
 		const title = createTitleModule(
 			deps({
-				searchTracker: async () => ({ status: "unavailable" }),
-				searchLocal: async (query) => {
+				searchTorrents: async (query) => {
 					expect(query).toBe("Inception");
-					return [candidate({ torrentId: "9" })];
+					return {
+						status: "degraded",
+						local: [candidate({ torrentId: "9" })],
+						trackerError: "unavailable",
+					};
 				},
 			}),
 		);
@@ -182,7 +190,7 @@ describe("title.torrents", () => {
 		const title = createTitleModule(
 			deps({
 				fetchTmdbMeta: async () => ({ status: "unavailable" }),
-				searchLocal: async () => {
+				searchTorrents: async () => {
 					throw new Error("should not search without a name");
 				},
 			}),
