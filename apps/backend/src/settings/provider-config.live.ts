@@ -38,6 +38,10 @@ export async function loadRutrackerConfig() {
 	return providerConfig.loadRutracker();
 }
 
+export async function loadKinozalConfig() {
+	return providerConfig.loadKinozal();
+}
+
 export async function loadQbittorrentConfig() {
 	return providerConfig.loadQbittorrent();
 }
