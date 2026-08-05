@@ -14,15 +14,15 @@ import { tryServeMedia } from "./http/media-proxy";
 import { tryServeStatic } from "./http/static";
 import { ensureBetterAuthSecret } from "./settings/app-settings";
 import { ensureBucket } from "./storage/s3";
-import { nightlyWorker } from "./title/index";
 import { createContext } from "./trpc/context";
 import { env } from "./utils/env";
 import { logger } from "./utils/logger";
+import { startWorkers } from "./workers";
 
 await runMigrations();
 
 startTransferSnapshotScheduler();
-nightlyWorker.start();
+startWorkers();
 
 const betterAuthSecret = await ensureBetterAuthSecret();
 initAuth(betterAuthSecret);

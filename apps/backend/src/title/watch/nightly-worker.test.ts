@@ -27,6 +27,18 @@ function nightlyDeps(
 	};
 }
 
+describe("nightly worker runNow", () => {
+	test("runNow syncs, enqueues, drains ignoring the night window", async () => {
+		const deps = nightlyDeps({
+			now: () => new Date("2026-08-02T12:00:00.000Z"), // afternoon
+		});
+		const worker = createNightlyWorker(deps);
+		const result = await worker.runNow();
+		expect(result).toEqual({ enqueued: 1, processed: 1 });
+		expect(deps.calls).toEqual(["sync", "enqueue", "list", "process:task-1"]);
+	});
+});
+
 describe("nightly worker tick", () => {
 	test("outside the nightly window it does nothing", async () => {
 		const deps = nightlyDeps({

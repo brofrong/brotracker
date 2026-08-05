@@ -6,7 +6,8 @@
  * The tick is a plain async function of an injected clock so tests can
  * drive it without waiting for a real night to happen; start() wraps it in
  * a simple hourly setInterval (see qbittorent.poller.ts for the same
- * pattern).
+ * pattern). runNow() runs the same pipeline without night-window / date-key
+ * gates (manual admin trigger).
  */
 
 const NIGHT_WINDOW_START_HOUR = 3;
@@ -30,6 +31,11 @@ export type NightlyTickResult =
 	| { ran: false }
 	| { ran: true; enqueued: number; processed: number };
 
+export type NightlyRunNowResult = {
+	enqueued: number;
+	processed: number;
+};
+
 export function createNightlyWorker(deps: NightlyWorkerDeps) {
 	let lastRunDateKey: string | null = null;
 
@@ -52,6 +58,13 @@ export function createNightlyWorker(deps: NightlyWorkerDeps) {
 		return processed;
 	}
 
+	async function runNow(): Promise<NightlyRunNowResult> {
+		await deps.sync();
+		const { enqueued } = await deps.enqueue();
+		const processed = await drainPendingTasks();
+		return { enqueued, processed };
+	}
+
 	async function tick(): Promise<NightlyTickResult> {
 		const now = deps.now();
 		if (!isWithinNightlyWindow(now)) {
@@ -64,10 +77,7 @@ export function createNightlyWorker(deps: NightlyWorkerDeps) {
 		}
 		lastRunDateKey = key;
 
-		await deps.sync();
-		const { enqueued } = await deps.enqueue();
-		const processed = await drainPendingTasks();
-
+		const { enqueued, processed } = await runNow();
 		return { ran: true, enqueued, processed };
 	}
 
@@ -79,7 +89,7 @@ export function createNightlyWorker(deps: NightlyWorkerDeps) {
 		return () => clearInterval(interval);
 	}
 
-	return { tick, start, drainPendingTasks };
+	return { tick, runNow, start, drainPendingTasks };
 }
 
 export type NightlyWorker = ReturnType<typeof createNightlyWorker>;
