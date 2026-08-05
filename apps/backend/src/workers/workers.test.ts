@@ -108,6 +108,36 @@ describe("workers.run", () => {
 		]);
 	});
 
+	test("finishes succeeded even when appendLog rejects", async () => {
+		const base = createMemoryWorkerRunStore();
+		const store: WorkerRunStore = {
+			...base,
+			async appendLog() {
+				throw new Error("log write failed");
+			},
+		};
+		const workers = createWorkers({
+			store,
+			now: () => new Date("2026-08-05T12:00:00.000Z"),
+			id: () => "run-1",
+			definitions: [
+				baseDef({
+					execute: async ({ log }) => {
+						log("info", "will-fail-to-persist");
+						return { summary: "ok despite log failure" };
+					},
+				}),
+			],
+			retainRuns: 50,
+		});
+
+		const run = await workers.run(workerId);
+
+		expect(run.status).toBe("succeeded");
+		expect(run.summary).toBe("ok despite log failure");
+		expect(await store.findRunning(workerId)).toBeNull();
+	});
+
 	test("rejects second run while one is running", async () => {
 		let release!: () => void;
 		const gate = new Promise<void>((r) => {

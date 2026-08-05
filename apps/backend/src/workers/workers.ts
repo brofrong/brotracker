@@ -105,7 +105,7 @@ export function createWorkers(deps: WorkersDeps) {
 
 			try {
 				const { summary } = await definition.execute({ log });
-				await Promise.all(pending);
+				await Promise.allSettled(pending);
 				const finished = await deps.store.finish(record.id, {
 					status: "succeeded",
 					finishedAt: deps.now(),
@@ -115,7 +115,7 @@ export function createWorkers(deps: WorkersDeps) {
 				await prune(workerId);
 				return finished;
 			} catch (err) {
-				await Promise.all(pending);
+				await Promise.allSettled(pending);
 				const message =
 					err instanceof Error ? err.message : String(err);
 				const finished = await deps.store.finish(record.id, {
