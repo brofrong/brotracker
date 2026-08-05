@@ -62,7 +62,12 @@ export function TitleCard({ item }: { item: TitleCardData }) {
 					)}
 				</AspectRatio>
 				<VStack gap={1} padding={2} width="100%">
-					<Text display="block" maxLines={2} type="body">
+					<Text
+						className="min-h-[calc(2*var(--text-body-size)*var(--text-body-leading))]"
+						display="block"
+						maxLines={2}
+						type="body"
+					>
 						{item.name}
 					</Text>
 					<HStack gap={1} vAlign="center">

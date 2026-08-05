@@ -3,18 +3,23 @@
 import { Button } from "@astryxdesign/core/Button";
 import { HStack, StackItem } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
-import { useEffect, useState, type FormEvent } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 type SearchBarProps = {
 	initialQuery?: string;
 	isSearching?: boolean;
+	placeholder?: string;
 	onSearch: (query: string) => void;
+	/** Called when the field is cleared (e.g. clear button). */
+	onClear?: () => void;
 };
 
 export const SearchBar = ({
 	initialQuery = "",
 	isSearching = false,
+	placeholder = "Поиск...",
 	onSearch,
+	onClear,
 }: SearchBarProps) => {
 	const [query, setQuery] = useState(initialQuery);
 	const canSearch = query.trim().length > 0;
@@ -34,6 +39,13 @@ export const SearchBar = ({
 		submit();
 	};
 
+	const handleChange = (value: string) => {
+		setQuery(value);
+		if (!value.trim()) {
+			onClear?.();
+		}
+	};
+
 	return (
 		<form onSubmit={onSubmit}>
 			<HStack gap={2} vAlign="end" width="100%">
@@ -42,8 +54,8 @@ export const SearchBar = ({
 						label="Поиск"
 						isLabelHidden
 						value={query}
-						onChange={setQuery}
-						placeholder="Поиск..."
+						onChange={handleChange}
+						placeholder={placeholder}
 						startIcon="search"
 						hasClear
 						width="100%"

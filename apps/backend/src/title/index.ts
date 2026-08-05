@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db/db";
 import { torrents } from "../db/torrent/torrent.schema";
+import { fetchWithProxy } from "../http/fetch-with-proxy";
 import { toLiveTorrent } from "../qbittorent/live-torrent";
 import {
 	addTorrent,
@@ -9,7 +10,6 @@ import {
 	QbittorrentNotConfiguredError,
 } from "../qbittorent/qbittorent.client";
 import { addFromTracker } from "../qbittorent/qbittorent.service";
-import { fetchWithProxy } from "../http/fetch-with-proxy";
 import {
 	resolveTmdbCredentials,
 	type TmdbCredentials,
@@ -27,11 +27,7 @@ import { processWatchTask } from "./process-watch-task";
 import { createDefaultRatingsPort } from "./ratings-port";
 import { createReplaceTorrentInQb } from "./replace-torrent-in-qb";
 import { syncWatchesFromQb } from "./sync-watches-from-qb";
-import {
-	createTitleModule,
-	TitleAddError,
-	TitleWatchError,
-} from "./title";
+import { createTitleModule, TitleAddError, TitleWatchError } from "./title";
 import type {
 	FetchTmdbMetaOutcome,
 	TitleKind,
@@ -44,6 +40,7 @@ import {
 	saveWatch,
 } from "./title-watch.repository";
 import { appendWatchEvent } from "./title-watch-event.repository";
+import { createTmdbBrowse } from "./tmdb-browse";
 import {
 	parseMovieDetails,
 	parseSimilar,
@@ -115,10 +112,7 @@ export function createFetchTmdbMeta(
 		const similarPath = `/${segment}/${tmdbId}/similar`;
 
 		const [details, credits, similar] = await Promise.all([
-			fetchTmdbJson<TmdbMovieDetails | TmdbTvDetails>(
-				detailsPath,
-				credentials,
-			),
+			fetchTmdbJson<TmdbMovieDetails | TmdbTvDetails>(detailsPath, credentials),
 			fetchTmdbJson<TmdbCredits>(creditsPath, credentials),
 			fetchTmdbJson<TmdbSimilarResponse>(similarPath, credentials),
 		]);
@@ -356,6 +350,10 @@ export const titleModule = createTitleModule({
 	recordEvent: recordWatchEvent,
 	enqueueWatchTask: createWatchTask,
 	processWatchTask: processWatchTaskById,
+});
+
+export const tmdbBrowse = createTmdbBrowse({
+	resolveCredentials: resolveTmdbCredentials,
 });
 
 export const nightlyWorker = createNightlyWorker({

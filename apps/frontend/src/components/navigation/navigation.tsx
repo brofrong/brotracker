@@ -12,12 +12,8 @@ import {
 } from "@astryxdesign/core/SideNav";
 import { HStack } from "@astryxdesign/core/Stack";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Download, Home, Search, Settings } from "lucide-react";
-import {
-	type ComponentPropsWithoutRef,
-	forwardRef,
-	useState,
-} from "react";
+import { Download, Film, Home, Search, Settings } from "lucide-react";
+import { type ComponentPropsWithoutRef, forwardRef, useState } from "react";
 
 const SIDE_NAV_COLLAPSED_KEY = "side-nav-collapsed";
 
@@ -35,9 +31,7 @@ const brandIcon = (
 );
 
 function BrandHeading() {
-	return (
-		<SideNavHeading heading="torrent-manager" icon={brandIcon} />
-	);
+	return <SideNavHeading heading="torrent-manager" icon={brandIcon} />;
 }
 
 function readCollapsed(): boolean {
@@ -70,6 +64,13 @@ export function NavItems() {
 				href="/"
 				icon={Home}
 				isSelected={pathname === "/"}
+			/>
+			<SideNavItem
+				as={SideNavLink}
+				label="Фильмы"
+				href="/title"
+				icon={Film}
+				isSelected={pathname === "/title" || pathname.startsWith("/title/")}
 			/>
 			<SideNavItem
 				as={SideNavLink}

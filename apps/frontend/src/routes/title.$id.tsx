@@ -805,12 +805,12 @@ function TitlePage() {
 			<img
 				alt=""
 				aria-hidden
-				className="pointer-events-none fixed inset-0 z-0 size-full object-cover object-top"
+				className="pointer-events-none fixed inset-0 z-0 size-full object-cover object-top brightness-50"
 				src={meta.backdrop}
 			/>
 			<VStack
 				aria-hidden
-				className="pointer-events-none fixed inset-0 z-0 bg-overlay opacity-95"
+				className="pointer-events-none fixed inset-0 z-0 bg-overlay opacity-100"
 			/>
 			<svg
 				aria-hidden

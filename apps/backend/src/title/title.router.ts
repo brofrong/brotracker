@@ -5,7 +5,31 @@ import {
 	AddFromTrackerPreconditionError,
 } from "../qbittorent/qbittorent.service";
 import { protectedProcedure, router } from "../trpc";
-import { TitleAddError, TitleWatchError, titleModule } from "./index";
+import {
+	TitleAddError,
+	TitleWatchError,
+	titleModule,
+	tmdbBrowse,
+} from "./index";
+import type { BrowseOutcome } from "./tmdb-browse";
+
+function browseOrThrow(outcome: BrowseOutcome) {
+	if (outcome.status === "unavailable") {
+		throw new TRPCError({
+			code: "PRECONDITION_FAILED",
+			message: "TMDB не настроен. Укажите API key в настройках.",
+		});
+	}
+	if (outcome.status === "error") {
+		throw new TRPCError({
+			code: "BAD_GATEWAY",
+			message: "Не удалось получить данные из TMDB.",
+		});
+	}
+	return outcome.data;
+}
+
+const cursorSchema = z.number().int().min(1).nullish();
 
 const titleRefSchema = z.discriminatedUnion("type", [
 	z.object({
@@ -40,6 +64,33 @@ export const titleRouter = router({
 	resolve: protectedProcedure
 		.input(titleRefSchema)
 		.query(({ input }) => titleModule.resolve(input)),
+
+	trending: protectedProcedure
+		.input(z.object({ cursor: cursorSchema }).optional())
+		.query(async ({ input }) => {
+			const page = input?.cursor ?? 1;
+			return browseOrThrow(await tmdbBrowse.fetchTrending(page));
+		}),
+
+	search: protectedProcedure
+		.input(
+			z.object({
+				query: z.string().min(1),
+				cursor: cursorSchema,
+			}),
+		)
+		.query(async ({ input }) => {
+			const query = input.query.trim();
+			if (!query) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Query is required",
+				});
+			}
+			return browseOrThrow(
+				await tmdbBrowse.searchMulti(query, input.cursor ?? 1),
+			);
+		}),
 
 	get: protectedProcedure
 		.input(z.object({ id: z.string().min(1) }))
