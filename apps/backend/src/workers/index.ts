@@ -1,14 +1,18 @@
 /**
  * Workers composition: registry + Postgres run store + scheduled nightly tick
- * that records durable WorkerRuns when the night window pipeline actually runs.
+ * that holds a durable `running` WorkerRun for the whole pipeline (same lock
+ * as manual Run).
  *
- * Manual runs go through `workers.run("nightly-torrent-check")` → `runNow()`.
+ * Manual / scheduled both go through `workers.run(...)` → `runNow()`.
  * tRPC surface: `workers.router.ts` (mounted on appRouter as `workers`).
  */
 
 import { nightlyWorker } from "../title/watch";
 import { logger } from "../utils/logger";
-import { startScheduledNightlyWorker } from "./scheduled-nightly";
+import {
+	runScheduledNightlyOnce,
+	startScheduledNightlyWorker,
+} from "./scheduled-nightly";
 import { createWorkerRunStore } from "./worker-run.repository";
 import { createWorkers } from "./workers";
 
@@ -16,6 +20,7 @@ export const NIGHTLY_TORRENT_CHECK_ID = "nightly-torrent-check";
 
 const DEFAULT_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 const RETAIN_RUNS = 50;
+const INTERRUPTED_ERROR = "Interrupted by process restart";
 
 export const workers = createWorkers({
 	store: createWorkerRunStore(),
@@ -43,41 +48,45 @@ export const workers = createWorkers({
 export function startWorkers(
 	intervalMs: number = DEFAULT_CHECK_INTERVAL_MS,
 ): () => void {
-	return startScheduledNightlyWorker({
-		intervalMs,
-		tick: async () => {
-			const detail = await workers.get(NIGHTLY_TORRENT_CHECK_ID);
-			if (detail?.status === "running") {
-				logger.info(
-					"Skipping scheduled nightly tick; worker already running",
-				);
-				return { ran: false };
-			}
-			return nightlyWorker.tick();
-		},
-		onRan: async (result) => {
-			await workers.recordFinishedRun({
-				workerId: NIGHTLY_TORRENT_CHECK_ID,
-				trigger: "scheduled",
-				summary: `enqueued ${result.enqueued}, processed ${result.processed}`,
-				log: [
-					{
-						ts: new Date().toISOString(),
-						level: "info",
-						message: `Enqueued ${result.enqueued}`,
+	let stopInterval: (() => void) | undefined;
+
+	void (async () => {
+		try {
+			await workers.failInterruptedRuns(INTERRUPTED_ERROR);
+		} catch (err) {
+			logger.warn(
+				{ err },
+				"Failed to clear interrupted WorkerRuns on startup",
+			);
+		}
+		stopInterval = startScheduledNightlyWorker({
+			intervalMs,
+			tick: async () => {
+				const outcome = await runScheduledNightlyOnce({
+					isRunning: async () => {
+						const detail = await workers.get(NIGHTLY_TORRENT_CHECK_ID);
+						return detail?.status === "running";
 					},
-					{
-						ts: new Date().toISOString(),
-						level: "info",
-						message: `Processed ${result.processed}`,
-					},
-				],
-			});
-		},
-	});
+					shouldRun: () => nightlyWorker.shouldRun(),
+					noteScheduledStart: () => nightlyWorker.noteScheduledStart(),
+					runScheduled: () =>
+						workers.run(NIGHTLY_TORRENT_CHECK_ID, {
+							trigger: "scheduled",
+						}),
+				});
+				if (outcome === "skipped-running") {
+					logger.info(
+						"Skipping scheduled nightly tick; worker already running",
+					);
+				}
+			},
+		});
+	})();
+
+	return () => stopInterval?.();
 }
 
-export { startScheduledNightlyWorker } from "./scheduled-nightly";
+export { runScheduledNightlyOnce, startScheduledNightlyWorker } from "./scheduled-nightly";
 export { createWorkers } from "./workers";
 export { createWorkerRunStore } from "./worker-run.repository";
 export type { WorkersDeps } from "./workers";

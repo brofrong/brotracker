@@ -2,22 +2,44 @@ import { logger } from "../utils/logger";
 
 const DEFAULT_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 
-export type ScheduledTickResult =
-	| { ran: false }
-	| { ran: true; enqueued: number; processed: number };
+export type RunScheduledNightlyOnceDeps = {
+	isRunning: () => Promise<boolean>;
+	shouldRun: () => boolean;
+	noteScheduledStart: () => void;
+	runScheduled: () => Promise<unknown>;
+};
+
+export type ScheduledNightlyOutcome =
+	| "skipped-running"
+	| "skipped-gates"
+	| "ran";
+
+/**
+ * Two-phase scheduled nightly: peek gates without a WorkerRun row, then
+ * mark the date key and run under the same durable lock as manual Run.
+ */
+export async function runScheduledNightlyOnce(
+	deps: RunScheduledNightlyOnceDeps,
+): Promise<ScheduledNightlyOutcome> {
+	if (await deps.isRunning()) {
+		return "skipped-running";
+	}
+	if (!deps.shouldRun()) {
+		return "skipped-gates";
+	}
+	deps.noteScheduledStart();
+	await deps.runScheduled();
+	return "ran";
+}
 
 export type StartScheduledNightlyWorkerOptions = {
-	tick: () => Promise<ScheduledTickResult>;
-	onRan: (
-		result: Extract<ScheduledTickResult, { ran: true }>,
-	) => Promise<void>;
+	tick: () => Promise<void>;
 	intervalMs?: number;
 };
 
 /**
- * Interval that calls nightly tick and, when it ran, invokes onRan
- * (typically workers.recordFinishedRun). If onRan throws — e.g. a manual
- * run is already in progress — we log and continue so the process stays up.
+ * Interval that calls the scheduled nightly tick. Tick errors are logged
+ * so a failed/locked run never takes down the process.
  */
 export function startScheduledNightlyWorker(
 	options: StartScheduledNightlyWorkerOptions,
@@ -25,17 +47,10 @@ export function startScheduledNightlyWorker(
 	const intervalMs = options.intervalMs ?? DEFAULT_CHECK_INTERVAL_MS;
 
 	async function scheduledTick() {
-		const result = await options.tick();
-		if (!result.ran) {
-			return;
-		}
 		try {
-			await options.onRan(result);
+			await options.tick();
 		} catch (err) {
-			logger.warn(
-				{ err },
-				"Failed to record scheduled nightly WorkerRun (manual run may be in progress)",
-			);
+			logger.warn({ err }, "Scheduled nightly tick failed");
 		}
 	}
 

@@ -72,6 +72,46 @@ describe("workers.run", () => {
 		});
 	});
 
+	test("run accepts scheduled trigger", async () => {
+		const { workers } = createTestWorkers({ id: () => "run-sched" });
+
+		const run = await workers.run(workerId, { trigger: "scheduled" });
+
+		expect(run.trigger).toBe("scheduled");
+		expect(run.status).toBe("succeeded");
+	});
+
+	test("scheduled run holds running lock during execute", async () => {
+		let release!: () => void;
+		const gate = new Promise<void>((r) => {
+			release = r;
+		});
+		const { workers, store } = createTestWorkers({
+			definitions: [
+				baseDef({
+					execute: async () => {
+						await gate;
+						return { summary: "done" };
+					},
+				}),
+			],
+		});
+
+		const pending = workers.run(workerId, { trigger: "scheduled" });
+		await Bun.sleep(10);
+
+		const running = await store.findRunning(workerId);
+		expect(running?.status).toBe("running");
+		expect(running?.trigger).toBe("scheduled");
+		await expect(workers.run(workerId)).rejects.toThrow(/already running/i);
+
+		release();
+		const finished = await pending;
+		expect(finished.trigger).toBe("scheduled");
+		expect(finished.status).toBe("succeeded");
+		expect(await store.findRunning(workerId)).toBeNull();
+	});
+
 	test("awaits fire-and-forget log writes before finish", async () => {
 		const base = createMemoryWorkerRunStore();
 		const store: WorkerRunStore = {
@@ -424,5 +464,26 @@ describe("workers.run", () => {
 		const remaining = await store.listByWorker(workerId, 10);
 		expect(remaining.map((r) => r.id)).toEqual(["run-3", "run-2"]);
 		expect(await store.get("run-1")).toBeNull();
+	});
+
+	test("failInterruptedRuns marks stuck running rows failed", async () => {
+		const { workers, store } = createTestWorkers({ id: () => "stuck-1" });
+
+		await store.insertRunning({
+			id: "stuck-1",
+			workerId,
+			trigger: "manual",
+			startedAt: new Date("2026-08-05T11:00:00.000Z"),
+		});
+
+		await workers.failInterruptedRuns();
+
+		expect(await store.findRunning(workerId)).toBeNull();
+		const run = await store.get("stuck-1");
+		expect(run).toMatchObject({
+			status: "failed",
+			error: "Interrupted by process restart",
+			finishedAt: new Date("2026-08-05T12:00:00.000Z"),
+		});
 	});
 });

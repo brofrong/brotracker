@@ -106,6 +106,18 @@ export function createWorkerRunStore(
 
 		findRunning,
 
+		async failAllRunning(input) {
+			await database
+				.update(workerRuns)
+				.set({
+					status: "failed",
+					finishedAt: input.finishedAt,
+					summary: null,
+					error: input.error,
+				})
+				.where(eq(workerRuns.status, "running"));
+		},
+
 		async listByWorker(workerId, limit) {
 			const rows = await database
 				.select()

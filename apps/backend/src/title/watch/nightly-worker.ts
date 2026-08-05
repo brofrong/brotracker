@@ -65,17 +65,23 @@ export function createNightlyWorker(deps: NightlyWorkerDeps) {
 		return { enqueued, processed };
 	}
 
-	async function tick(): Promise<NightlyTickResult> {
+	function shouldRun(): boolean {
 		const now = deps.now();
 		if (!isWithinNightlyWindow(now)) {
-			return { ran: false };
+			return false;
 		}
+		return lastRunDateKey !== dateKey(now);
+	}
 
-		const key = dateKey(now);
-		if (lastRunDateKey === key) {
+	function noteScheduledStart(): void {
+		lastRunDateKey = dateKey(deps.now());
+	}
+
+	async function tick(): Promise<NightlyTickResult> {
+		if (!shouldRun()) {
 			return { ran: false };
 		}
-		lastRunDateKey = key;
+		noteScheduledStart();
 
 		const { enqueued, processed } = await runNow();
 		return { ran: true, enqueued, processed };
@@ -89,7 +95,7 @@ export function createNightlyWorker(deps: NightlyWorkerDeps) {
 		return () => clearInterval(interval);
 	}
 
-	return { tick, runNow, start, drainPendingTasks };
+	return { tick, runNow, start, drainPendingTasks, shouldRun, noteScheduledStart };
 }
 
 export type NightlyWorker = ReturnType<typeof createNightlyWorker>;
