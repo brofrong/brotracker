@@ -39,8 +39,11 @@ import {
 	loadWatchByTopicUrl,
 	saveWatch,
 } from "./title-watch.repository";
-import { appendWatchEvent } from "./title-watch-event.repository";
-import { createTmdbBrowse } from "./tmdb-browse";
+import { createTmdbBrowse } from "../tmdb/browse";
+import {
+	appendWatchEvent,
+	listRecentWatchEvents,
+} from "./title-watch-event.repository";
 import {
 	parseMovieDetails,
 	parseSimilar,
@@ -355,6 +358,10 @@ export const titleModule = createTitleModule({
 export const tmdbBrowse = createTmdbBrowse({
 	resolveCredentials: resolveTmdbCredentials,
 });
+
+export function getTitleWatchFeed(limit: number) {
+	return listRecentWatchEvents(limit);
+}
 
 export const nightlyWorker = createNightlyWorker({
 	sync: () =>
