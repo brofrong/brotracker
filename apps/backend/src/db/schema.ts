@@ -13,3 +13,4 @@ export { watchTasks } from "./title/watch-task.schema";
 export { torrents } from "./torrent/torrent.schema";
 export { transferSnapshots } from "./transfer/transfer-snapshot.schema";
 export { transferSpeedSamples } from "./transfer/transfer-speed-sample.schema";
+export { workerRuns } from "./workers/worker-run.schema";
