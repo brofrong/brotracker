@@ -6,6 +6,7 @@ import { VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
+import { useTranslation } from "react-i18next";
 
 type WorkerLogLevel = "info" | "warn" | "error";
 
@@ -15,16 +16,7 @@ type WorkerLogLine = {
 	message: string;
 };
 
-const LEVEL_LABEL: Record<WorkerLogLevel, string> = {
-	info: "Инфо",
-	warn: "Предупреждение",
-	error: "Ошибка",
-};
-
-const LEVEL_VARIANT: Record<
-	WorkerLogLevel,
-	"accent" | "warning" | "error"
-> = {
+const LEVEL_VARIANT: Record<WorkerLogLevel, "accent" | "warning" | "error"> = {
 	info: "accent",
 	warn: "warning",
 	error: "error",
@@ -35,11 +27,13 @@ type RunLogProps = {
 };
 
 export function RunLog({ lines }: RunLogProps) {
+	const { t } = useTranslation("workers");
+
 	if (lines.length === 0) {
 		return (
 			<EmptyState
-				description="У этого запуска пока нет записей в журнале."
-				title="Журнал пуст"
+				description={t("log.emptyDescription")}
+				title={t("log.emptyTitle")}
 			/>
 		);
 	}
@@ -47,7 +41,7 @@ export function RunLog({ lines }: RunLogProps) {
 	return (
 		<List density="compact" hasDividers>
 			{lines.map((line, index) => {
-				const levelLabel = LEVEL_LABEL[line.level];
+				const levelLabel = t(`log.levels.${line.level}`);
 				return (
 					<ListItem
 						key={`${line.ts}-${index}`}
@@ -71,11 +65,13 @@ export function RunLog({ lines }: RunLogProps) {
 
 export function RunLogPanel({
 	lines,
-	title = "Журнал",
+	title,
 }: RunLogProps & { title?: string }) {
+	const { t } = useTranslation("workers");
+
 	return (
 		<VStack gap={3} width="100%">
-			<Text type="label">{title}</Text>
+			<Text type="label">{title ?? t("log.defaultTitle")}</Text>
 			<RunLog lines={lines} />
 		</VStack>
 	);

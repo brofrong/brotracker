@@ -154,7 +154,7 @@ export type HomeDeps = {
 	/** Optional recent speed samples seeding the live chart; failures are swallowed. */
 	getRecentSpeeds?: () => Promise<SpeedSamplePoint[]>;
 	/** `null` = TMDB unavailable / error; `[]` = empty feed. */
-	getDiscoverFeed: () => Promise<DiscoverCard[] | null>;
+	getDiscoverFeed: (language: string) => Promise<DiscoverCard[] | null>;
 	/** Newest-first watch events for tracked TV titles; `[]` when there's nothing to show. */
 	getTitleWatchEvents: () => Promise<TitleWatchEvent[]>;
 };
@@ -169,8 +169,10 @@ export function createHome(deps: HomeDeps) {
 	return {
 		compose: async ({
 			widgets,
+			language = "ru-RU",
 		}: {
 			widgets: ComposeWidgetRequest[];
+			language?: string;
 		}): Promise<ComposeResponse> => {
 			const result: Record<string, WidgetEnvelope<ComposeWidgetData>> = {};
 
@@ -208,7 +210,7 @@ export function createHome(deps: HomeDeps) {
 				}
 
 				if (widget === "discoverFeed") {
-					const items = await deps.getDiscoverFeed();
+					const items = await deps.getDiscoverFeed(language);
 					if (items === null) {
 						result[key] = { status: "unavailable" };
 						continue;

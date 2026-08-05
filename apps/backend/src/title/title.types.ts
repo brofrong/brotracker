@@ -207,6 +207,7 @@ export type TitleDeps = {
 	fetchTmdbMeta: (
 		kind: TitleKind,
 		tmdbId: number,
+		language: string,
 	) => Promise<FetchTmdbMetaOutcome>;
 	getRatings: (ctx: RatingsContext) => Promise<TitleRating[]>;
 	searchTorrents: (query: string) => Promise<TitleTorrentsSearch>;

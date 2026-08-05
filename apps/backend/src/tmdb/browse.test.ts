@@ -86,10 +86,10 @@ describe("createTmdbBrowse", () => {
 			},
 		});
 
-		await expect(browse.fetchTrending(1)).resolves.toEqual({
+		await expect(browse.fetchTrending(1, "ru-RU")).resolves.toEqual({
 			status: "unavailable",
 		});
-		await expect(browse.searchMulti("Dune", 1)).resolves.toEqual({
+		await expect(browse.searchMulti("Dune", 1, "ru-RU")).resolves.toEqual({
 			status: "unavailable",
 		});
 	});
@@ -124,10 +124,11 @@ describe("createTmdbBrowse", () => {
 			},
 		});
 
-		const outcome = await browse.fetchTrending(2);
+		const outcome = await browse.fetchTrending(2, "en-US");
 		expect(urls[0]).toContain("/trending/all/day?");
 		expect(urls[0]).toContain("page=2");
 		expect(urls[0]).toContain("api_key=test-key");
+		expect(urls[0]).toContain("language=en-US");
 		expect(outcome).toEqual({
 			status: "ok",
 			data: {
@@ -178,10 +179,11 @@ describe("createTmdbBrowse", () => {
 			},
 		});
 
-		const outcome = await browse.searchMulti("Andor", 1);
+		const outcome = await browse.searchMulti("Andor", 1, "ru-RU");
 		expect(urls[0]).toContain("/search/multi?");
 		expect(urls[0]).toContain("query=Andor");
 		expect(urls[0]).toContain("page=1");
+		expect(urls[0]).toContain("language=ru-RU");
 		expect(outcome).toEqual({
 			status: "ok",
 			data: {
@@ -207,7 +209,7 @@ describe("createTmdbBrowse", () => {
 			fetchJson: async () => new Response("nope", { status: 500 }),
 		});
 
-		await expect(browse.fetchTrending(1)).resolves.toEqual({
+		await expect(browse.fetchTrending(1, "ru-RU")).resolves.toEqual({
 			status: "error",
 		});
 	});

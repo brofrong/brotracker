@@ -302,8 +302,11 @@ export function createTitleModule(deps: TitleDeps) {
 			return { id: titleRefToId(ref) };
 		},
 
-		async get(input: { id: string } | { ref: TitleRef }): Promise<Title> {
+		async get(
+			input: ({ id: string } | { ref: TitleRef }) & { language?: string },
+		): Promise<Title> {
 			const id = "id" in input ? input.id : titleRefToId(input.ref);
+			const language = input.language ?? "ru-RU";
 			const parsed = parseTitleId(id);
 
 			if (!parsed) {
@@ -328,7 +331,11 @@ export function createTitleModule(deps: TitleDeps) {
 				};
 			}
 
-			const outcome = await deps.fetchTmdbMeta(parsed.kind, parsed.tmdbId);
+			const outcome = await deps.fetchTmdbMeta(
+				parsed.kind,
+				parsed.tmdbId,
+				language,
+			);
 
 			if (outcome.status !== "ok") {
 				const facet = parsed.kind;
@@ -368,8 +375,12 @@ export function createTitleModule(deps: TitleDeps) {
 		async torrents(input: {
 			id: string;
 			query?: string;
+			language?: string;
 		}): Promise<TitleTorrentsResult> {
-			const title = await this.get({ id: input.id });
+			const title = await this.get({
+				id: input.id,
+				language: input.language,
+			});
 			const query = input.query?.trim() || title.meta.name?.trim();
 			if (!query) {
 				return { status: "empty", items: [] };

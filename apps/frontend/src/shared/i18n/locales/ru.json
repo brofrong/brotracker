@@ -1,0 +1,464 @@
+{
+	"common": {
+		"brand": "torrent-manager",
+		"loading": "Загрузка",
+		"cancel": "Отмена",
+		"save": "Сохранить",
+		"saved": "Сохранено",
+		"saveFailed": "Не удалось сохранить",
+		"test": "Проверить",
+		"testFailed": "Проверка не удалась",
+		"openSettings": "Открыть настройки",
+		"search": "Поиск",
+		"find": "Найти",
+		"searchPlaceholder": "Поиск...",
+		"download": "Скачать",
+		"onTracker": "На трекере",
+		"film": "Фильм",
+		"series": "Сериал",
+		"emDash": "—",
+		"loadFailed": "Не удалось загрузить",
+		"nothingFound": "Ничего не найдено",
+		"torrentAdded": "Торрент добавлен в qBittorrent",
+		"torrentAddFailed": "Не удалось добавить торрент",
+		"showPassword": "Показать пароль",
+		"hidePassword": "Скрыть пароль",
+		"showKey": "Показать ключ",
+		"hideKey": "Скрыть ключ",
+		"proxy": "Proxy",
+		"proxyPlaceholder": "socks5://user:pass@host:1080",
+		"proxyDescription": "http://, https:// или socks5://, с optional user:pass@",
+		"apiKey": "API key",
+		"tmdb": {
+			"linkLabel": "The Movie Database (TMDB)",
+			"newTabLabel": "(откроется в новой вкладке)",
+			"logoAlt": "The Movie Database (TMDB)",
+			"disclaimer": "This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB."
+		},
+		"theme": {
+			"label": "Тема оформления",
+			"light": "Светлая",
+			"dark": "Тёмная",
+			"system": "Система"
+		},
+		"runtime": {
+			"minutesOnly": "{{minutes}} мин",
+			"hoursOnly": "{{hours}} ч",
+			"hoursMinutes": "{{hours}} ч {{minutes}} мин"
+		},
+		"duration": {
+			"ms": "{{ms}} мс",
+			"seconds": "{{seconds}} с",
+			"minutesOnly": "{{minutes}} мин",
+			"minutesSeconds": "{{minutes}} мин {{seconds}} с",
+			"hoursOnly": "{{hours}} ч",
+			"hoursMinutes": "{{hours}} ч {{minutes}} мин"
+		},
+		"votes": {
+			"one": "оценка",
+			"few": "оценки",
+			"many": "оценок"
+		}
+	},
+	"nav": {
+		"sectionActions": "Действия",
+		"home": "Главная",
+		"films": "Фильмы",
+		"search": "Поиск",
+		"torrents": "Торренты",
+		"workers": "Воркеры",
+		"settings": "Настройки",
+		"ariaLabel": "Навигация",
+		"brand": "torrent-manager"
+	},
+	"auth": {
+		"gate": {
+			"checkingTitle": "Проверяем сессию",
+			"checkingDescription": "Сейчас убедимся, что вы авторизованы",
+			"checkingAria": "Проверка авторизации",
+			"redirectingTitle": "Переходим к входу",
+			"redirectingDescription": "Открываем страницу авторизации",
+			"redirectingAria": "Перенаправление на страницу входа"
+		},
+		"login": {
+			"brand": "torrent-manager",
+			"loadingAria": "Загрузка",
+			"modeErrorTitle": "Не удалось определить режим авторизации",
+			"authentikRedirectAria": "Перенаправление на Authentik",
+			"authentikRedirectLabel": "Открываем Authentik",
+			"signInTitle": "Вход",
+			"signInDescription": "Войдите с email и паролем",
+			"signUpTitle": "Создать аккаунт",
+			"signUpDescription": "Первый пользователь становится администратором",
+			"email": "Email",
+			"name": "Имя",
+			"namePlaceholder": "Как к вам обращаться",
+			"password": "Пароль",
+			"confirmPassword": "Подтверждение пароля",
+			"signIn": "Войти",
+			"signUp": "Зарегистрироваться",
+			"passwordsMismatch": "Пароли не совпадают",
+			"passwordTooShort": "Пароль должен быть не короче 8 символов",
+			"signUpFailed": "Не удалось зарегистрироваться",
+			"invalidCredentials": "Неверный email или пароль",
+			"authError": "Ошибка авторизации"
+		}
+	},
+	"settings": {
+		"title": "Настройки",
+		"buildVersion": "Версия сборки {{version}}",
+		"account": {
+			"title": "Аккаунт",
+			"description": "Информация о текущем пользователе и выход из системы",
+			"name": "Имя",
+			"email": "Email",
+			"signOut": "Выйти",
+			"sessionLoadFailed": "Не удалось загрузить сессию",
+			"userLoadFailed": "Не удалось загрузить данные пользователя",
+			"userNotFoundTitle": "Пользователь не найден",
+			"userNotFoundDescription": "Сессия активна, но данные пользователя недоступны"
+		},
+		"appearance": {
+			"title": "Оформление",
+			"description": "Тема интерфейса: светлая, тёмная или как в системе",
+			"locale": {
+				"title": "Язык интерфейса",
+				"label": "Язык интерфейса",
+				"description": "Меняет язык приложения и данных TMDB",
+				"ru": "Русский",
+				"en": "English"
+			}
+		},
+		"rutracker": {
+			"title": "Rutracker",
+			"description": "Учётные данные и прокси для поиска на трекере",
+			"login": "Login",
+			"password": "Password",
+			"loadFailed": "Не удалось загрузить настройки Rutracker",
+			"testSuccess": "Подключение к Rutracker успешно"
+		},
+		"qbittorrent": {
+			"title": "qBittorrent",
+			"description": "WebUI, API key и пути сохранения для фильмов и сериалов",
+			"url": "URL",
+			"urlPlaceholder": "https://torrent.example.com",
+			"urlDescription": "Базовый URL WebUI без /api/v2",
+			"filmsPath": "Путь для фильмов",
+			"filmsPathPlaceholder": "/data/media/movies",
+			"filmsPathDescription": "Куда qBittorrent будет сохранять фильмы",
+			"seriesPath": "Путь для сериалов",
+			"seriesPathPlaceholder": "/data/media/tv",
+			"seriesPathDescription": "Куда qBittorrent будет сохранять сериалы",
+			"loadFailed": "Не удалось загрузить настройки qBittorrent",
+			"testSuccess": "Подключение успешно (qBittorrent {{version}}, торрентов: {{torrentCount}})"
+		},
+		"tmdb": {
+			"title": "TMDB",
+			"description": "API key и прокси для метаданных Title и виджета Discover на главной",
+			"apiKeyLeaveBlank": "Оставьте пустым, чтобы не менять",
+			"loadFailed": "Не удалось загрузить настройки TMDB",
+			"testSuccess": "Подключение к TMDB успешно"
+		}
+	},
+	"home": {
+		"title": "Главная",
+		"transferStats": {
+			"loading": "Загрузка статистики",
+			"loadFailed": "Не удалось загрузить статистику",
+			"qbUnavailableTitle": "qBittorrent недоступен",
+			"qbUnavailableDescription": "Укажите URL и API key qBittorrent в настройках, чтобы видеть статистику.",
+			"emptyTitle": "Нет данных о передаче",
+			"emptyDescription": "Статистика появится после первой передачи данных.",
+			"heading": "Статистика передачи",
+			"downloaded": "Скачано",
+			"uploaded": "Отдано",
+			"ratio": "Ratio",
+			"ratioHint": "отдано / скачано",
+			"freeDisk": "Свободно на диске",
+			"dailyTraffic": "Передача по дням",
+			"cumulativeTraffic": "Трафик за период",
+			"uploadedCumulative": "Отдано (накопительно)",
+			"downloadedCumulative": "Скачано (накопительно)",
+			"historyEmpty": "История пока пуста: снапшоты пишутся каждый час, дневная динамика появится завтра."
+		},
+		"discover": {
+			"heading": "Discover",
+			"carouselAria": "Тренды дня",
+			"loading": "Загрузка Discover",
+			"unavailableTitle": "Discover недоступен",
+			"unavailableDescription": "Добавьте TMDB API key в настройках, чтобы видеть подборку. Остальная главная работает как обычно.",
+			"emptyTitle": "Discover пуст",
+			"emptyDescription": "TMDB не вернул тренды."
+		},
+		"titleWatchFeed": {
+			"heading": "Обновления сериалов",
+			"loading": "Загрузка ленты обновлений",
+			"loadFailed": "Не удалось загрузить ленту обновлений",
+			"emptyTitle": "Пока нет обновлений",
+			"emptyDescription": "Добавьте сериал в слежение на странице тайтла, чтобы видеть здесь обновления раздач.",
+			"events": {
+				"torrentUpdated": "Раздача обновилась",
+				"progressChanged": "Прогресс обновился",
+				"completed": "Все серии скачаны",
+				"checkFailed": "Ошибка проверки"
+			}
+		}
+	},
+	"search": {
+		"title": "Поиск",
+		"subtitle": "Поиск по трекеру",
+		"loading": "Загрузка",
+		"searchingTracker": "Ищем на трекере…",
+		"searchingTrackerAria": "Ищем на трекере",
+		"errorTitle": "Ошибка поиска",
+		"refreshFailed": "Не удалось получить данные с трекера",
+		"foundCount": "Найдено: {{count}}",
+		"recentReleases": "Последние релизы",
+		"emptyFoundTitle": "Ничего не найдено",
+		"emptyRecentTitle": "Пока ничего нет",
+		"emptyRecentDescription": "Сделайте поиск — результаты попадут в кэш",
+		"viewModeLabel": "Вид результатов",
+		"viewTable": "Таблица",
+		"viewCards": "Карточки",
+		"columns": {
+			"title": "Название",
+			"tags": "Теги",
+			"size": "Размер",
+			"seeds": "Сиды",
+			"leeches": "Личи",
+			"downloads": "Скачивания",
+			"date": "Дата"
+		},
+		"download": "Скачать",
+		"onTracker": "На трекере",
+		"onForum": "На форум",
+		"dialog": {
+			"title": "Скачать в qBittorrent",
+			"meta": "{{size}} · Сиды: {{seeds}} · Личи: {{leeches}}",
+			"typeLabel": "Тип",
+			"film": "Фильм",
+			"series": "Сериал",
+			"cancel": "Отмена",
+			"download": "Скачать",
+			"added": "Торрент добавлен в qBittorrent",
+			"addFailed": "Не удалось добавить торрент"
+		}
+	},
+	"title": {
+		"browse": {
+			"heading": "Фильмы и сериалы",
+			"subtitle": "Поиск по TMDB — фильмы и сериалы",
+			"searchPlaceholder": "Название фильма или сериала",
+			"loading": "Загрузка",
+			"loadingMoreAria": "Загрузка ещё",
+			"tmdbUnavailableTitle": "TMDB недоступен",
+			"tmdbUnavailableDescription": "Укажите API key TMDB в настройках, чтобы искать фильмы и сериалы.",
+			"loadFailed": "Не удалось загрузить",
+			"emptySearchTitle": "Ничего не найдено",
+			"emptySearchDescription": "Попробуйте другое название",
+			"emptyTrendingTitle": "Пока пусто",
+			"emptyTrendingDescription": "Сейчас нет трендов — попробуйте поиск",
+			"searchResults": "Результаты поиска",
+			"trendingToday": "В тренде сегодня"
+		},
+		"card": {
+			"film": "Фильм",
+			"series": "Сериал"
+		},
+		"detail": {
+			"untitled": "Без названия",
+			"loadFailed": "Не удалось загрузить",
+			"metaDegradedTitle": "Метаданные недоступны",
+			"metaDegradedDescription": "TMDB временно недоступен. Карточка открыта, метаданные появятся позже.",
+			"metaEmptyTitle": "Пустая карточка",
+			"metaEmptyDescription": "У этой карточки ещё нет привязки к TMDB.",
+			"openPosterAria": "Открыть постер: {{title}}",
+			"film": "Фильм",
+			"series": "Сериал",
+			"seasonsCount": "Сезонов: {{count}}",
+			"episodeProgressUnknown": "Прогресс серий неизвестен",
+			"episodeProgress": "Серии: {{have}} из {{total}}",
+			"crewHeading": "Съёмочная группа",
+			"crewLine": "{{job}}: {{names}}",
+			"ratingWithVotes": "{{source}} · {{count}} {{votesWord}}",
+			"castHeading": "Актёры",
+			"castCarouselAria": "Актёры",
+			"similarHeading": "Похожие",
+			"similarCarouselAria": "Похожие тайтлы",
+			"crewJobs": {
+				"Director": "Режиссёр",
+				"Screenplay": "Сценарий",
+				"Writer": "Сценарий",
+				"Creator": "Создатель",
+				"Executive Producer": "Продюсер"
+			},
+			"ratingSources": {
+				"tmdb": "TMDB",
+				"imdb": "IMDb",
+				"kinopoisk": "Кинопоиск"
+			}
+		},
+		"torrents": {
+			"heading": "Раздачи",
+			"seasonLabel": "Сезон",
+			"seasonOption": "Сезон {{n}}",
+			"allSeasons": "Все сезоны",
+			"queryLabel": "Запрос",
+			"queryPlaceholder": "Поисковый запрос",
+			"noQueryTitle": "Нет запроса",
+			"noQueryDescription": "Введите запрос, чтобы найти раздачи.",
+			"loadFailed": "Не удалось загрузить раздачи",
+			"degradedTitle": "Раздачи из кэша",
+			"degradedDescription": "Показан локальный кэш. Трекер временно недоступен.",
+			"emptyTitle": "Раздач пока нет",
+			"emptyDescription": "Когда появятся кандидаты на трекере или в локальном кэше — они будут здесь.",
+			"progressAria": "Прогресс {{title}}",
+			"doneStatus": "{{stateLabel}} · Готово",
+			"activeStatus": "{{stateLabel}} · {{speed}} · ETA {{eta}}",
+			"download": "Скачать",
+			"onTracker": "На трекере",
+			"added": "Торрент добавлен в qBittorrent",
+			"addFailed": "Не удалось добавить торрент",
+			"kindDetectFailed": "Не удалось определить тип (фильм/сериал)",
+			"seasonQuery": "{{name}} сезон {{season}}"
+		},
+		"watch": {
+			"heading": "Follow",
+			"follow": "Следить",
+			"statusLabel": "Статус follow",
+			"tracking": "Слежу",
+			"paused": "Пауза",
+			"checkNow": "Проверить обновление",
+			"checkErrorTitle": "Ошибка проверки",
+			"lastChecked": "Проверено: {{datetime}}",
+			"setFailed": "Не удалось изменить follow",
+			"unchanged": "Раздача не изменилась",
+			"updatedApplied": "Раздача обновлена и подменена в qBittorrent",
+			"updated": "Раздача обновилась",
+			"checkFailed": "Не удалось проверить обновление"
+		}
+	},
+	"transfers": {
+		"title": "Торренты в qBittorrent",
+		"searchLabel": "Поиск",
+		"searchPlaceholder": "Поиск по названию, пути или статусу...",
+		"columns": {
+			"name": "Название",
+			"state": "Статус",
+			"progress": "Прогресс",
+			"size": "Размер",
+			"downloadSpeed": "Скорость ↓",
+			"uploadSpeed": "Скорость ↑",
+			"eta": "ETA",
+			"addedOn": "Добавлен",
+			"savePath": "Путь сохранения",
+			"actions": "Действия"
+		},
+		"resume": "Продолжить скачивание",
+		"pause": "Перевести на паузу",
+		"delete": "Удалить",
+		"deleteTooltip": "Удалить торрент и файлы",
+		"pauseAll": "Остановить все торренты",
+		"resumeAll": "Продолжить все торренты",
+		"resumeFailed": "Не удалось продолжить торрент",
+		"pauseFailed": "Не удалось поставить торрент на паузу",
+		"pauseAllFailed": "Не удалось остановить все торренты",
+		"resumeAllFailed": "Не удалось продолжить все торренты",
+		"deleted": "Торрент и файлы удалены",
+		"deleteFailed": "Не удалось удалить торрент",
+		"deleteDialog": {
+			"title": "Удалить торрент?",
+			"description": "«{{name}}» будет удалён из qBittorrent вместе со скачанными файлами. Это действие нельзя отменить.",
+			"action": "Удалить",
+			"cancel": "Отмена"
+		},
+		"notConfiguredTitle": "qBittorrent не настроен",
+		"notConfiguredDescription": "Укажите URL и API key, чтобы видеть список торрентов.",
+		"loadFailed": "Не удалось загрузить торренты",
+		"emptyTitle": "Нет активных торрентов",
+		"emptyFilteredTitle": "Ничего не найдено",
+		"emptyFilteredDescription": "Попробуйте изменить запрос или очистить фильтр.",
+		"optimistic": {
+			"pausedReady": "На паузе (готов)",
+			"paused": "На паузе",
+			"seeding": "Раздача",
+			"downloading": "Загрузка"
+		},
+		"connection": {
+			"none": "Нет подключения",
+			"live": "Live (WebSocket)",
+			"error": "Ошибка подключения",
+			"notConfiguredTooltip": "qBittorrent не настроен — live-обновления недоступны.",
+			"liveTooltip": "Активное WebSocket-подключение: список торрентов обновляется в реальном времени.",
+			"errorTooltip": "WebSocket оборвался. Статусы не обновляются — проверьте бэкенд и qBittorrent.",
+			"waitingTooltip": "Ожидание WebSocket-подключения для live-обновлений."
+		},
+		"disk": {
+			"critical": "Мало места на диске: свободно {{amount}} (меньше 200 ГБ)",
+			"warning": "Свободное место заканчивается: {{amount}} (меньше 500 ГБ)",
+			"ok": "Свободное место на диске qBittorrent: {{amount}}",
+			"unknown": "Свободное место на диске неизвестно"
+		}
+	},
+	"workers": {
+		"list": {
+			"title": "Воркеры",
+			"subtitle": "Фоновые задачи: статус, история запусков и ручной запуск",
+			"loading": "Загрузка воркеров",
+			"loadFailed": "Не удалось загрузить воркеров",
+			"emptyTitle": "Нет воркеров",
+			"emptyDescription": "Зарегистрированные воркеры появятся здесь.",
+			"run": "Запустить",
+			"started": "Воркер запущен",
+			"startFailed": "Не удалось запустить",
+			"neverRun": "Ещё не запускался",
+			"lastRunWithDetail": "{{outcome}} · {{when}} · {{detail}}",
+			"lastRun": "{{outcome}} · {{when}}"
+		},
+		"detail": {
+			"navAria": "Навигация",
+			"breadcrumbWorkers": "Воркеры",
+			"loading": "Загрузка воркера",
+			"loadFailed": "Не удалось загрузить воркера",
+			"backToWorkers": "К воркерам",
+			"run": "Запустить",
+			"started": "Воркер запущен",
+			"startFailed": "Не удалось запустить",
+			"historyLoading": "Загрузка истории",
+			"historyLoadFailed": "Не удалось загрузить историю запусков",
+			"noRunsTitle": "Нет запусков",
+			"noRunsDescription": "Запустите воркера вручную или дождитесь расписания.",
+			"historyHeading": "История запусков",
+			"runMeta": "{{trigger}} · {{duration}}",
+			"noSummary": "Без сводки",
+			"selectRunTitle": "Выберите запуск",
+			"selectRunDescription": "Нажмите на строку в истории, чтобы открыть журнал.",
+			"logLoadFailed": "Не удалось загрузить журнал",
+			"logLoading": "Загрузка журнала",
+			"logTitle": "Журнал · {{datetime}}"
+		},
+		"status": {
+			"running": "Работает",
+			"idle": "Простаивает"
+		},
+		"runStatus": {
+			"running": "Выполняется",
+			"succeeded": "Успешно",
+			"failed": "Ошибка"
+		},
+		"trigger": {
+			"scheduled": "По расписанию",
+			"manual": "Вручную"
+		},
+		"log": {
+			"defaultTitle": "Журнал",
+			"emptyTitle": "Журнал пуст",
+			"emptyDescription": "У этого запуска пока нет записей в журнале.",
+			"levels": {
+				"info": "Инфо",
+				"warn": "Предупреждение",
+				"error": "Ошибка"
+			}
+		}
+	}
+}

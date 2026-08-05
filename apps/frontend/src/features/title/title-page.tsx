@@ -30,6 +30,9 @@ import { detectMediaType } from "@brotracker/rutracker-ts/tracker/search-engine/
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImageOff, Star } from "lucide-react";
 import { type SVGProps, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { AppLocale } from "#/shared/i18n/locale";
+import { useLocale } from "#/shared/i18n/locale-provider";
 import {
 	formatBytes,
 	formatEta,
@@ -40,25 +43,38 @@ import { trpc } from "#/shared/lib/trpc";
 import { TitleCard } from "#/shared/ui/title-card";
 import { TmdbAttribution } from "#/shared/ui/tmdb-attribution";
 
-function formatRuntime(minutes: number): string {
+function formatRuntime(
+	minutes: number,
+	t: (key: string, options?: Record<string, unknown>) => string,
+): string {
 	if (minutes < 60) {
-		return `${minutes} мин`;
+		return t("runtime.minutesOnly", { minutes });
 	}
 	const hours = Math.floor(minutes / 60);
 	const rest = minutes % 60;
-	return rest === 0 ? `${hours} ч` : `${hours} ч ${rest} мин`;
+	return rest === 0
+		? t("runtime.hoursOnly", { hours })
+		: t("runtime.hoursMinutes", { hours, minutes: rest });
 }
 
-function votesLabel(count: number): string {
+/** Picks common.votes.one/few/many: Slavic rules for ru, one vs many for en. */
+function votesWord(
+	count: number,
+	locale: AppLocale,
+	t: (key: string) => string,
+): string {
+	if (locale === "en") {
+		return count === 1 ? t("votes.one") : t("votes.many");
+	}
 	const mod10 = count % 10;
 	const mod100 = count % 100;
 	if (mod10 === 1 && mod100 !== 11) {
-		return "оценка";
+		return t("votes.one");
 	}
 	if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-		return "оценки";
+		return t("votes.few");
 	}
-	return "оценок";
+	return t("votes.many");
 }
 
 function ratingColor(value: number): "success" | "warning" | "error" {
@@ -81,26 +97,13 @@ function ratingTextClass(value: number): string {
 	return "text-red-vivid";
 }
 
-const RATING_SOURCE_LABELS: Record<string, string> = {
-	tmdb: "TMDB",
-	imdb: "IMDb",
-	kinopoisk: "Кинопоиск",
-};
-
-const CREW_JOB_LABELS: Record<string, string> = {
-	Director: "Режиссёр",
-	Screenplay: "Сценарий",
-	Writer: "Сценарий",
-	Creator: "Создатель",
-	"Executive Producer": "Продюсер",
-};
-
 function groupCrewByJob(
 	crew: Array<{ name: string; job: string }>,
+	translateJob: (job: string) => string,
 ): Array<{ job: string; names: string[] }> {
 	const groups = new Map<string, string[]>();
 	for (const member of crew) {
-		const job = CREW_JOB_LABELS[member.job] ?? member.job;
+		const job = translateJob(member.job);
 		const names = groups.get(job) ?? [];
 		names.push(member.name);
 		groups.set(job, names);
@@ -151,17 +154,6 @@ type TitleTorrentItem = {
 	} | null;
 };
 
-function buildTorrentsQuery(titleName: string, season: number | null): string {
-	const name = titleName.trim();
-	if (!name) {
-		return "";
-	}
-	if (season == null) {
-		return name;
-	}
-	return `${name} сезон ${season}`;
-}
-
 function TitleTorrentsList({
 	titleId,
 	titleName,
@@ -173,19 +165,28 @@ function TitleTorrentsList({
 	facet: "films" | "tv" | null;
 	seasons: number | null;
 }) {
+	const { t } = useTranslation("title");
 	const toast = useToast();
 	const queryClient = useQueryClient();
 	const isTv = facet === "tv";
 	const seasonCount = seasons != null && seasons > 0 ? seasons : null;
 
+	const buildTorrentsQuery = (name: string, season: number | null): string => {
+		const trimmed = name.trim();
+		if (!trimmed) {
+			return "";
+		}
+		if (season == null) {
+			return trimmed;
+		}
+		return t("torrents.seasonQuery", { name: trimmed, season });
+	};
+
 	const [season, setSeason] = useState<string | null>(
 		isTv && seasonCount != null ? "1" : null,
 	);
 	const [queryDraft, setQueryDraft] = useState(() =>
-		buildTorrentsQuery(
-			titleName,
-			isTv && seasonCount != null ? 1 : null,
-		),
+		buildTorrentsQuery(titleName, isTv && seasonCount != null ? 1 : null),
 	);
 	const [searchQuery, setSearchQuery] = useState(queryDraft);
 
@@ -203,9 +204,9 @@ function TitleTorrentsList({
 		}
 		return Array.from({ length: seasonCount }, (_, index) => {
 			const value = String(index + 1);
-			return { value, label: `Сезон ${value}` };
+			return { value, label: t("torrents.seasonOption", { n: value }) };
 		});
-	}, [seasonCount]);
+	}, [seasonCount, t]);
 
 	const torrentsQuery = useQuery({
 		...trpc.title.torrents.queryOptions({
@@ -223,7 +224,7 @@ function TitleTorrentsList({
 	const addMutation = useMutation({
 		...trpc.title.add.mutationOptions(),
 		onSuccess: async () => {
-			toast({ body: "Торрент добавлен в qBittorrent" });
+			toast({ body: t("torrents.added") });
 			await queryClient.invalidateQueries({
 				queryKey: trpc.title.torrents.pathKey(),
 			});
@@ -234,7 +235,7 @@ function TitleTorrentsList({
 		onError: (error) => {
 			toast({
 				type: "error",
-				body: error.message || "Не удалось добавить торрент",
+				body: error.message || t("torrents.addFailed"),
 			});
 		},
 	});
@@ -254,7 +255,7 @@ function TitleTorrentsList({
 		if (!kind) {
 			toast({
 				type: "error",
-				body: "Не удалось определить тип (фильм/сериал)",
+				body: t("torrents.kindDetectFailed"),
 			});
 			return;
 		}
@@ -268,14 +269,14 @@ function TitleTorrentsList({
 
 	const controls = (
 		<VStack gap={2} width="100%">
-			<Heading level={2}>Раздачи</Heading>
+			<Heading level={2}>{t("torrents.heading")}</Heading>
 			{isTv && seasonCount != null ? (
 				<Selector
 					hasClear
-					label="Сезон"
+					label={t("torrents.seasonLabel")}
 					onChange={onSeasonChange}
 					options={seasonOptions}
-					placeholder="Все сезоны"
+					placeholder={t("torrents.allSeasons")}
 					size="sm"
 					value={season ?? undefined}
 					width={200}
@@ -283,9 +284,9 @@ function TitleTorrentsList({
 			) : null}
 			<TextInput
 				hasClear
-				label="Запрос"
+				label={t("torrents.queryLabel")}
 				onChange={setQueryDraft}
-				placeholder="Поисковый запрос"
+				placeholder={t("torrents.queryPlaceholder")}
 				size="sm"
 				value={queryDraft}
 				width="100%"
@@ -298,8 +299,8 @@ function TitleTorrentsList({
 			<VStack gap={3} width="100%">
 				{controls}
 				<EmptyState
-					description="Введите запрос, чтобы найти раздачи."
-					title="Нет запроса"
+					description={t("torrents.noQueryDescription")}
+					title={t("torrents.noQueryTitle")}
 				/>
 			</VStack>
 		);
@@ -321,7 +322,7 @@ function TitleTorrentsList({
 				{controls}
 				<EmptyState
 					description={torrentsQuery.error.message}
-					title="Не удалось загрузить раздачи"
+					title={t("torrents.loadFailed")}
 				/>
 			</VStack>
 		);
@@ -337,16 +338,16 @@ function TitleTorrentsList({
 			{result?.status === "degraded" ? (
 				<Banner
 					container="section"
-					description="Показан локальный кэш. Трекер временно недоступен."
+					description={t("torrents.degradedDescription")}
 					status="warning"
-					title="Раздачи из кэша"
+					title={t("torrents.degradedTitle")}
 				/>
 			) : null}
 
 			{!result || result.status === "empty" || items.length === 0 ? (
 				<EmptyState
-					description="Когда появятся кандидаты на трекере или в локальном кэше — они будут здесь."
-					title="Раздач пока нет"
+					description={t("torrents.emptyDescription")}
+					title={t("torrents.emptyTitle")}
 				/>
 			) : (
 				<List density="compact" hasDividers>
@@ -382,7 +383,9 @@ function TitleTorrentsList({
 												<ProgressBar
 													hasValueLabel
 													isLabelHidden
-													label={`Прогресс ${item.title}`}
+													label={t("torrents.progressAria", {
+														title: item.title,
+													})}
 													max={100}
 													value={progressPct}
 													variant={done ? "success" : "accent"}
@@ -392,8 +395,14 @@ function TitleTorrentsList({
 												/>
 												<Text hasTabularNumbers type="supporting">
 													{done
-														? `${transfer.stateLabel} · Готово`
-														: `${transfer.stateLabel} · ${formatSpeed(transfer.downloadSpeed)} · ETA ${formatEta(transfer.etaSeconds)}`}
+														? t("torrents.doneStatus", {
+																stateLabel: transfer.stateLabel,
+															})
+														: t("torrents.activeStatus", {
+																stateLabel: transfer.stateLabel,
+																speed: formatSpeed(transfer.downloadSpeed),
+																eta: formatEta(transfer.etaSeconds),
+															})}
 												</Text>
 											</VStack>
 										) : null}
@@ -403,7 +412,7 @@ function TitleTorrentsList({
 									<HStack gap={1}>
 										{transfer ? null : (
 											<Button
-												label="Скачать"
+												label={t("torrents.download")}
 												size="sm"
 												variant="secondary"
 												isDisabled={addMutation.isPending}
@@ -414,7 +423,7 @@ function TitleTorrentsList({
 											href={item.topicUrl}
 											icon={<Icon icon="externalLink" size="sm" />}
 											isExternalLink
-											label="На трекере"
+											label={t("torrents.onTracker")}
 											size="sm"
 											target="_blank"
 											variant="ghost"
@@ -441,11 +450,17 @@ type TitleWatchView = {
 	progress: { have: number; total: number } | null;
 };
 
-function episodeProgressLabel(watch: TitleWatchView | null): string {
+function episodeProgressLabel(
+	watch: TitleWatchView | null,
+	t: (key: string, options?: Record<string, unknown>) => string,
+): string {
 	if (!watch?.progress) {
-		return "Прогресс серий неизвестен";
+		return t("detail.episodeProgressUnknown");
 	}
-	return `Серии: ${watch.progress.have} из ${watch.progress.total}`;
+	return t("detail.episodeProgress", {
+		have: watch.progress.have,
+		total: watch.progress.total,
+	});
 }
 
 function episodeProgressVariant(
@@ -464,6 +479,8 @@ function TitleWatchPanel({
 	titleId: string;
 	watch: TitleWatchView | null;
 }) {
+	const { t } = useTranslation("title");
+	const { bcp47 } = useLocale();
 	const toast = useToast();
 	const queryClient = useQueryClient();
 
@@ -477,7 +494,7 @@ function TitleWatchPanel({
 		onError: (error) => {
 			toast({
 				type: "error",
-				body: error.message || "Не удалось изменить follow",
+				body: error.message || t("watch.setFailed"),
 			});
 		},
 	});
@@ -493,24 +510,22 @@ function TitleWatchPanel({
 			});
 
 			if (result.status === "unchanged") {
-				toast({ body: "Раздача не изменилась" });
+				toast({ body: t("watch.unchanged") });
 			} else if (result.status === "updated") {
 				toast({
-					body: result.applied
-						? "Раздача обновлена и подменена в qBittorrent"
-						: "Раздача обновилась",
+					body: result.applied ? t("watch.updatedApplied") : t("watch.updated"),
 				});
 			} else {
 				toast({
 					type: "error",
-					body: result.message || "Не удалось проверить обновление",
+					body: result.message || t("watch.checkFailed"),
 				});
 			}
 		},
 		onError: (error) => {
 			toast({
 				type: "error",
-				body: error.message || "Не удалось проверить обновление",
+				body: error.message || t("watch.checkFailed"),
 			});
 		},
 	});
@@ -524,12 +539,12 @@ function TitleWatchPanel({
 
 	return (
 		<VStack gap={2} width="100%">
-			<Heading level={2}>Follow</Heading>
+			<Heading level={2}>{t("watch.heading")}</Heading>
 			<HStack gap={3} vAlign="center" wrap="wrap">
 				{segmentValue === "off" ? (
 					<Button
 						isLoading={setWatchMutation.isPending}
-						label="Следить"
+						label={t("watch.follow")}
 						onClick={() =>
 							setWatchMutation.mutate({
 								id: titleId,
@@ -541,7 +556,7 @@ function TitleWatchPanel({
 				) : (
 					<SegmentedControl
 						isDisabled={setWatchMutation.isPending}
-						label="Статус follow"
+						label={t("watch.statusLabel")}
 						onChange={(value) => {
 							if (value !== "tracking" && value !== "paused") {
 								return;
@@ -554,13 +569,16 @@ function TitleWatchPanel({
 						size="sm"
 						value={segmentValue}
 					>
-						<SegmentedControlItem label="Слежу" value="tracking" />
-						<SegmentedControlItem label="Пауза" value="paused" />
+						<SegmentedControlItem
+							label={t("watch.tracking")}
+							value="tracking"
+						/>
+						<SegmentedControlItem label={t("watch.paused")} value="paused" />
 					</SegmentedControl>
 				)}
 				<Button
 					isLoading={checkNowMutation.isPending}
-					label="Проверить обновление"
+					label={t("watch.checkNow")}
 					onClick={() => checkNowMutation.mutate({ id: titleId })}
 					variant="ghost"
 				/>
@@ -570,12 +588,14 @@ function TitleWatchPanel({
 					container="section"
 					description={watch.lastError}
 					status="error"
-					title="Ошибка проверки"
+					title={t("watch.checkErrorTitle")}
 				/>
 			) : null}
 			{watch?.lastCheckedAt ? (
 				<Text type="supporting">
-					Проверено: {new Date(watch.lastCheckedAt).toLocaleString("ru-RU")}
+					{t("watch.lastChecked", {
+						datetime: new Date(watch.lastCheckedAt).toLocaleString(bcp47),
+					})}
 				</Text>
 			) : null}
 		</VStack>
@@ -619,12 +639,17 @@ function TitleHero({
 	watch,
 	onOpenPoster,
 }: TitleHeroProps) {
+	const { t } = useTranslation("title");
+	const { t: tCommon } = useTranslation("common");
+	const { locale, bcp47 } = useLocale();
+	const progressLabel = episodeProgressLabel(watch, t);
+
 	return (
 		<HStack gap={6} vAlign="center" wrap="nowrap" width="100%">
 			<VStack className="shrink-0" width={208}>
 				{meta.poster ? (
 					<VStack
-						aria-label={`Открыть постер: ${titleName}`}
+						aria-label={t("detail.openPosterAria", { title: titleName })}
 						as="button"
 						className="cursor-pointer"
 						onClick={onOpenPoster}
@@ -659,7 +684,9 @@ function TitleHero({
 						<HStack gap={2} vAlign="center" wrap="wrap">
 							{facet ? (
 								<Badge
-									label={facet === "films" ? "Фильм" : "Сериал"}
+									label={
+										facet === "films" ? t("detail.film") : t("detail.series")
+									}
 									variant="teal"
 								/>
 							) : null}
@@ -668,22 +695,24 @@ function TitleHero({
 							) : null}
 							{facet === "films" && meta.runtimeMinutes != null ? (
 								<Text type="supporting">
-									{formatRuntime(meta.runtimeMinutes)}
+									{formatRuntime(meta.runtimeMinutes, tCommon)}
 								</Text>
 							) : null}
 							{facet === "tv" && meta.status ? (
 								<Text type="supporting">{meta.status}</Text>
 							) : null}
 							{facet === "tv" && meta.seasons != null ? (
-								<Text type="supporting">Сезонов: {meta.seasons}</Text>
+								<Text type="supporting">
+									{t("detail.seasonsCount", { count: meta.seasons })}
+								</Text>
 							) : null}
 							{facet === "tv" ? (
 								<HStack gap={1} vAlign="center">
 									<StatusDot
-										label={episodeProgressLabel(watch)}
+										label={progressLabel}
 										variant={episodeProgressVariant(watch)}
 									/>
-									<Text type="supporting">{episodeProgressLabel(watch)}</Text>
+									<Text type="supporting">{progressLabel}</Text>
 								</HStack>
 							) : null}
 						</HStack>
@@ -696,7 +725,7 @@ function TitleHero({
 
 					{crewGroups.length > 0 ? (
 						<VStack gap={1}>
-							<Text type="supporting">Съёмочная группа</Text>
+							<Text type="supporting">{t("detail.crewHeading")}</Text>
 							{crewGroups.map((group) => (
 								<Text key={group.job} type="body">
 									<Text color="secondary" type="inherit">
@@ -729,10 +758,21 @@ function TitleHero({
 											</Text>
 										</HStack>
 										<Text type="supporting">
-											{RATING_SOURCE_LABELS[rating.source] ?? rating.source}
 											{rating.voteCount != null
-												? ` · ${rating.voteCount.toLocaleString("ru-RU")} ${votesLabel(rating.voteCount)}`
-												: ""}
+												? t("detail.ratingWithVotes", {
+														source: t(`detail.ratingSources.${rating.source}`, {
+															defaultValue: rating.source,
+														}),
+														count: rating.voteCount.toLocaleString(bcp47),
+														votesWord: votesWord(
+															rating.voteCount,
+															locale,
+															tCommon,
+														),
+													})
+												: t(`detail.ratingSources.${rating.source}`, {
+														defaultValue: rating.source,
+													})}
 										</Text>
 									</VStack>
 								) : null,
@@ -750,6 +790,7 @@ function TitleHero({
 }
 
 export function TitlePage({ id }: { id: string }) {
+	const { t } = useTranslation("title");
 	const [isPosterOpen, setIsPosterOpen] = useState(false);
 	const { data, isLoading, isError, error } = useQuery({
 		...trpc.title.get.queryOptions({ id }),
@@ -785,7 +826,10 @@ export function TitlePage({ id }: { id: string }) {
 	if (isError) {
 		return (
 			<Section padding={4} variant="transparent">
-				<EmptyState description={error.message} title="Не удалось загрузить" />
+				<EmptyState
+					description={error.message}
+					title={t("detail.loadFailed")}
+				/>
 			</Section>
 		);
 	}
@@ -795,8 +839,10 @@ export function TitlePage({ id }: { id: string }) {
 	}
 
 	const { meta, metaStatus, facet, ratings, watch } = data;
-	const titleName = meta.name ?? "Без названия";
-	const crewGroups = groupCrewByJob(meta.crew);
+	const titleName = meta.name ?? t("detail.untitled");
+	const crewGroups = groupCrewByJob(meta.crew, (job) =>
+		t(`detail.crewJobs.${job}`, { defaultValue: job }),
+	);
 	const hasRatings = ratings.some((rating) => rating.status === "ok");
 
 	const page = (
@@ -805,18 +851,18 @@ export function TitlePage({ id }: { id: string }) {
 				{metaStatus === "degraded" ? (
 					<Banner
 						container="section"
-						description="TMDB временно недоступен. Карточка открыта, метаданные появятся позже."
+						description={t("detail.metaDegradedDescription")}
 						status="warning"
-						title="Метаданные недоступны"
+						title={t("detail.metaDegradedTitle")}
 					/>
 				) : null}
 
 				{metaStatus === "empty" ? (
 					<Banner
 						container="section"
-						description="У этой карточки ещё нет привязки к TMDB."
+						description={t("detail.metaEmptyDescription")}
 						status="info"
-						title="Пустая карточка"
+						title={t("detail.metaEmptyTitle")}
 					/>
 				) : null}
 
@@ -843,8 +889,8 @@ export function TitlePage({ id }: { id: string }) {
 
 				{meta.cast.length > 0 ? (
 					<VStack gap={2} width="100%">
-						<Heading level={2}>Актёры</Heading>
-						<Carousel aria-label="Актёры" gap={3} hasSnap>
+						<Heading level={2}>{t("detail.castHeading")}</Heading>
+						<Carousel aria-label={t("detail.castCarouselAria")} gap={3} hasSnap>
 							{meta.cast.map((member) => (
 								<VStack
 									gap={2}
@@ -894,8 +940,12 @@ export function TitlePage({ id }: { id: string }) {
 
 				{meta.similar.length > 0 ? (
 					<VStack gap={3} width="100%">
-						<Heading level={2}>Похожие</Heading>
-						<Carousel aria-label="Похожие тайтлы" gap={3} hasSnap>
+						<Heading level={2}>{t("detail.similarHeading")}</Heading>
+						<Carousel
+							aria-label={t("detail.similarCarouselAria")}
+							gap={3}
+							hasSnap
+						>
 							{meta.similar.map((item) => (
 								<TitleCard key={item.titleId} item={item} />
 							))}

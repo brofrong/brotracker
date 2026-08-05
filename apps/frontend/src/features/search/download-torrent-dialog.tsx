@@ -16,6 +16,7 @@ import {
 } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/media-type";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { SearchCardTags } from "#/features/search/search-results-cards";
 import { trpc } from "#/shared/lib/trpc";
 
@@ -37,6 +38,7 @@ type Props = {
 };
 
 export function DownloadTorrentDialog({ item, isOpen, onOpenChange }: Props) {
+	const { t } = useTranslation("search");
 	const toast = useToast();
 	const [mediaType, setMediaType] = useState<"" | MediaType>("");
 
@@ -62,15 +64,12 @@ export function DownloadTorrentDialog({ item, isOpen, onOpenChange }: Props) {
 				torrentFileUrl: item.torrentFileUrl,
 				mediaType,
 			});
-			toast({ body: "Торрент добавлен в qBittorrent" });
+			toast({ body: t("dialog.added") });
 			onOpenChange(false);
 		} catch (error) {
 			toast({
 				type: "error",
-				body:
-					error instanceof Error
-						? error.message
-						: "Не удалось добавить торрент",
+				body: error instanceof Error ? error.message : t("dialog.addFailed"),
 			});
 		}
 	};
@@ -86,7 +85,7 @@ export function DownloadTorrentDialog({ item, isOpen, onOpenChange }: Props) {
 				<Layout
 					header={
 						<DialogHeader
-							title="Скачать в qBittorrent"
+							title={t("dialog.title")}
 							onOpenChange={onOpenChange}
 						/>
 					}
@@ -98,7 +97,11 @@ export function DownloadTorrentDialog({ item, isOpen, onOpenChange }: Props) {
 										{item.title}
 									</Text>
 									<Text type="supporting">
-										{item.size} · Сиды: {item.seeds} · Личи: {item.leeches}
+										{t("dialog.meta", {
+											size: item.size,
+											seeds: item.seeds,
+											leeches: item.leeches,
+										})}
 									</Text>
 									<SearchCardTags
 										item={{
@@ -108,13 +111,16 @@ export function DownloadTorrentDialog({ item, isOpen, onOpenChange }: Props) {
 									/>
 								</VStack>
 								<SegmentedControl
-									label="Тип"
+									label={t("dialog.typeLabel")}
 									layout="fill"
 									value={mediaType}
 									onChange={(value) => setMediaType(value as "" | MediaType)}
 								>
-									<SegmentedControlItem label="Фильм" value="films" />
-									<SegmentedControlItem label="Сериал" value="tv" />
+									<SegmentedControlItem
+										label={t("dialog.film")}
+										value="films"
+									/>
+									<SegmentedControlItem label={t("dialog.series")} value="tv" />
 								</SegmentedControl>
 							</VStack>
 						</LayoutContent>
@@ -123,12 +129,12 @@ export function DownloadTorrentDialog({ item, isOpen, onOpenChange }: Props) {
 						<LayoutFooter>
 							<HStack gap={2} hAlign="end">
 								<Button
-									label="Отмена"
+									label={t("dialog.cancel")}
 									variant="secondary"
 									onClick={() => onOpenChange(false)}
 								/>
 								<Button
-									label="Скачать"
+									label={t("dialog.download")}
 									variant="primary"
 									isDisabled={mediaType === ""}
 									isLoading={addMutation.isPending}

@@ -18,8 +18,8 @@ export function formatEta(seconds: number): string {
 	if (seconds <= 0) return "—";
 	const hours = Math.floor(seconds / 3600);
 	const minutes = Math.floor((seconds % 3600) / 60);
-	if (hours > 0) return `${hours}ч ${minutes}м`;
-	return `${minutes}м`;
+	if (hours > 0) return `${hours}h ${minutes}m`;
+	return `${minutes}m`;
 }
 
 export function formatProgress(progress: number): string {
@@ -27,11 +27,11 @@ export function formatProgress(progress: number): string {
 }
 
 /** Formats a qBittorrent `added_on` unix timestamp (seconds). */
-export function formatAddedOn(unixSeconds: number): string {
+export function formatAddedOn(unixSeconds: number, locale = "ru-RU"): string {
 	if (unixSeconds <= 0) return "—";
 	const date = new Date(unixSeconds * 1000);
 	if (Number.isNaN(date.getTime())) return "—";
-	return date.toLocaleString("ru-RU", {
+	return date.toLocaleString(locale, {
 		day: "2-digit",
 		month: "2-digit",
 		year: "numeric",

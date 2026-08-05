@@ -3,6 +3,7 @@
 import { Link } from "@astryxdesign/core/Link";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
+import { useTranslation } from "react-i18next";
 
 const TMDB_HOME = "https://www.themoviedb.org/";
 
@@ -11,27 +12,26 @@ const TMDB_HOME = "https://www.themoviedb.org/";
  * Logo is the official Alt short (blue) SVG — less prominent than app branding.
  */
 export function TmdbAttribution({ compact = false }: { compact?: boolean }) {
+	const { t } = useTranslation("common");
+
 	return (
 		<VStack gap={compact ? 1 : 2} width="100%">
 			<HStack gap={2} vAlign="center" wrap="wrap">
 				<Link
 					href={TMDB_HOME}
 					isExternalLink
-					label="The Movie Database (TMDB)"
-					newTabLabel="(откроется в новой вкладке)"
+					label={t("tmdb.linkLabel")}
+					newTabLabel={t("tmdb.newTabLabel")}
 				>
 					<img
-						alt="The Movie Database (TMDB)"
+						alt={t("tmdb.logoAlt")}
 						height={20}
 						src="/tmdb-logo-short.svg"
 						width={154}
 					/>
 				</Link>
 			</HStack>
-			<Text type="supporting">
-				This application uses TMDB and the TMDB APIs but is not endorsed,
-				certified, or otherwise approved by TMDB.
-			</Text>
+			<Text type="supporting">{t("tmdb.disclaimer")}</Text>
 		</VStack>
 	);
 }

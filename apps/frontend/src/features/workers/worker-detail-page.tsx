@@ -14,12 +14,15 @@ import { Text } from "@astryxdesign/core/Text";
 import { useToast } from "@astryxdesign/core/Toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
+import type { TFunction } from "i18next";
 import {
 	type ComponentPropsWithoutRef,
 	forwardRef,
 	useEffect,
 	useState,
 } from "react";
+import { useTranslation } from "react-i18next";
+import { useLocale } from "#/shared/i18n/locale-provider";
 import { trpc } from "#/shared/lib/trpc";
 import { RunLogPanel } from "./run-log";
 
@@ -29,17 +32,6 @@ type WorkerRunStatus = "running" | "succeeded" | "failed";
 
 type WorkerRunTrigger = "scheduled" | "manual";
 
-const STATUS_LABEL: Record<WorkerLiveStatus, string> = {
-	running: "Работает",
-	idle: "Простаивает",
-};
-
-const RUN_STATUS_LABEL: Record<WorkerRunStatus, string> = {
-	running: "Выполняется",
-	succeeded: "Успешно",
-	failed: "Ошибка",
-};
-
 const RUN_STATUS_VARIANT: Record<
 	WorkerRunStatus,
 	"accent" | "success" | "error"
@@ -47,11 +39,6 @@ const RUN_STATUS_VARIANT: Record<
 	running: "accent",
 	succeeded: "success",
 	failed: "error",
-};
-
-const TRIGGER_LABEL: Record<WorkerRunTrigger, string> = {
-	scheduled: "По расписанию",
-	manual: "Вручную",
 };
 
 type RouterLinkProps = ComponentPropsWithoutRef<"a"> & {
@@ -64,15 +51,19 @@ const RouterLink = forwardRef<HTMLAnchorElement, RouterLinkProps>(
 	},
 );
 
-function formatTimestamp(value: string | Date | null | undefined): string {
+function formatTimestamp(
+	value: string | Date | null | undefined,
+	bcp47: string,
+	emDash: string,
+): string {
 	if (value == null) {
-		return "—";
+		return emDash;
 	}
 	const date = value instanceof Date ? value : new Date(value);
 	if (Number.isNaN(date.getTime())) {
-		return "—";
+		return emDash;
 	}
-	return date.toLocaleString("ru-RU", {
+	return date.toLocaleString(bcp47, {
 		day: "2-digit",
 		month: "2-digit",
 		year: "numeric",
@@ -90,32 +81,36 @@ function toMillis(value: string | Date): number {
 function formatDuration(
 	startedAt: string | Date,
 	finishedAt: string | Date | null,
+	tCommon: TFunction<"common">,
 ): string {
 	const start = toMillis(startedAt);
 	if (Number.isNaN(start)) {
-		return "—";
+		return tCommon("emDash");
 	}
-	const end =
-		finishedAt != null ? toMillis(finishedAt) : Date.now();
+	const end = finishedAt != null ? toMillis(finishedAt) : Date.now();
 	if (Number.isNaN(end)) {
-		return "—";
+		return tCommon("emDash");
 	}
 	const ms = Math.max(0, end - start);
 	if (ms < 1000) {
-		return `${ms} мс`;
+		return tCommon("duration.ms", { ms });
 	}
 	const totalSec = Math.round(ms / 1000);
 	if (totalSec < 60) {
-		return `${totalSec} с`;
+		return tCommon("duration.seconds", { seconds: totalSec });
 	}
 	const minutes = Math.floor(totalSec / 60);
 	const seconds = totalSec % 60;
 	if (minutes < 60) {
-		return seconds === 0 ? `${minutes} мин` : `${minutes} мин ${seconds} с`;
+		return seconds === 0
+			? tCommon("duration.minutesOnly", { minutes })
+			: tCommon("duration.minutesSeconds", { minutes, seconds });
 	}
 	const hours = Math.floor(minutes / 60);
 	const remMinutes = minutes % 60;
-	return remMinutes === 0 ? `${hours} ч` : `${hours} ч ${remMinutes} мин`;
+	return remMinutes === 0
+		? tCommon("duration.hoursOnly", { hours })
+		: tCommon("duration.hoursMinutes", { hours, minutes: remMinutes });
 }
 
 type WorkerDetailPageProps = {
@@ -126,7 +121,11 @@ export function WorkerDetailPage({ id }: WorkerDetailPageProps) {
 	const navigate = useNavigate();
 	const toast = useToast();
 	const queryClient = useQueryClient();
+	const { t } = useTranslation("workers");
+	const { t: tCommon } = useTranslation("common");
+	const { bcp47 } = useLocale();
 	const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+	const emDash = tCommon("emDash");
 
 	const workerQuery = useQuery({
 		...trpc.workers.get.queryOptions({ id }),
@@ -182,12 +181,12 @@ export function WorkerDetailPage({ id }: WorkerDetailPageProps) {
 					queryKey: trpc.workers.list.queryKey(),
 				}),
 			]);
-			toast({ body: "Воркер запущен" });
+			toast({ body: t("detail.started") });
 		},
 		onError: (error) => {
 			toast({
 				type: "error",
-				body: error.message || "Не удалось запустить",
+				body: error.message || t("detail.startFailed"),
 			});
 		},
 	});
@@ -210,35 +209,41 @@ export function WorkerDetailPage({ id }: WorkerDetailPageProps) {
 
 	const selectedRun = runQuery.data ?? selectedListRun;
 	const isWorkerRunning = worker?.status === "running";
-	const statusLabel = worker ? STATUS_LABEL[worker.status] : "";
+	const statusLabel = worker
+		? t(`status.${worker.status as WorkerLiveStatus}`)
+		: "";
 
 	return (
 		<Section padding={4} variant="transparent">
 			<VStack gap={6} width="100%">
 				<VStack gap={3} width="100%">
-					<Breadcrumbs label="Навигация" variant="supporting">
+					<Breadcrumbs label={t("detail.navAria")} variant="supporting">
 						<BreadcrumbItem as={RouterLink} href="/workers">
-							Воркеры
+							{t("detail.breadcrumbWorkers")}
 						</BreadcrumbItem>
-						<BreadcrumbItem isCurrent>
-							{worker?.name ?? id}
-						</BreadcrumbItem>
+						<BreadcrumbItem isCurrent>{worker?.name ?? id}</BreadcrumbItem>
 					</Breadcrumbs>
 
 					{workerQuery.isLoading ? (
-						<Spinner label="Загрузка воркера" />
+						<Spinner label={t("detail.loading")} />
 					) : null}
 
 					{workerQuery.isError ? (
 						<Banner
 							description={workerQuery.error.message}
 							status="error"
-							title="Не удалось загрузить воркера"
+							title={t("detail.loadFailed")}
 						/>
 					) : null}
 
 					{worker ? (
-						<HStack gap={4} hAlign="between" vAlign="start" width="100%" wrap="wrap">
+						<HStack
+							gap={4}
+							hAlign="between"
+							vAlign="start"
+							width="100%"
+							wrap="wrap"
+						>
 							<VStack gap={1}>
 								<Heading level={1}>{worker.name}</Heading>
 								<Text type="supporting">{worker.description}</Text>
@@ -255,7 +260,7 @@ export function WorkerDetailPage({ id }: WorkerDetailPageProps) {
 								<Button
 									isDisabled={isWorkerRunning || runMutation.isPending}
 									isLoading={runMutation.isPending}
-									label="Запустить"
+									label={t("detail.run")}
 									onClick={() => runMutation.mutate({ workerId: id })}
 									size="sm"
 									variant="secondary"
@@ -265,37 +270,45 @@ export function WorkerDetailPage({ id }: WorkerDetailPageProps) {
 					) : null}
 				</VStack>
 
-				{runsQuery.isLoading ? <Spinner label="Загрузка истории" /> : null}
+				{runsQuery.isLoading ? (
+					<Spinner label={t("detail.historyLoading")} />
+				) : null}
 
 				{runsQuery.isError ? (
 					<Banner
 						description={runsQuery.error.message}
 						status="error"
-						title="Не удалось загрузить историю запусков"
+						title={t("detail.historyLoadFailed")}
 					/>
 				) : null}
 
 				{!runsQuery.isLoading && !runsQuery.isError && runs.length === 0 ? (
 					<EmptyState
-						description="Запустите воркера вручную или дождитесь расписания."
-						title="Нет запусков"
+						description={t("detail.noRunsDescription")}
+						title={t("detail.noRunsTitle")}
 					/>
 				) : null}
 
 				{!runsQuery.isLoading && !runsQuery.isError && runs.length > 0 ? (
 					<VStack gap={6} width="100%">
 						<VStack gap={3} width="100%">
-							<Heading level={2}>История запусков</Heading>
+							<Heading level={2}>{t("detail.historyHeading")}</Heading>
 							<List density="compact" hasDividers>
 								{runs.map((run) => {
-									const runStatusLabel = RUN_STATUS_LABEL[run.status];
+									const runStatusLabel = t(
+										`runStatus.${run.status as WorkerRunStatus}`,
+									);
 									const isRunning = run.status === "running";
 									const duration = formatDuration(
 										run.startedAt,
 										run.finishedAt,
+										tCommon,
 									);
 									const summary =
-										run.summary ?? run.error ?? "Без сводки";
+										run.summary ?? run.error ?? t("detail.noSummary");
+									const triggerLabel = t(
+										`trigger.${run.trigger as WorkerRunTrigger}`,
+									);
 
 									return (
 										<ListItem
@@ -303,7 +316,10 @@ export function WorkerDetailPage({ id }: WorkerDetailPageProps) {
 											description={
 												<VStack gap={0}>
 													<Text type="supporting">
-														{TRIGGER_LABEL[run.trigger]} · {duration}
+														{t("detail.runMeta", {
+															trigger: triggerLabel,
+															duration,
+														})}
 													</Text>
 													<Text type="supporting">{summary}</Text>
 												</VStack>
@@ -319,7 +335,7 @@ export function WorkerDetailPage({ id }: WorkerDetailPageProps) {
 												</HStack>
 											}
 											isSelected={run.id === selectedRunId}
-											label={formatTimestamp(run.startedAt)}
+											label={formatTimestamp(run.startedAt, bcp47, emDash)}
 											onClick={() => setSelectedRunId(run.id)}
 										/>
 									);
@@ -330,21 +346,27 @@ export function WorkerDetailPage({ id }: WorkerDetailPageProps) {
 						<VStack gap={3} width="100%">
 							{selectedRunId == null ? (
 								<EmptyState
-									description="Нажмите на строку в истории, чтобы открыть журнал."
-									title="Выберите запуск"
+									description={t("detail.selectRunDescription")}
+									title={t("detail.selectRunTitle")}
 								/>
 							) : runQuery.isError && selectedRun == null ? (
 								<Banner
 									description={runQuery.error.message}
 									status="error"
-									title="Не удалось загрузить журнал"
+									title={t("detail.logLoadFailed")}
 								/>
 							) : runQuery.isLoading && selectedRun == null ? (
-								<Spinner label="Загрузка журнала" />
+								<Spinner label={t("detail.logLoading")} />
 							) : selectedRun ? (
 								<RunLogPanel
 									lines={selectedRun.log}
-									title={`Журнал · ${formatTimestamp(selectedRun.startedAt)}`}
+									title={t("detail.logTitle", {
+										datetime: formatTimestamp(
+											selectedRun.startedAt,
+											bcp47,
+											emDash,
+										),
+									})}
 								/>
 							) : null}
 						</VStack>
@@ -353,7 +375,7 @@ export function WorkerDetailPage({ id }: WorkerDetailPageProps) {
 
 				{workerQuery.isError ? (
 					<Button
-						label="К воркерам"
+						label={t("detail.backToWorkers")}
 						onClick={() => void navigate({ to: "/workers" })}
 						variant="secondary"
 					/>

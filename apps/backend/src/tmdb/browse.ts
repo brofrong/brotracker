@@ -119,6 +119,7 @@ export function createTmdbBrowse(deps: TmdbBrowseDeps) {
 	async function request(
 		pathAndQuery: string,
 		logLabel: string,
+		language: string,
 	): Promise<BrowseOutcome> {
 		const credentials = await deps.resolveCredentials();
 		if (!credentials) {
@@ -127,7 +128,7 @@ export function createTmdbBrowse(deps: TmdbBrowseDeps) {
 
 		const url = `${TMDB_BASE}${pathAndQuery}${
 			pathAndQuery.includes("?") ? "&" : "?"
-		}api_key=${encodeURIComponent(credentials.apiKey)}&language=ru-RU`;
+		}api_key=${encodeURIComponent(credentials.apiKey)}&language=${encodeURIComponent(language)}`;
 
 		try {
 			const response = await fetchJson(url, credentials.proxyUrl);
@@ -151,16 +152,22 @@ export function createTmdbBrowse(deps: TmdbBrowseDeps) {
 	}
 
 	return {
-		fetchTrending: (page: number): Promise<BrowseOutcome> =>
+		fetchTrending: (page: number, language: string): Promise<BrowseOutcome> =>
 			request(
 				`/trending/all/day?page=${encodeURIComponent(String(page))}`,
 				"tmdb browse trending",
+				language,
 			),
 
-		searchMulti: (query: string, page: number): Promise<BrowseOutcome> =>
+		searchMulti: (
+			query: string,
+			page: number,
+			language: string,
+		): Promise<BrowseOutcome> =>
 			request(
 				`/search/multi?query=${encodeURIComponent(query)}&page=${encodeURIComponent(String(page))}`,
 				"tmdb browse search",
+				language,
 			),
 	};
 }

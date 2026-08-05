@@ -21,10 +21,11 @@ function tmdbAuthQuery(apiKey: string): string {
 async function fetchTmdbJson<T>(
 	path: string,
 	credentials: TmdbCredentials,
+	language: string,
 ): Promise<T | null> {
 	const url = `${TMDB_BASE}${path}${
 		path.includes("?") ? "&" : "?"
-	}${tmdbAuthQuery(credentials.apiKey)}&language=ru-RU`;
+	}${tmdbAuthQuery(credentials.apiKey)}&language=${encodeURIComponent(language)}`;
 
 	try {
 		const response = await fetchWithProxy(url, {
@@ -51,8 +52,12 @@ async function fetchTmdbJson<T>(
 
 export function createFetchTmdbMeta(
 	resolveCredentials: () => Promise<TmdbCredentials | undefined>,
-): (kind: TitleKind, tmdbId: number) => Promise<FetchTmdbMetaOutcome> {
-	return async (kind, tmdbId) => {
+): (
+	kind: TitleKind,
+	tmdbId: number,
+	language: string,
+) => Promise<FetchTmdbMetaOutcome> {
+	return async (kind, tmdbId, language) => {
 		const credentials = await resolveCredentials();
 		if (!credentials) {
 			return { status: "unavailable" };
@@ -64,9 +69,13 @@ export function createFetchTmdbMeta(
 		const similarPath = `/${segment}/${tmdbId}/similar`;
 
 		const [details, credits, similar] = await Promise.all([
-			fetchTmdbJson<TmdbMovieDetails | TmdbTvDetails>(detailsPath, credentials),
-			fetchTmdbJson<TmdbCredits>(creditsPath, credentials),
-			fetchTmdbJson<TmdbSimilarResponse>(similarPath, credentials),
+			fetchTmdbJson<TmdbMovieDetails | TmdbTvDetails>(
+				detailsPath,
+				credentials,
+				language,
+			),
+			fetchTmdbJson<TmdbCredits>(creditsPath, credentials, language),
+			fetchTmdbJson<TmdbSimilarResponse>(similarPath, credentials, language),
 		]);
 
 		if (!details || !credits) {
