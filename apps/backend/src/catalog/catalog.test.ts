@@ -256,4 +256,41 @@ describe("catalog.searchRefresh", () => {
 
 		await expect(catalog.searchRefresh("film", {})).rejects.toThrow("timeout");
 	});
+
+	test("merges results when searchTracker returns combined tracker output", async () => {
+		const catalog = createCatalog({
+			normalizeTitle: (q) => q,
+			searchLocal: async () => {
+				throw new Error("local search should not run for refresh");
+			},
+			listRecent: async () => {
+				throw new Error("listRecent should not run for refresh");
+			},
+			searchTracker: async () => ({
+				status: "ok",
+				totalResults: 3,
+				results: [
+					hit({ torrentId: "rutracker:1", title: "RuTracker hit" }),
+					hit({
+						torrentId: "kinozal:2",
+						title: "Kinozal hit",
+						topicUrl: "https://kinozal.me/details.php?id=2",
+						torrentFileUrl: "https://dl.kinozal.me/download.php?id=2",
+					}),
+				],
+			}),
+			upsertFromTracker: async () => {},
+			loadImageKeys: async () => new Map(),
+			publicUrl: (key) => key,
+			enqueueCoverFetch: () => {},
+		});
+
+		const response = await catalog.searchRefresh("film", {});
+
+		expect(response.totalResults).toBe(3);
+		expect(response.results.map((r) => r.torrentId)).toEqual([
+			"rutracker:1",
+			"kinozal:2",
+		]);
+	});
 });

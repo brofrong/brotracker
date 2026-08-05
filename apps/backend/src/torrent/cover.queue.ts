@@ -8,7 +8,7 @@ import {
 	createCoverFetchQueue,
 	type CoverPipelineDeps,
 } from "./cover-pipeline";
-import { getTracker } from "./torrent.tracker";
+import { getTrackerForTorrentId } from "./torrent.tracker";
 
 const FETCH_TIMEOUT_MS = 15_000;
 
@@ -72,7 +72,7 @@ export const liveCoverPipelineDeps: CoverPipelineDeps = {
 		return row.imageKey;
 	},
 	resolveImageUrl: async (torrentId) => {
-		const tracker = await getTracker();
+		const tracker = await getTrackerForTorrentId(torrentId);
 		const imageResult = await tracker.getImage(torrentId);
 		if (imageResult.isErr()) {
 			logger.warn(

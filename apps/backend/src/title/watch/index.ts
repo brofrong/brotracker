@@ -8,7 +8,7 @@ import {
 	QbittorrentNotConfiguredError,
 } from "../../qbittorent/qbittorent.client";
 import { loadQbittorrentConfig } from "../../settings/qbittorrent-config";
-import { getTracker } from "../../torrent/torrent.tracker";
+import { getTrackerForTorrentId } from "../../torrent/torrent.tracker";
 import { extractTopicId, torrentFileUrlFromId } from "../topic-tag";
 import { isCompletePack } from "./episode-progress";
 import { createNightlyWorker } from "./nightly-worker";
@@ -57,7 +57,11 @@ async function getSeriesPath(): Promise<string | null> {
 }
 
 async function fetchTorrentBytes(torrentFileUrl: string): Promise<Uint8Array> {
-	const tracker = await getTracker();
+	const topicId = extractTopicId(torrentFileUrl);
+	if (!topicId) {
+		throw new Error("Некорректный torrent URL");
+	}
+	const tracker = await getTrackerForTorrentId(topicId);
 	const file = await tracker.getTorrent(torrentFileUrl);
 	if (file.isErr()) {
 		throw file.error;
