@@ -1,17 +1,18 @@
 import { TRPCError } from "@trpc/server";
 import z from "zod";
+import { toTmdbLanguage } from "../i18n/locale";
 import {
 	AddFromTrackerGatewayError,
 	AddFromTrackerPreconditionError,
 } from "../qbittorent/qbittorent.service";
 import { protectedProcedure, router } from "../trpc";
+import type { BrowseOutcome } from "../tmdb/browse";
 import {
 	TitleAddError,
 	TitleWatchError,
 	titleModule,
 	tmdbBrowse,
 } from "./index";
-import type { BrowseOutcome } from "../tmdb/browse";
 
 function browseOrThrow(outcome: BrowseOutcome) {
 	if (outcome.status === "unavailable") {
@@ -67,9 +68,10 @@ export const titleRouter = router({
 
 	trending: protectedProcedure
 		.input(z.object({ cursor: cursorSchema }).optional())
-		.query(async ({ input }) => {
+		.query(async ({ ctx, input }) => {
 			const page = input?.cursor ?? 1;
-			return browseOrThrow(await tmdbBrowse.fetchTrending(page));
+			const language = toTmdbLanguage(ctx.locale);
+			return browseOrThrow(await tmdbBrowse.fetchTrending(page, language));
 		}),
 
 	search: protectedProcedure
@@ -79,7 +81,7 @@ export const titleRouter = router({
 				cursor: cursorSchema,
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ ctx, input }) => {
 			const query = input.query.trim();
 			if (!query) {
 				throw new TRPCError({
@@ -87,16 +89,20 @@ export const titleRouter = router({
 					message: "Query is required",
 				});
 			}
+			const language = toTmdbLanguage(ctx.locale);
 			return browseOrThrow(
-				await tmdbBrowse.searchMulti(query, input.cursor ?? 1),
+				await tmdbBrowse.searchMulti(query, input.cursor ?? 1, language),
 			);
 		}),
 
 	get: protectedProcedure
 		.input(z.object({ id: z.string().min(1) }))
-		.query(async ({ input }) => {
+		.query(async ({ ctx, input }) => {
 			assertTitleId(input.id);
-			return titleModule.get({ id: input.id });
+			return titleModule.get({
+				id: input.id,
+				language: toTmdbLanguage(ctx.locale),
+			});
 		}),
 
 	torrents: protectedProcedure
@@ -106,11 +112,12 @@ export const titleRouter = router({
 				query: z.string().min(1).optional(),
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ ctx, input }) => {
 			assertTitleId(input.id);
 			return titleModule.torrents({
 				id: input.id,
 				query: input.query,
+				language: toTmdbLanguage(ctx.locale),
 			});
 		}),
 

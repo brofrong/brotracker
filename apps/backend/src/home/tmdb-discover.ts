@@ -12,11 +12,11 @@ export function mapTrendingItem(item: TmdbBrowseItem): DiscoverCard | null {
 
 export function createFetchDiscoverFeed(
 	resolveCredentials: () => Promise<TmdbCredentials | undefined>,
-): () => Promise<DiscoverCard[] | null> {
+): (language: string) => Promise<DiscoverCard[] | null> {
 	const browse = createTmdbBrowse({ resolveCredentials });
 
-	return async () => {
-		const outcome = await browse.fetchTrending(1);
+	return async (language) => {
+		const outcome = await browse.fetchTrending(1, language);
 		if (outcome.status === "unavailable" || outcome.status === "error") {
 			return null;
 		}

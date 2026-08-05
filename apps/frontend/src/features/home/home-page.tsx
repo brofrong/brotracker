@@ -13,10 +13,12 @@ import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Text } from "@astryxdesign/core/Text";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import {
 	type TransferStatsData,
 	TransferStatsWidget,
 } from "#/features/home/transfer-stats-widget";
+import { useLocale } from "#/shared/i18n/locale-provider";
 import { trpc } from "#/shared/lib/trpc";
 import { TitleCard, type TitleCardData } from "#/shared/ui/title-card";
 import { TmdbAttribution } from "#/shared/ui/tmdb-attribution";
@@ -35,11 +37,11 @@ type TitleWatchFeedItemData = {
 	createdAt: string;
 };
 
-const TITLE_WATCH_EVENT_LABELS: Record<TitleWatchEventKind, string> = {
-	"torrent-updated": "Раздача обновилась",
-	"progress-changed": "Прогресс обновился",
-	completed: "Все серии скачаны",
-	"check-failed": "Ошибка проверки",
+const TITLE_WATCH_EVENT_KEYS: Record<TitleWatchEventKind, string> = {
+	"torrent-updated": "titleWatchFeed.events.torrentUpdated",
+	"progress-changed": "titleWatchFeed.events.progressChanged",
+	completed: "titleWatchFeed.events.completed",
+	"check-failed": "titleWatchFeed.events.checkFailed",
 };
 
 function titleWatchEventVariant(
@@ -50,8 +52,8 @@ function titleWatchEventVariant(
 	return "success";
 }
 
-function formatEventTimestamp(createdAt: string): string {
-	return new Date(createdAt).toLocaleString("ru-RU", {
+function formatEventTimestamp(createdAt: string, bcp47: string): string {
+	return new Date(createdAt).toLocaleString(bcp47, {
 		day: "2-digit",
 		month: "2-digit",
 		hour: "2-digit",
@@ -61,47 +63,56 @@ function formatEventTimestamp(createdAt: string): string {
 
 function TitleWatchFeedWidget({ items }: { items: TitleWatchFeedItemData[] }) {
 	const navigate = useNavigate();
+	const { t } = useTranslation("home");
+	const { bcp47 } = useLocale();
 
 	return (
 		<VStack gap={3} width="100%">
-			<Heading level={2}>Обновления сериалов</Heading>
+			<Heading level={2}>{t("titleWatchFeed.heading")}</Heading>
 			<List hasDividers>
-				{items.map((item) => (
-					<ListItem
-						key={item.id}
-						description={item.message ?? formatEventTimestamp(item.createdAt)}
-						endContent={
-							item.message ? (
-								<Text type="supporting">
-									{formatEventTimestamp(item.createdAt)}
-								</Text>
-							) : null
-						}
-						label={TITLE_WATCH_EVENT_LABELS[item.kind]}
-						onClick={() =>
-							void navigate({
-								to: "/title/$id",
-								params: { id: item.titleId },
-							})
-						}
-						startContent={
-							<StatusDot
-								label={TITLE_WATCH_EVENT_LABELS[item.kind]}
-								variant={titleWatchEventVariant(item.kind)}
-							/>
-						}
-					/>
-				))}
+				{items.map((item) => {
+					const label = t(TITLE_WATCH_EVENT_KEYS[item.kind]);
+					return (
+						<ListItem
+							key={item.id}
+							description={
+								item.message ?? formatEventTimestamp(item.createdAt, bcp47)
+							}
+							endContent={
+								item.message ? (
+									<Text type="supporting">
+										{formatEventTimestamp(item.createdAt, bcp47)}
+									</Text>
+								) : null
+							}
+							label={label}
+							onClick={() =>
+								void navigate({
+									to: "/title/$id",
+									params: { id: item.titleId },
+								})
+							}
+							startContent={
+								<StatusDot
+									label={label}
+									variant={titleWatchEventVariant(item.kind)}
+								/>
+							}
+						/>
+					);
+				})}
 			</List>
 		</VStack>
 	);
 }
 
 function DiscoverWidget({ items }: { items: TitleCardData[] }) {
+	const { t } = useTranslation("home");
+
 	return (
 		<VStack gap={3} width="100%">
-			<Heading level={2}>Discover</Heading>
-			<Carousel aria-label="Тренды дня" gap={3} hasSnap>
+			<Heading level={2}>{t("discover.heading")}</Heading>
+			<Carousel aria-label={t("discover.carouselAria")} gap={3} hasSnap>
 				{items.map((item) => (
 					<TitleCard key={item.titleId} item={item} />
 				))}
@@ -140,6 +151,8 @@ function isTitleWatchFeed(
 
 export function HomePage() {
 	const navigate = useNavigate();
+	const { t } = useTranslation("home");
+	const { t: tCommon } = useTranslation("common");
 	const transferQuery = useQuery({
 		...trpc.home.compose.queryOptions({
 			widgets: [{ key: "transfer", widget: "transferStats" }],
@@ -167,16 +180,16 @@ export function HomePage() {
 	return (
 		<Section padding={4} variant="transparent">
 			<VStack gap={6} width="100%">
-				<Heading level={1}>Главная</Heading>
+				<Heading level={1}>{t("title")}</Heading>
 
 				{transferQuery.isLoading ? (
-					<Spinner label="Загрузка статистики" />
+					<Spinner label={t("transferStats.loading")} />
 				) : null}
 
 				{transferQuery.isError ? (
 					<EmptyState
 						description={transferQuery.error.message}
-						title="Не удалось загрузить статистику"
+						title={t("transferStats.loadFailed")}
 					/>
 				) : null}
 
@@ -185,10 +198,10 @@ export function HomePage() {
 				transfer?.status === "unavailable" ? (
 					<Banner
 						container="section"
-						description="Укажите URL и API key qBittorrent в настройках, чтобы видеть статистику."
+						description={t("transferStats.qbUnavailableDescription")}
 						endContent={
 							<Button
-								label="Открыть настройки"
+								label={tCommon("openSettings")}
 								onClick={() =>
 									void navigate({
 										to: "/settings",
@@ -199,7 +212,7 @@ export function HomePage() {
 							/>
 						}
 						status="warning"
-						title="qBittorrent недоступен"
+						title={t("transferStats.qbUnavailableTitle")}
 					/>
 				) : null}
 
@@ -207,8 +220,8 @@ export function HomePage() {
 				!transferQuery.isError &&
 				transfer?.status === "empty" ? (
 					<EmptyState
-						description="Статистика появится после первой передачи данных."
-						title="Нет данных о передаче"
+						description={t("transferStats.emptyDescription")}
+						title={t("transferStats.emptyTitle")}
 					/>
 				) : null}
 
@@ -222,17 +235,19 @@ export function HomePage() {
 					/>
 				) : null}
 
-				{discoverQuery.isLoading ? <Spinner label="Загрузка Discover" /> : null}
+				{discoverQuery.isLoading ? (
+					<Spinner label={t("discover.loading")} />
+				) : null}
 
 				{!discoverQuery.isLoading &&
 				!discoverQuery.isError &&
 				discover?.status === "unavailable" ? (
 					<Banner
 						container="section"
-						description="Добавьте TMDB API key в настройках, чтобы видеть подборку. Остальная главная работает как обычно."
+						description={t("discover.unavailableDescription")}
 						endContent={
 							<Button
-								label="Открыть настройки"
+								label={tCommon("openSettings")}
 								onClick={() =>
 									void navigate({
 										to: "/settings",
@@ -243,7 +258,7 @@ export function HomePage() {
 							/>
 						}
 						status="warning"
-						title="Discover недоступен"
+						title={t("discover.unavailableTitle")}
 					/>
 				) : null}
 
@@ -251,8 +266,8 @@ export function HomePage() {
 				!discoverQuery.isError &&
 				discover?.status === "empty" ? (
 					<EmptyState
-						description="TMDB не вернул тренды."
-						title="Discover пуст"
+						description={t("discover.emptyDescription")}
+						title={t("discover.emptyTitle")}
 					/>
 				) : null}
 
@@ -264,13 +279,13 @@ export function HomePage() {
 				) : null}
 
 				{feedQuery.isLoading ? (
-					<Spinner label="Загрузка ленты обновлений" />
+					<Spinner label={t("titleWatchFeed.loading")} />
 				) : null}
 
 				{!feedQuery.isLoading && feedQuery.isError ? (
 					<EmptyState
 						description={feedQuery.error.message}
-						title="Не удалось загрузить ленту обновлений"
+						title={t("titleWatchFeed.loadFailed")}
 					/>
 				) : null}
 
@@ -278,8 +293,8 @@ export function HomePage() {
 				!feedQuery.isError &&
 				feed?.status === "empty" ? (
 					<EmptyState
-						description="Добавьте сериал в слежение на странице тайтла, чтобы видеть здесь обновления раздач."
-						title="Пока нет обновлений"
+						description={t("titleWatchFeed.emptyDescription")}
+						title={t("titleWatchFeed.emptyTitle")}
 					/>
 				) : null}
 

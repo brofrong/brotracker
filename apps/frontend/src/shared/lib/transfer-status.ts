@@ -84,18 +84,24 @@ function isSeedingLike(transfer: {
 export function getOptimisticStoppedState(transfer: {
 	progress: number;
 	stateKind: string;
-}): { stateKind: string; stateLabel: string } {
+}): { stateKind: string; stateLabelKey: OptimisticStateLabelKey } {
 	return isSeedingLike(transfer)
-		? { stateKind: "stoppedUP", stateLabel: "На паузе (готов)" }
-		: { stateKind: "stoppedDL", stateLabel: "На паузе" };
+		? { stateKind: "stoppedUP", stateLabelKey: "optimistic.pausedReady" }
+		: { stateKind: "stoppedDL", stateLabelKey: "optimistic.paused" };
 }
 
 /** Optimistic status after start. */
 export function getOptimisticStartedState(transfer: {
 	progress: number;
 	stateKind: string;
-}): { stateKind: string; stateLabel: string } {
+}): { stateKind: string; stateLabelKey: OptimisticStateLabelKey } {
 	return isSeedingLike(transfer)
-		? { stateKind: "uploading", stateLabel: "Раздача" }
-		: { stateKind: "downloading", stateLabel: "Загрузка" };
+		? { stateKind: "uploading", stateLabelKey: "optimistic.seeding" }
+		: { stateKind: "downloading", stateLabelKey: "optimistic.downloading" };
 }
+
+export type OptimisticStateLabelKey =
+	| "optimistic.pausedReady"
+	| "optimistic.paused"
+	| "optimistic.seeding"
+	| "optimistic.downloading";

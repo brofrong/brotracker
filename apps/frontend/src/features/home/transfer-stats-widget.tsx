@@ -20,6 +20,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	Area,
 	AreaChart,
@@ -33,6 +34,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+import { useLocale } from "#/shared/i18n/locale-provider";
 import { formatBytes, formatSpeed } from "#/shared/lib/format";
 
 export type TransferDayData = {
@@ -163,19 +165,20 @@ function SpeedTooltip({
 	active?: boolean;
 	payload?: readonly TooltipEntry[];
 }) {
+	const { bcp47 } = useLocale();
 	if (!active || !payload?.length) return null;
 	const entry = payload[0];
 	if (!entry || typeof entry.value !== "number") return null;
-	const t = entry.payload?.t;
+	const time = entry.payload?.t;
 	return (
 		<Card padding={3}>
 			<VStack gap={0}>
 				<Text hasTabularNumbers type="supporting">
 					{formatSpeed(entry.value)}
 				</Text>
-				{t != null ? (
+				{time != null ? (
 					<Text type="supporting">
-						{new Date(t).toLocaleTimeString("ru-RU")}
+						{new Date(time).toLocaleTimeString(bcp47)}
 					</Text>
 				) : null}
 			</VStack>
@@ -274,6 +277,7 @@ function KpiCard({
 }
 
 function DailyTrafficCard({ days }: { days: TransferDayData[] }) {
+	const { t } = useTranslation("home");
 	const data = days.map((d) => ({
 		label: formatDayLabel(d.date),
 		uploaded: d.uploadedBytes,
@@ -283,7 +287,7 @@ function DailyTrafficCard({ days }: { days: TransferDayData[] }) {
 	return (
 		<Card elevation="low" padding={5} width="100%">
 			<VStack gap={3} width="100%">
-				<Heading level={3}>Передача по дням</Heading>
+				<Heading level={3}>{t("transferStats.dailyTraffic")}</Heading>
 				<ResponsiveContainer height={220} width="100%">
 					<BarChart data={data} margin={chartMargin}>
 						<CartesianGrid
@@ -312,20 +316,26 @@ function DailyTrafficCard({ days }: { days: TransferDayData[] }) {
 						<Bar
 							dataKey="uploaded"
 							fill={chartColors.upload}
-							name="Отдано"
+							name={t("transferStats.uploaded")}
 							radius={[3, 3, 0, 0]}
 						/>
 						<Bar
 							dataKey="downloaded"
 							fill={chartColors.download}
-							name="Скачано"
+							name={t("transferStats.downloaded")}
 							radius={[3, 3, 0, 0]}
 						/>
 					</BarChart>
 				</ResponsiveContainer>
 				<HStack gap={6} vAlign="center">
-					<ChartLegendItem color={chartColors.upload} label="Отдано" />
-					<ChartLegendItem color={chartColors.download} label="Скачано" />
+					<ChartLegendItem
+						color={chartColors.upload}
+						label={t("transferStats.uploaded")}
+					/>
+					<ChartLegendItem
+						color={chartColors.download}
+						label={t("transferStats.downloaded")}
+					/>
 				</HStack>
 			</VStack>
 		</Card>
@@ -333,6 +343,7 @@ function DailyTrafficCard({ days }: { days: TransferDayData[] }) {
 }
 
 function CumulativeTrafficCard({ days }: { days: TransferDayData[] }) {
+	const { t } = useTranslation("home");
 	let downloaded = 0;
 	let uploaded = 0;
 	const data = days.map((d) => {
@@ -344,7 +355,7 @@ function CumulativeTrafficCard({ days }: { days: TransferDayData[] }) {
 	return (
 		<Card elevation="low" padding={5} width="100%">
 			<VStack gap={3} width="100%">
-				<Heading level={3}>Трафик за период</Heading>
+				<Heading level={3}>{t("transferStats.cumulativeTraffic")}</Heading>
 				<ResponsiveContainer height={220} width="100%">
 					<AreaChart data={data} margin={chartMargin}>
 						<CartesianGrid
@@ -374,7 +385,7 @@ function CumulativeTrafficCard({ days }: { days: TransferDayData[] }) {
 							dataKey="uploaded"
 							fill={chartColors.upload}
 							fillOpacity={0.15}
-							name="Отдано (накопительно)"
+							name={t("transferStats.uploadedCumulative")}
 							stroke={chartColors.upload}
 							strokeWidth={2}
 							type="monotone"
@@ -383,7 +394,7 @@ function CumulativeTrafficCard({ days }: { days: TransferDayData[] }) {
 							dataKey="downloaded"
 							fill={chartColors.download}
 							fillOpacity={0.15}
-							name="Скачано (накопительно)"
+							name={t("transferStats.downloadedCumulative")}
 							stroke={chartColors.download}
 							strokeWidth={2}
 							type="monotone"
@@ -393,11 +404,11 @@ function CumulativeTrafficCard({ days }: { days: TransferDayData[] }) {
 				<HStack gap={6} vAlign="center">
 					<ChartLegendItem
 						color={chartColors.upload}
-						label="Отдано (накопительно)"
+						label={t("transferStats.uploadedCumulative")}
 					/>
 					<ChartLegendItem
 						color={chartColors.download}
-						label="Скачано (накопительно)"
+						label={t("transferStats.downloadedCumulative")}
 					/>
 				</HStack>
 			</VStack>
@@ -412,6 +423,7 @@ export function TransferStatsWidget({
 	stats: TransferStatsData;
 	updatedAt: number;
 }) {
+	const { t } = useTranslation("home");
 	const speedSamples = useSpeedSamples(stats, updatedAt);
 	const liveSamples = speedSamples.filter(
 		(s) => s.t > updatedAt - LIVE_WINDOW_MS,
@@ -427,7 +439,7 @@ export function TransferStatsWidget({
 
 	return (
 		<VStack gap={4} width="100%">
-			<Heading level={2}>Статистика передачи</Heading>
+			<Heading level={2}>{t("transferStats.heading")}</Heading>
 			<Grid columns={{ minWidth: 200, max: 4 }} gap={3} width="100%">
 				<KpiCard
 					hint={
@@ -436,7 +448,7 @@ export function TransferStatsWidget({
 							: undefined
 					}
 					icon={ArrowDownToLine}
-					label="Скачано"
+					label={t("transferStats.downloaded")}
 					sparkColor={chartColors.download}
 					sparkData={downSpark}
 					value={formatBytes(stats.downloadedBytes)}
@@ -448,23 +460,23 @@ export function TransferStatsWidget({
 							: undefined
 					}
 					icon={ArrowUpFromLine}
-					label="Отдано"
+					label={t("transferStats.uploaded")}
 					sparkColor={chartColors.upload}
 					sparkData={upSpark}
 					value={formatBytes(stats.uploadedBytes)}
 				/>
 				{stats.ratio != null ? (
 					<KpiCard
-						hint="отдано / скачано"
+						hint={t("transferStats.ratioHint")}
 						icon={Scale}
-						label="Ratio"
+						label={t("transferStats.ratio")}
 						value={stats.ratio.toFixed(2)}
 					/>
 				) : null}
 				{stats.freeSpaceBytes != null ? (
 					<KpiCard
 						icon={HardDrive}
-						label="Свободно на диске"
+						label={t("transferStats.freeDisk")}
 						value={formatBytes(stats.freeSpaceBytes)}
 					/>
 				) : null}
@@ -480,11 +492,8 @@ export function TransferStatsWidget({
 			{history != null && !hasDailyData ? (
 				<Card elevation="low" padding={5} width="100%">
 					<VStack gap={2} width="100%">
-						<Heading level={3}>Передача по дням</Heading>
-						<Text type="supporting">
-							История пока пуста: снапшоты пишутся каждый час, дневная динамика
-							появится завтра.
-						</Text>
+						<Heading level={3}>{t("transferStats.dailyTraffic")}</Heading>
+						<Text type="supporting">{t("transferStats.historyEmpty")}</Text>
 					</VStack>
 				</Card>
 			) : null}

@@ -10,6 +10,7 @@ import { Icon } from "@astryxdesign/core/Icon";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { ImageOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export type SearchCardItem = {
 	id: string;
@@ -70,6 +71,8 @@ function SearchCard({
 	item: SearchCardItem;
 	onDownload: (item: SearchCardItem) => void;
 }) {
+	const { t } = useTranslation("search");
+
 	return (
 		<Card padding={0} elevation="low" height="100%">
 			<VStack gap={0} height="100%">
@@ -108,7 +111,7 @@ function SearchCard({
 					</HStack>
 					<VStack gap={2} width="100%">
 						<Button
-							label="Скачать"
+							label={t("download")}
 							size="sm"
 							variant="primary"
 							width="100%"
@@ -118,7 +121,7 @@ function SearchCard({
 							href={item.topicUrl}
 							icon={<Icon icon="externalLink" size="sm" />}
 							isExternalLink
-							label="На форум"
+							label={t("onForum")}
 							size="sm"
 							target="_blank"
 							variant="secondary"

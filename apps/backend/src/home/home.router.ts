@@ -1,4 +1,5 @@
 import z from "zod";
+import { toTmdbLanguage } from "../i18n/locale";
 import { protectedProcedure, router } from "../trpc";
 import { home } from "./index";
 
@@ -14,5 +15,10 @@ export const homeRouter = router({
 				),
 			}),
 		)
-		.query(async ({ input }) => home.compose(input)),
+		.query(async ({ ctx, input }) =>
+			home.compose({
+				...input,
+				language: toTmdbLanguage(ctx.locale),
+			}),
+		),
 });

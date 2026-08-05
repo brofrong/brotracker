@@ -10,6 +10,7 @@ import {
 	useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { LocaleProvider } from "#/shared/i18n/locale-provider";
 import { queryClient } from "#/shared/lib/trpc";
 import { AuthGate } from "#/shared/ui/AuthGate";
 import Navigation, {
@@ -17,6 +18,7 @@ import Navigation, {
 } from "#/shared/ui/navigation/navigation";
 import { ThemeProvider } from "#/shared/ui/theme-provider";
 import appCss from "../styles.css?url";
+import "#/shared/i18n";
 
 export const Route = createRootRoute({
 	head: () => ({
@@ -62,6 +64,7 @@ export const Route = createRootRoute({
 });
 
 const themeFlashScript = `(function(){try{var s=localStorage.getItem("theme");if(s==="light"||s==="dark"){document.documentElement.setAttribute("data-theme",s)}else{document.documentElement.removeAttribute("data-theme")}}catch(e){}})();`;
+const localeFlashScript = `(function(){try{var l=localStorage.getItem("locale");document.documentElement.lang=l==="en"?"en-US":"ru-RU"}catch(e){document.documentElement.lang="ru-RU"}})();`;
 
 function AppFrame({ children }: { children: React.ReactNode }) {
 	const pathname = useRouterState({
@@ -86,18 +89,21 @@ function AppFrame({ children }: { children: React.ReactNode }) {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang="ru-RU" suppressHydrationWarning>
 			<head>
 				<HeadContent />
 				<script dangerouslySetInnerHTML={{ __html: themeFlashScript }} />
+				<script dangerouslySetInnerHTML={{ __html: localeFlashScript }} />
 			</head>
 			<body className="bg-body text-primary antialiased">
 				<ThemeProvider>
-					<QueryClientProvider client={queryClient}>
-						<AuthGate>
-							<AppFrame>{children}</AppFrame>
-						</AuthGate>
-					</QueryClientProvider>
+					<LocaleProvider>
+						<QueryClientProvider client={queryClient}>
+							<AuthGate>
+								<AppFrame>{children}</AppFrame>
+							</AuthGate>
+						</QueryClientProvider>
+					</LocaleProvider>
 				</ThemeProvider>
 				<TanStackDevtools
 					config={{

@@ -7,25 +7,14 @@ import { VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { authClient } from "#/shared/lib/auth-client";
 import { unauthorizedRedirect } from "#/shared/lib/unauthorized-redirect";
 
 type GateStatus = "checking" | "authenticated" | "redirecting";
 
-const STATUS_COPY = {
-	checking: {
-		title: "Проверяем сессию",
-		description: "Сейчас убедимся, что вы авторизованы",
-		ariaLabel: "Проверка авторизации",
-	},
-	redirecting: {
-		title: "Переходим к входу",
-		description: "Открываем страницу авторизации",
-		ariaLabel: "Перенаправление на страницу входа",
-	},
-} as const;
-
 export function AuthGate({ children }: { children: React.ReactNode }) {
+	const { t } = useTranslation("auth");
 	const pathname = useRouterState({
 		select: (state) => state.location.pathname,
 	});
@@ -72,13 +61,24 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 		return children;
 	}
 
-	const copy = STATUS_COPY[status];
+	const copy =
+		status === "checking"
+			? {
+					title: t("gate.checkingTitle"),
+					description: t("gate.checkingDescription"),
+					ariaLabel: t("gate.checkingAria"),
+				}
+			: {
+					title: t("gate.redirectingTitle"),
+					description: t("gate.redirectingDescription"),
+					ariaLabel: t("gate.redirectingAria"),
+				};
 
 	return (
 		<Center height="100dvh" width="100%">
 			<VStack gap={8} hAlign="center" maxWidth={280} padding={6} width="100%">
 				<Heading justify="center" level={1} type="display-3">
-					torrent-manager
+					{t("login.brand")}
 				</Heading>
 
 				<Spinner

@@ -13,6 +13,9 @@ import { Text } from "@astryxdesign/core/Text";
 import { useToast } from "@astryxdesign/core/Toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
+import { useLocale } from "#/shared/i18n/locale-provider";
 import { trpc } from "#/shared/lib/trpc";
 
 type WorkerLiveStatus = "running" | "idle";
@@ -27,26 +30,19 @@ type WorkerLastRun = {
 	error: string | null;
 };
 
-const STATUS_LABEL: Record<WorkerLiveStatus, string> = {
-	running: "Работает",
-	idle: "Простаивает",
-};
-
-const RUN_STATUS_LABEL: Record<WorkerRunStatus, string> = {
-	running: "Выполняется",
-	succeeded: "Успешно",
-	failed: "Ошибка",
-};
-
-function formatTimestamp(value: string | Date | null | undefined): string {
+function formatTimestamp(
+	value: string | Date | null | undefined,
+	bcp47: string,
+	emDash: string,
+): string {
 	if (value == null) {
-		return "—";
+		return emDash;
 	}
 	const date = value instanceof Date ? value : new Date(value);
 	if (Number.isNaN(date.getTime())) {
-		return "—";
+		return emDash;
 	}
-	return date.toLocaleString("ru-RU", {
+	return date.toLocaleString(bcp47, {
 		day: "2-digit",
 		month: "2-digit",
 		year: "numeric",
@@ -55,23 +51,35 @@ function formatTimestamp(value: string | Date | null | undefined): string {
 	});
 }
 
-function lastRunSummary(lastRun: WorkerLastRun | null): string {
+function lastRunSummary(
+	lastRun: WorkerLastRun | null,
+	t: TFunction<"workers">,
+	bcp47: string,
+	emDash: string,
+): string {
 	if (!lastRun) {
-		return "Ещё не запускался";
+		return t("list.neverRun");
 	}
-	const when = formatTimestamp(lastRun.finishedAt ?? lastRun.startedAt);
-	const outcome = RUN_STATUS_LABEL[lastRun.status];
+	const when = formatTimestamp(
+		lastRun.finishedAt ?? lastRun.startedAt,
+		bcp47,
+		emDash,
+	);
+	const outcome = t(`runStatus.${lastRun.status}`);
 	const detail = lastRun.summary ?? lastRun.error;
 	if (detail) {
-		return `${outcome} · ${when} · ${detail}`;
+		return t("list.lastRunWithDetail", { outcome, when, detail });
 	}
-	return `${outcome} · ${when}`;
+	return t("list.lastRun", { outcome, when });
 }
 
 export function WorkersPage() {
 	const navigate = useNavigate();
 	const toast = useToast();
 	const queryClient = useQueryClient();
+	const { t } = useTranslation("workers");
+	const { t: tCommon } = useTranslation("common");
+	const { bcp47 } = useLocale();
 
 	const listQuery = useQuery({
 		...trpc.workers.list.queryOptions(),
@@ -92,49 +100,50 @@ export function WorkersPage() {
 			await queryClient.invalidateQueries({
 				queryKey: trpc.workers.list.queryKey(),
 			});
-			toast({ body: "Воркер запущен" });
+			toast({ body: t("list.started") });
 		},
 		onError: (error) => {
 			toast({
 				type: "error",
-				body: error.message || "Не удалось запустить",
+				body: error.message || t("list.startFailed"),
 			});
 		},
 	});
 
 	const workers = listQuery.data ?? [];
+	const emDash = tCommon("emDash");
 
 	return (
 		<Section padding={4} variant="transparent">
 			<VStack gap={6} width="100%">
 				<VStack gap={1} width="100%">
-					<Heading level={1}>Воркеры</Heading>
-					<Text type="supporting">
-						Фоновые задачи: статус, история запусков и ручной запуск
-					</Text>
+					<Heading level={1}>{t("list.title")}</Heading>
+					<Text type="supporting">{t("list.subtitle")}</Text>
 				</VStack>
 
-				{listQuery.isLoading ? <Spinner label="Загрузка воркеров" /> : null}
+				{listQuery.isLoading ? <Spinner label={t("list.loading")} /> : null}
 
 				{listQuery.isError ? (
 					<Banner
 						description={listQuery.error.message}
 						status="error"
-						title="Не удалось загрузить воркеров"
+						title={t("list.loadFailed")}
 					/>
 				) : null}
 
 				{!listQuery.isLoading && !listQuery.isError && workers.length === 0 ? (
 					<EmptyState
-						description="Зарегистрированные воркеры появятся здесь."
-						title="Нет воркеров"
+						description={t("list.emptyDescription")}
+						title={t("list.emptyTitle")}
 					/>
 				) : null}
 
 				{!listQuery.isLoading && !listQuery.isError && workers.length > 0 ? (
 					<List density="compact" hasDividers>
 						{workers.map((worker) => {
-							const statusLabel = STATUS_LABEL[worker.status];
+							const statusLabel = t(
+								`status.${worker.status as WorkerLiveStatus}`,
+							);
 							const isRunning = worker.status === "running";
 							const isThisPending =
 								runMutation.isPending &&
@@ -147,7 +156,7 @@ export function WorkersPage() {
 										<VStack gap={0}>
 											<Text type="supporting">{worker.description}</Text>
 											<Text type="supporting">
-												{lastRunSummary(worker.lastRun)}
+												{lastRunSummary(worker.lastRun, t, bcp47, emDash)}
 											</Text>
 										</VStack>
 									}
@@ -164,7 +173,7 @@ export function WorkersPage() {
 											<Button
 												isDisabled={isRunning || runMutation.isPending}
 												isLoading={isThisPending}
-												label="Запустить"
+												label={t("list.run")}
 												onClick={(event) => {
 													event.stopPropagation();
 													runMutation.mutate({ workerId: worker.id });

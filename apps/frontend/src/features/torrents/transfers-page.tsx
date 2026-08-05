@@ -28,8 +28,11 @@ import { useToast } from "@astryxdesign/core/Toast";
 import { Tooltip } from "@astryxdesign/core/Tooltip";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import type { TFunction } from "i18next";
 import { HardDrive, Pause, Play, Trash2, Wifi, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useLocale } from "#/shared/i18n/locale-provider";
 import {
 	formatAddedOn,
 	formatBytes,
@@ -77,18 +80,6 @@ interface TransferRow extends Record<string, unknown> {
 	savePath: string;
 }
 
-const sortLabels: Record<SortKey, string> = {
-	name: "Название",
-	state: "Статус",
-	progress: "Прогресс",
-	size: "Размер",
-	downloadSpeed: "Скорость ↓",
-	uploadSpeed: "Скорость ↑",
-	eta: "ETA",
-	addedOn: "Добавлен",
-	savePath: "Путь сохранения",
-};
-
 function toTransferRow(transfer: LiveTransfer): TransferRow {
 	return {
 		id: transfer.id,
@@ -135,6 +126,8 @@ function TransferProgressCell({
 }
 
 function TransfersTableSkeleton() {
+	const { t } = useTranslation("transfers");
+
 	const data = useMemo(
 		(): SkeletonRow[] =>
 			Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
@@ -175,13 +168,13 @@ function TransfersTableSkeleton() {
 		return [
 			{
 				key: "name",
-				header: sortLabels.name,
+				header: t("columns.name"),
 				width: pixel(320),
 				renderCell: ({ index }) => cell(index, 0, "85%"),
 			},
 			{
 				key: "state",
-				header: sortLabels.state,
+				header: t("columns.state"),
 				width: pixel(72),
 				align: "center",
 				renderCell: ({ index }) =>
@@ -192,61 +185,61 @@ function TransfersTableSkeleton() {
 			},
 			{
 				key: "progress",
-				header: sortLabels.progress,
+				header: t("columns.progress"),
 				width: pixel(180),
 				renderCell: ({ index }) => cell(index, 2, "90%", { radius: "rounded" }),
 			},
 			{
 				key: "size",
-				header: sortLabels.size,
+				header: t("columns.size"),
 				width: pixel(100),
 				align: "end",
 				renderCell: ({ index }) => cell(index, 3, 64),
 			},
 			{
 				key: "downloadSpeed",
-				header: sortLabels.downloadSpeed,
+				header: t("columns.downloadSpeed"),
 				width: pixel(110),
 				align: "end",
 				renderCell: ({ index }) => cell(index, 4, 72),
 			},
 			{
 				key: "uploadSpeed",
-				header: sortLabels.uploadSpeed,
+				header: t("columns.uploadSpeed"),
 				width: pixel(110),
 				align: "end",
 				renderCell: ({ index }) => cell(index, 5, 72),
 			},
 			{
 				key: "eta",
-				header: sortLabels.eta,
+				header: t("columns.eta"),
 				width: pixel(80),
 				align: "end",
 				renderCell: ({ index }) => cell(index, 6, 40),
 			},
 			{
 				key: "addedOn",
-				header: sortLabels.addedOn,
+				header: t("columns.addedOn"),
 				width: pixel(140),
 				align: "end",
 				renderCell: ({ index }) => cell(index, 7, 96),
 			},
 			{
 				key: "savePath",
-				header: sortLabels.savePath,
+				header: t("columns.savePath"),
 				width: pixel(240),
 				renderCell: ({ index }) => cell(index, 8, "70%"),
 			},
 			{
 				key: "actions",
-				header: "Действия",
+				header: t("columns.actions"),
 				width: pixel(96),
 				align: "center",
 				renderCell: ({ index }) =>
 					cell(index, 9, 64, { center: true, radius: "rounded" }),
 			},
 		];
-	}, []);
+	}, [t]);
 
 	return (
 		<Table
@@ -270,20 +263,23 @@ function diskFreeIconColor(freeBytes: number): "success" | "warning" | "error" {
 	return "success";
 }
 
-function diskFreeTooltip(freeBytes: number): string {
+function diskFreeTooltip(freeBytes: number, t: TFunction<"transfers">): string {
 	const amount = formatBytes(freeBytes);
 	if (freeBytes < DISK_FREE_CRITICAL_GIB * GIB) {
-		return `Мало места на диске: свободно ${amount} (меньше 200 ГБ)`;
+		return t("disk.critical", { amount });
 	}
 	if (freeBytes < DISK_FREE_WARNING_GIB * GIB) {
-		return `Свободное место заканчивается: ${amount} (меньше 500 ГБ)`;
+		return t("disk.warning", { amount });
 	}
-	return `Свободное место на диске qBittorrent: ${amount}`;
+	return t("disk.ok", { amount });
 }
 
 export function TransfersPage() {
 	const navigate = useNavigate();
 	const toast = useToast();
+	const { t } = useTranslation("transfers");
+	const { t: tCommon } = useTranslation("common");
+	const { bcp47 } = useLocale();
 	const qbSettingsQuery = useQuery(
 		trpc.settings.providers.qbittorrent.get.queryOptions(),
 	);
@@ -321,6 +317,21 @@ export function TransfersPage() {
 	});
 
 	const freeSpaceOnDisk = freeSpaceQuery.data?.freeSpaceOnDisk ?? null;
+
+	const sortLabels = useMemo(
+		(): Record<SortKey, string> => ({
+			name: t("columns.name"),
+			state: t("columns.state"),
+			progress: t("columns.progress"),
+			size: t("columns.size"),
+			downloadSpeed: t("columns.downloadSpeed"),
+			uploadSpeed: t("columns.uploadSpeed"),
+			eta: t("columns.eta"),
+			addedOn: t("columns.addedOn"),
+			savePath: t("columns.savePath"),
+		}),
+		[t],
+	);
 
 	useEffect(() => {
 		if (qbSettingsQuery.isLoading) {
@@ -376,10 +387,10 @@ export function TransfersPage() {
 
 			switch (sortKey) {
 				case "name":
-					comparison = left.name.localeCompare(right.name, "ru");
+					comparison = left.name.localeCompare(right.name, bcp47);
 					break;
 				case "state":
-					comparison = left.stateLabel.localeCompare(right.stateLabel, "ru");
+					comparison = left.stateLabel.localeCompare(right.stateLabel, bcp47);
 					break;
 				case "progress":
 					comparison = left.progress - right.progress;
@@ -400,13 +411,13 @@ export function TransfersPage() {
 					comparison = left.addedOn - right.addedOn;
 					break;
 				case "savePath":
-					comparison = left.savePath.localeCompare(right.savePath, "ru");
+					comparison = left.savePath.localeCompare(right.savePath, bcp47);
 					break;
 			}
 
 			return sortDirection === "asc" ? comparison : -comparison;
 		});
-	}, [transfers, search, sortKey, sortDirection]);
+	}, [transfers, search, sortKey, sortDirection, bcp47]);
 
 	const rows = useMemo(
 		() => filteredTransfers.map(toTransferRow),
@@ -452,7 +463,7 @@ export function TransfersPage() {
 				return {
 					...transfer,
 					stateKind: next.stateKind as LiveTransfer["stateKind"],
-					stateLabel: next.stateLabel,
+					stateLabel: t(next.stateLabelKey),
 					downloadSpeed: paused ? transfer.downloadSpeed : 0,
 					uploadSpeed: paused ? transfer.uploadSpeed : 0,
 				};
@@ -473,8 +484,8 @@ export function TransfersPage() {
 					err instanceof Error
 						? err.message
 						: paused
-							? "Не удалось продолжить торрент"
-							: "Не удалось поставить торрент на паузу",
+							? t("resumeFailed")
+							: t("pauseFailed"),
 			});
 		}
 	};
@@ -493,12 +504,12 @@ export function TransfersPage() {
 
 		try {
 			await deleteMutation.mutateAsync({ id: deletingId });
-			toast({ body: "Торрент и файлы удалены" });
+			toast({ body: t("deleted") });
 		} catch (err) {
 			setTransfers(snapshot);
 			toast({
 				type: "error",
-				body: err instanceof Error ? err.message : "Не удалось удалить торрент",
+				body: err instanceof Error ? err.message : t("deleteFailed"),
 			});
 		}
 	};
@@ -511,7 +522,7 @@ export function TransfersPage() {
 				return {
 					...transfer,
 					stateKind: next.stateKind as LiveTransfer["stateKind"],
-					stateLabel: next.stateLabel,
+					stateLabel: t(next.stateLabelKey),
 					downloadSpeed: 0,
 					uploadSpeed: 0,
 				};
@@ -524,10 +535,7 @@ export function TransfersPage() {
 			setTransfers(snapshot);
 			toast({
 				type: "error",
-				body:
-					err instanceof Error
-						? err.message
-						: "Не удалось остановить все торренты",
+				body: err instanceof Error ? err.message : t("pauseAllFailed"),
 			});
 		}
 	};
@@ -540,7 +548,7 @@ export function TransfersPage() {
 				return {
 					...transfer,
 					stateKind: next.stateKind as LiveTransfer["stateKind"],
-					stateLabel: next.stateLabel,
+					stateLabel: t(next.stateLabelKey),
 				};
 			}),
 		);
@@ -551,10 +559,7 @@ export function TransfersPage() {
 			setTransfers(snapshot);
 			toast({
 				type: "error",
-				body:
-					err instanceof Error
-						? err.message
-						: "Не удалось продолжить все торренты",
+				body: err instanceof Error ? err.message : t("resumeAllFailed"),
 			});
 		}
 	};
@@ -676,7 +681,7 @@ export function TransfersPage() {
 				align: "end",
 				renderCell: (item) => (
 					<Text hasTabularNumbers type="body">
-						{formatAddedOn(item.addedOn)}
+						{formatAddedOn(item.addedOn, bcp47)}
 					</Text>
 				),
 			},
@@ -687,14 +692,12 @@ export function TransfersPage() {
 			},
 			{
 				key: "actions",
-				header: "Действия",
+				header: t("columns.actions"),
 				width: pixel(96),
 				align: "center",
 				renderCell: (item) => {
 					const paused = isTransferPaused(item.stateKind);
-					const actionLabel = paused
-						? "Продолжить скачивание"
-						: "Перевести на паузу";
+					const actionLabel = paused ? t("resume") : t("pause");
 					return (
 						<HStack gap={1} hAlign="center" width="100%">
 							<IconButton
@@ -713,10 +716,10 @@ export function TransfersPage() {
 							/>
 							<IconButton
 								icon={<Icon color="error" icon={Trash2} size="sm" />}
-								label="Удалить"
+								label={t("delete")}
 								onClick={() => setPendingDelete(item)}
 								size="sm"
-								tooltip="Удалить торрент и файлы"
+								tooltip={t("deleteTooltip")}
 								variant="ghost"
 							/>
 						</HStack>
@@ -724,7 +727,7 @@ export function TransfersPage() {
 				},
 			},
 		];
-	}, [sortKey, sortDirection]);
+	}, [sortKey, sortDirection, sortLabels, t, bcp47]);
 
 	const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
 	const columnResize = useTableColumnResize({
@@ -745,20 +748,20 @@ export function TransfersPage() {
 				: "neutral";
 
 	const connectionLabel = !isConfigured
-		? "Нет подключения"
+		? t("connection.none")
 		: isConnected
-			? "Live (WebSocket)"
+			? t("connection.live")
 			: error
-				? "Ошибка подключения"
-				: "Нет подключения";
+				? t("connection.error")
+				: t("connection.none");
 
 	const connectionTooltip = !isConfigured
-		? "qBittorrent не настроен — live-обновления недоступны."
+		? t("connection.notConfiguredTooltip")
 		: isConnected
-			? "Активное WebSocket-подключение: список торрентов обновляется в реальном времени."
+			? t("connection.liveTooltip")
 			: error
-				? "WebSocket оборвался. Статусы не обновляются — проверьте бэкенд и qBittorrent."
-				: "Ожидание WebSocket-подключения для live-обновлений.";
+				? t("connection.errorTooltip")
+				: t("connection.waitingTooltip");
 
 	const connectionIconColor =
 		connectionStatus === "success"
@@ -770,14 +773,14 @@ export function TransfersPage() {
 	const pageHeader = (
 		<LayoutHeader className="bg-body" hasDivider padding={4}>
 			<HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
-				<Heading level={1}>Торренты в qBittorrent</Heading>
+				<Heading level={1}>{t("title")}</Heading>
 				{isConfigured ? (
 					<TextInput
 						hasClear
 						isLabelHidden
-						label="Поиск"
+						label={t("searchLabel")}
 						onChange={setSearch}
-						placeholder="Поиск по названию, пути или статусу..."
+						placeholder={t("searchPlaceholder")}
 						startIcon="search"
 						value={search}
 						width={320}
@@ -787,20 +790,21 @@ export function TransfersPage() {
 		</LayoutHeader>
 	);
 
+	const diskUnknown = t("disk.unknown");
+	const freeSpaceTooltip =
+		freeSpaceOnDisk != null ? diskFreeTooltip(freeSpaceOnDisk, t) : diskUnknown;
+
 	const pageFooter = (
 		<LayoutFooter className="bg-body" hasDivider padding={4}>
 			<HStack gap={4} hAlign="between" vAlign="center" wrap="wrap">
 				<HStack gap={3} vAlign="center">
 					{freeSpaceOnDisk != null ? (
-						<Tooltip
-							content={diskFreeTooltip(freeSpaceOnDisk)}
-							placement="above"
-						>
+						<Tooltip content={freeSpaceTooltip} placement="above">
 							<HStack gap={1.5} vAlign="center">
 								<Icon
 									color={diskFreeIconColor(freeSpaceOnDisk)}
 									icon={HardDrive}
-									label={diskFreeTooltip(freeSpaceOnDisk)}
+									label={freeSpaceTooltip}
 									size="sm"
 								/>
 								<Text hasTabularNumbers type="supporting">
@@ -809,14 +813,11 @@ export function TransfersPage() {
 							</HStack>
 						</Tooltip>
 					) : (
-						<Tooltip
-							content="Свободное место на диске неизвестно"
-							placement="above"
-						>
+						<Tooltip content={diskUnknown} placement="above">
 							<Icon
 								color="tertiary"
 								icon={HardDrive}
-								label="Свободное место на диске неизвестно"
+								label={diskUnknown}
 								size="sm"
 							/>
 						</Tooltip>
@@ -826,17 +827,17 @@ export function TransfersPage() {
 							<IconButton
 								clickAction={handlePauseAll}
 								icon={<Icon color="warning" icon={Pause} size="sm" />}
-								label="Остановить все торренты"
+								label={t("pauseAll")}
 								size="sm"
-								tooltip="Остановить все торренты"
+								tooltip={t("pauseAll")}
 								variant="ghost"
 							/>
 							<IconButton
 								clickAction={handleResumeAll}
 								icon={<Icon color="success" icon={Play} size="sm" />}
-								label="Продолжить все торренты"
+								label={t("resumeAll")}
 								size="sm"
-								tooltip="Продолжить все торренты"
+								tooltip={t("resumeAll")}
 								variant="ghost"
 							/>
 						</HStack>
@@ -877,10 +878,10 @@ export function TransfersPage() {
 						<Section padding={4} paddingBlock={0} variant="transparent">
 							<Banner
 								container="section"
-								description="Укажите URL и API key, чтобы видеть список торрентов."
+								description={t("notConfiguredDescription")}
 								endContent={
 									<Button
-										label="Открыть настройки"
+										label={tCommon("openSettings")}
 										onClick={() =>
 											navigate({
 												to: "/settings",
@@ -891,7 +892,7 @@ export function TransfersPage() {
 									/>
 								}
 								status="warning"
-								title="qBittorrent не настроен"
+								title={t("notConfiguredTitle")}
 							/>
 						</Section>
 					</LayoutContent>
@@ -916,7 +917,7 @@ export function TransfersPage() {
 									container="section"
 									description={error}
 									status="error"
-									title="Не удалось загрузить торренты"
+									title={t("loadFailed")}
 								/>
 							</Section>
 						) : null}
@@ -924,12 +925,10 @@ export function TransfersPage() {
 						{!isLoading && !error && rows.length === 0 ? (
 							<EmptyState
 								description={
-									search.trim()
-										? "Попробуйте изменить запрос или очистить фильтр."
-										: undefined
+									search.trim() ? t("emptyFilteredDescription") : undefined
 								}
 								title={
-									search.trim() ? "Ничего не найдено" : "Нет активных торрентов"
+									search.trim() ? t("emptyFilteredTitle") : t("emptyTitle")
 								}
 							/>
 						) : null}
@@ -953,11 +952,11 @@ export function TransfersPage() {
 				height="fill"
 			/>
 			<AlertDialog
-				actionLabel="Удалить"
-				cancelLabel="Отмена"
+				actionLabel={t("deleteDialog.action")}
+				cancelLabel={t("deleteDialog.cancel")}
 				description={
 					pendingDelete
-						? `«${pendingDelete.name}» будет удалён из qBittorrent вместе со скачанными файлами. Это действие нельзя отменить.`
+						? t("deleteDialog.description", { name: pendingDelete.name })
 						: ""
 				}
 				isActionLoading={deleteMutation.isPending}
@@ -968,7 +967,7 @@ export function TransfersPage() {
 						setPendingDelete(null);
 					}
 				}}
-				title="Удалить торрент?"
+				title={t("deleteDialog.title")}
 			/>
 		</>
 	);

@@ -13,6 +13,7 @@ import { TextInput } from "@astryxdesign/core/TextInput";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	authClient,
 	getAuthBaseURL,
@@ -21,6 +22,7 @@ import {
 import { fetchAuthMode } from "#/shared/lib/auth-mode";
 
 export function LoginPage() {
+	const { t } = useTranslation("auth");
 	const navigate = useNavigate();
 	const modeQuery = useQuery({
 		queryKey: ["auth-mode"],
@@ -30,7 +32,7 @@ export function LoginPage() {
 	if (modeQuery.isPending) {
 		return (
 			<Center height="100dvh" width="100%">
-				<Spinner aria-label="Загрузка" size="lg" />
+				<Spinner aria-label={t("login.loadingAria")} size="lg" />
 			</Center>
 		);
 	}
@@ -41,7 +43,7 @@ export function LoginPage() {
 				<VStack gap={4} maxWidth={400} padding={6} width="100%">
 					<Banner
 						status="error"
-						title="Не удалось определить режим авторизации"
+						title={t("login.modeErrorTitle")}
 						description={modeQuery.error.message}
 					/>
 				</VStack>
@@ -59,7 +61,7 @@ export function LoginPage() {
 		<Center height="100dvh" width="100%">
 			<VStack gap={4} maxWidth={400} padding={6} width="100%">
 				<Heading justify="center" level={1} type="display-3">
-					torrent-manager
+					{t("login.brand")}
 				</Heading>
 				<Card elevation="low" padding={8} width="100%">
 					<LocalAuthForm
@@ -75,6 +77,8 @@ export function LoginPage() {
 }
 
 function AuthentikRedirect() {
+	const { t } = useTranslation("auth");
+
 	useEffect(() => {
 		void redirectToAuthentikSignIn();
 	}, []);
@@ -82,8 +86,8 @@ function AuthentikRedirect() {
 	return (
 		<Center height="100dvh" width="100%">
 			<Spinner
-				aria-label="Перенаправление на Authentik"
-				label="Открываем Authentik"
+				aria-label={t("login.authentikRedirectAria")}
+				label={t("login.authentikRedirectLabel")}
 				size="lg"
 			/>
 		</Center>
@@ -97,6 +101,7 @@ function LocalAuthForm({
 	registrationOpen: boolean;
 	onSuccess: () => void;
 }) {
+	const { t } = useTranslation("auth");
 	const [email, setEmail] = useState("");
 	const [name, setName] = useState("");
 	const [password, setPassword] = useState("");
@@ -109,12 +114,12 @@ function LocalAuthForm({
 		setError(null);
 
 		if (registrationOpen && password !== confirmPassword) {
-			setError("Пароли не совпадают");
+			setError(t("login.passwordsMismatch"));
 			return;
 		}
 
 		if (password.length < 8) {
-			setError("Пароль должен быть не короче 8 символов");
+			setError(t("login.passwordTooShort"));
 			return;
 		}
 
@@ -127,7 +132,7 @@ function LocalAuthForm({
 					name: name.trim() || email.trim(),
 				});
 				if (result.error) {
-					setError(result.error.message || "Не удалось зарегистрироваться");
+					setError(result.error.message || t("login.signUpFailed"));
 					return;
 				}
 			} else {
@@ -136,13 +141,13 @@ function LocalAuthForm({
 					password,
 				});
 				if (result.error) {
-					setError(result.error.message || "Неверный email или пароль");
+					setError(result.error.message || t("login.invalidCredentials"));
 					return;
 				}
 			}
 			onSuccess();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Ошибка авторизации");
+			setError(err instanceof Error ? err.message : t("login.authError"));
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -153,12 +158,12 @@ function LocalAuthForm({
 			<VStack gap={4} width="100%">
 				<VStack gap={1}>
 					<Heading level={2}>
-						{registrationOpen ? "Создать аккаунт" : "Вход"}
+						{registrationOpen ? t("login.signUpTitle") : t("login.signInTitle")}
 					</Heading>
 					<Text type="supporting">
 						{registrationOpen
-							? "Первый пользователь становится администратором"
-							: "Войдите с email и паролем"}
+							? t("login.signUpDescription")
+							: t("login.signInDescription")}
 					</Text>
 				</VStack>
 
@@ -166,7 +171,7 @@ function LocalAuthForm({
 
 				<FormLayout>
 					<TextInput
-						label="Email"
+						label={t("login.email")}
 						type="email"
 						value={email}
 						onChange={setEmail}
@@ -175,16 +180,16 @@ function LocalAuthForm({
 					/>
 					{registrationOpen ? (
 						<TextInput
-							label="Имя"
+							label={t("login.name")}
 							value={name}
 							onChange={setName}
 							isOptional
-							placeholder="Как к вам обращаться"
+							placeholder={t("login.namePlaceholder")}
 							width="100%"
 						/>
 					) : null}
 					<TextInput
-						label="Пароль"
+						label={t("login.password")}
 						type="password"
 						value={password}
 						onChange={setPassword}
@@ -193,7 +198,7 @@ function LocalAuthForm({
 					/>
 					{registrationOpen ? (
 						<TextInput
-							label="Подтверждение пароля"
+							label={t("login.confirmPassword")}
 							type="password"
 							value={confirmPassword}
 							onChange={setConfirmPassword}
@@ -204,7 +209,7 @@ function LocalAuthForm({
 				</FormLayout>
 
 				<Button
-					label={registrationOpen ? "Зарегистрироваться" : "Войти"}
+					label={registrationOpen ? t("login.signUp") : t("login.signIn")}
 					type="submit"
 					variant="primary"
 					width="100%"

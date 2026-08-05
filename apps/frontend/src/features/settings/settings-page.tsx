@@ -21,9 +21,11 @@ import { TextInput } from "@astryxdesign/core/TextInput";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { authClient, signOutAndRedirect } from "#/shared/lib/auth-client";
 import { env } from "#/shared/lib/env";
 import { trpc } from "#/shared/lib/trpc";
+import { LocaleToggle } from "#/shared/ui/LocaleToggle";
 import { ThemeToggle } from "#/shared/ui/ThemeToggle";
 import { TmdbAttribution } from "#/shared/ui/tmdb-attribution";
 
@@ -35,6 +37,8 @@ export type SettingsSection =
 	| "tmdb";
 
 export function SettingsPage({ section }: { section?: SettingsSection }) {
+	const { t } = useTranslation("settings");
+
 	useEffect(() => {
 		if (!section) {
 			return;
@@ -48,8 +52,10 @@ export function SettingsPage({ section }: { section?: SettingsSection }) {
 			<Center axis="horizontal" height="100%" width="100%">
 				<VStack gap={6} maxWidth={520} width="100%">
 					<VStack gap={1} width="100%">
-						<Heading level={1}>Настройки</Heading>
-						<Text type="supporting">Версия сборки {env.VITE_APP_VERSION}</Text>
+						<Heading level={1}>{t("title")}</Heading>
+						<Text type="supporting">
+							{t("buildVersion", { version: env.VITE_APP_VERSION })}
+						</Text>
 					</VStack>
 					<AccountSettings highlighted={section === "account"} />
 					<AppearanceSettings highlighted={section === "appearance"} />
@@ -63,26 +69,27 @@ export function SettingsPage({ section }: { section?: SettingsSection }) {
 }
 
 function AccountSettings({ highlighted }: { highlighted: boolean }) {
+	const { t } = useTranslation(["settings", "common"]);
 	const sessionQuery = useQuery({
 		queryKey: ["auth", "session"],
 		queryFn: async () => {
 			const result = await authClient.getSession();
 			if (result.error) {
-				throw new Error(result.error.message || "Не удалось загрузить сессию");
+				throw new Error(result.error.message || t("account.sessionLoadFailed"));
 			}
 			return result.data;
 		},
 	});
 
 	if (sessionQuery.isLoading) {
-		return <Spinner label="Загрузка" />;
+		return <Spinner label={t("loading", { ns: "common" })} />;
 	}
 
 	if (sessionQuery.isError) {
 		return (
 			<Banner
 				status="error"
-				title="Не удалось загрузить данные пользователя"
+				title={t("account.userLoadFailed")}
 				description={sessionQuery.error.message}
 			/>
 		);
@@ -95,10 +102,8 @@ function AccountSettings({ highlighted }: { highlighted: boolean }) {
 			<Card elevation={highlighted ? "med" : "low"} padding={5} width="100%">
 				<VStack gap={4} width="100%">
 					<VStack gap={1}>
-						<Heading level={2}>Аккаунт</Heading>
-						<Text type="supporting">
-							Информация о текущем пользователе и выход из системы
-						</Text>
+						<Heading level={2}>{t("account.title")}</Heading>
+						<Text type="supporting">{t("account.description")}</Text>
 					</VStack>
 
 					{user ? (
@@ -110,8 +115,10 @@ function AccountSettings({ highlighted }: { highlighted: boolean }) {
 							/>
 							<StackItem size="fill">
 								<MetadataList>
-									<MetadataListItem label="Имя">{user.name}</MetadataListItem>
-									<MetadataListItem label="Email">
+									<MetadataListItem label={t("account.name")}>
+										{user.name}
+									</MetadataListItem>
+									<MetadataListItem label={t("account.email")}>
 										{user.email}
 									</MetadataListItem>
 								</MetadataList>
@@ -120,13 +127,13 @@ function AccountSettings({ highlighted }: { highlighted: boolean }) {
 					) : (
 						<Banner
 							status="warning"
-							title="Пользователь не найден"
-							description="Сессия активна, но данные пользователя недоступны"
+							title={t("account.userNotFoundTitle")}
+							description={t("account.userNotFoundDescription")}
 						/>
 					)}
 
 					<Button
-						label="Выйти"
+						label={t("account.signOut")}
 						variant="secondary"
 						type="button"
 						clickAction={() => signOutAndRedirect()}
@@ -138,17 +145,18 @@ function AccountSettings({ highlighted }: { highlighted: boolean }) {
 }
 
 function AppearanceSettings({ highlighted }: { highlighted: boolean }) {
+	const { t } = useTranslation("settings");
+
 	return (
 		<form id="settings-appearance">
 			<Card elevation={highlighted ? "med" : "low"} padding={5} width="100%">
 				<VStack gap={4} width="100%">
 					<VStack gap={1}>
-						<Heading level={2}>Оформление</Heading>
-						<Text type="supporting">
-							Тема интерфейса: светлая, тёмная или как в системе
-						</Text>
+						<Heading level={2}>{t("appearance.title")}</Heading>
+						<Text type="supporting">{t("appearance.description")}</Text>
 					</VStack>
 					<ThemeToggle />
+					<LocaleToggle />
 				</VStack>
 			</Card>
 		</form>
@@ -207,6 +215,7 @@ function SecretInput({
 }
 
 function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
+	const { t } = useTranslation(["settings", "common"]);
 	const queryClient = useQueryClient();
 	const settingsQuery = useQuery(
 		trpc.settings.providers.rutracker.get.queryOptions(),
@@ -235,12 +244,12 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 			setLogin(data.login);
 			setPassword(data.password);
 			setProxyUrl(data.proxyUrl ?? "");
-			setMessage({ status: "success", text: "Сохранено" });
+			setMessage({ status: "success", text: t("saved", { ns: "common" }) });
 		},
 		onError: (error) => {
 			setMessage({
 				status: "error",
-				text: error.message || "Не удалось сохранить",
+				text: error.message || t("saveFailed", { ns: "common" }),
 			});
 		},
 	});
@@ -250,13 +259,13 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 		onSuccess: () => {
 			setMessage({
 				status: "success",
-				text: "Подключение к Rutracker успешно",
+				text: t("rutracker.testSuccess"),
 			});
 		},
 		onError: (error) => {
 			setMessage({
 				status: "error",
-				text: error.message || "Проверка не удалась",
+				text: error.message || t("testFailed", { ns: "common" }),
 			});
 		},
 	});
@@ -272,14 +281,14 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 	};
 
 	if (settingsQuery.isLoading) {
-		return <Spinner label="Загрузка" />;
+		return <Spinner label={t("loading", { ns: "common" })} />;
 	}
 
 	if (settingsQuery.isError) {
 		return (
 			<Banner
 				status="error"
-				title="Не удалось загрузить настройки Rutracker"
+				title={t("rutracker.loadFailed")}
 				description={settingsQuery.error.message}
 			/>
 		);
@@ -294,35 +303,33 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 			<Card elevation={highlighted ? "med" : "low"} padding={5} width="100%">
 				<VStack gap={4} width="100%">
 					<VStack gap={1}>
-						<Heading level={2}>Rutracker</Heading>
-						<Text type="supporting">
-							Учётные данные и прокси для поиска на трекере
-						</Text>
+						<Heading level={2}>{t("rutracker.title")}</Heading>
+						<Text type="supporting">{t("rutracker.description")}</Text>
 					</VStack>
 
 					<FormLayout>
 						<TextInput
-							label="Login"
+							label={t("rutracker.login")}
 							value={login}
 							onChange={setLogin}
 							isRequired
 							width="100%"
 						/>
 						<SecretInput
-							label="Password"
+							label={t("rutracker.password")}
 							value={password}
 							onChange={setPassword}
 							isRequired
-							revealLabel="Показать пароль"
-							hideLabel="Скрыть пароль"
+							revealLabel={t("showPassword", { ns: "common" })}
+							hideLabel={t("hidePassword", { ns: "common" })}
 						/>
 						<TextInput
-							label="Proxy"
+							label={t("proxy", { ns: "common" })}
 							value={proxyUrl}
 							onChange={setProxyUrl}
 							isOptional
-							placeholder="socks5://user:pass@host:1080"
-							description="http://, https:// или socks5://, с optional user:pass@"
+							placeholder={t("proxyPlaceholder", { ns: "common" })}
+							description={t("proxyDescription", { ns: "common" })}
 							width="100%"
 						/>
 					</FormLayout>
@@ -333,14 +340,14 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 
 					<HStack gap={2} wrap="wrap">
 						<Button
-							label="Сохранить"
+							label={t("save", { ns: "common" })}
 							type="submit"
 							variant="primary"
 							isLoading={saveMutation.isPending}
 							isDisabled={!canSave || isBusy}
 						/>
 						<Button
-							label="Проверить"
+							label={t("test", { ns: "common" })}
 							type="button"
 							variant="secondary"
 							isLoading={testMutation.isPending}
@@ -358,6 +365,7 @@ function RutrackerSettingsForm({ highlighted }: { highlighted: boolean }) {
 }
 
 function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
+	const { t } = useTranslation(["settings", "common"]);
 	const queryClient = useQueryClient();
 	const settingsQuery = useQuery(
 		trpc.settings.providers.qbittorrent.get.queryOptions(),
@@ -389,12 +397,12 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 			setApiKey(data.apiKey);
 			setFilmsPath(data.filmsPath);
 			setSeriesPath(data.seriesPath);
-			setMessage({ status: "success", text: "Сохранено" });
+			setMessage({ status: "success", text: t("saved", { ns: "common" }) });
 		},
 		onError: (error) => {
 			setMessage({
 				status: "error",
-				text: error.message || "Не удалось сохранить",
+				text: error.message || t("saveFailed", { ns: "common" }),
 			});
 		},
 	});
@@ -404,13 +412,16 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 		onSuccess: (data) => {
 			setMessage({
 				status: "success",
-				text: `Подключение успешно (qBittorrent ${data.version}, торрентов: ${data.torrentCount})`,
+				text: t("qbittorrent.testSuccess", {
+					version: data.version,
+					torrentCount: data.torrentCount,
+				}),
 			});
 		},
 		onError: (error) => {
 			setMessage({
 				status: "error",
-				text: error.message || "Проверка не удалась",
+				text: error.message || t("testFailed", { ns: "common" }),
 			});
 		},
 	});
@@ -427,14 +438,14 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 	};
 
 	if (settingsQuery.isLoading) {
-		return <Spinner label="Загрузка" />;
+		return <Spinner label={t("loading", { ns: "common" })} />;
 	}
 
 	if (settingsQuery.isError) {
 		return (
 			<Banner
 				status="error"
-				title="Не удалось загрузить настройки qBittorrent"
+				title={t("qbittorrent.loadFailed")}
 				description={settingsQuery.error.message}
 			/>
 		);
@@ -449,44 +460,42 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 			<Card elevation={highlighted ? "med" : "low"} padding={5} width="100%">
 				<VStack gap={4} width="100%">
 					<VStack gap={1}>
-						<Heading level={2}>qBittorrent</Heading>
-						<Text type="supporting">
-							WebUI, API key и пути сохранения для фильмов и сериалов
-						</Text>
+						<Heading level={2}>{t("qbittorrent.title")}</Heading>
+						<Text type="supporting">{t("qbittorrent.description")}</Text>
 					</VStack>
 
 					<FormLayout>
 						<TextInput
-							label="URL"
+							label={t("qbittorrent.url")}
 							value={url}
 							onChange={setUrl}
 							isRequired
-							placeholder="https://torrent.example.com"
-							description="Базовый URL WebUI без /api/v2"
+							placeholder={t("qbittorrent.urlPlaceholder")}
+							description={t("qbittorrent.urlDescription")}
 							width="100%"
 						/>
 						<SecretInput
-							label="API key"
+							label={t("apiKey", { ns: "common" })}
 							value={apiKey}
 							onChange={setApiKey}
 							isRequired
-							revealLabel="Показать ключ"
-							hideLabel="Скрыть ключ"
+							revealLabel={t("showKey", { ns: "common" })}
+							hideLabel={t("hideKey", { ns: "common" })}
 						/>
 						<TextInput
-							label="Путь для фильмов"
+							label={t("qbittorrent.filmsPath")}
 							value={filmsPath}
 							onChange={setFilmsPath}
-							placeholder="/data/media/movies"
-							description="Куда qBittorrent будет сохранять фильмы"
+							placeholder={t("qbittorrent.filmsPathPlaceholder")}
+							description={t("qbittorrent.filmsPathDescription")}
 							width="100%"
 						/>
 						<TextInput
-							label="Путь для сериалов"
+							label={t("qbittorrent.seriesPath")}
 							value={seriesPath}
 							onChange={setSeriesPath}
-							placeholder="/data/media/tv"
-							description="Куда qBittorrent будет сохранять сериалы"
+							placeholder={t("qbittorrent.seriesPathPlaceholder")}
+							description={t("qbittorrent.seriesPathDescription")}
 							width="100%"
 						/>
 					</FormLayout>
@@ -497,14 +506,14 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 
 					<HStack gap={2} wrap="wrap">
 						<Button
-							label="Сохранить"
+							label={t("save", { ns: "common" })}
 							type="submit"
 							variant="primary"
 							isLoading={saveMutation.isPending}
 							isDisabled={!canSave || isBusy}
 						/>
 						<Button
-							label="Проверить"
+							label={t("test", { ns: "common" })}
 							type="button"
 							variant="secondary"
 							isLoading={testMutation.isPending}
@@ -522,6 +531,7 @@ function QbittorrentSettingsForm({ highlighted }: { highlighted: boolean }) {
 }
 
 function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
+	const { t } = useTranslation(["settings", "common"]);
 	const queryClient = useQueryClient();
 	const settingsQuery = useQuery(
 		trpc.settings.providers.tmdb.get.queryOptions(),
@@ -547,12 +557,12 @@ function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
 			});
 			setApiKey(data.apiKey);
 			setProxyUrl(data.proxyUrl ?? "");
-			setMessage({ status: "success", text: "Сохранено" });
+			setMessage({ status: "success", text: t("saved", { ns: "common" }) });
 		},
 		onError: (error) => {
 			setMessage({
 				status: "error",
-				text: error.message || "Не удалось сохранить",
+				text: error.message || t("saveFailed", { ns: "common" }),
 			});
 		},
 	});
@@ -562,13 +572,13 @@ function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
 		onSuccess: () => {
 			setMessage({
 				status: "success",
-				text: "Подключение к TMDB успешно",
+				text: t("tmdb.testSuccess"),
 			});
 		},
 		onError: (error) => {
 			setMessage({
 				status: "error",
-				text: error.message || "Проверка не удалась",
+				text: error.message || t("testFailed", { ns: "common" }),
 			});
 		},
 	});
@@ -583,14 +593,14 @@ function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
 	};
 
 	if (settingsQuery.isLoading) {
-		return <Spinner label="Загрузка" />;
+		return <Spinner label={t("loading", { ns: "common" })} />;
 	}
 
 	if (settingsQuery.isError) {
 		return (
 			<Banner
 				status="error"
-				title="Не удалось загрузить настройки TMDB"
+				title={t("tmdb.loadFailed")}
 				description={settingsQuery.error.message}
 			/>
 		);
@@ -606,34 +616,31 @@ function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
 			<Card elevation={highlighted ? "med" : "low"} padding={5} width="100%">
 				<VStack gap={4} width="100%">
 					<VStack gap={1}>
-						<Heading level={2}>TMDB</Heading>
-						<Text type="supporting">
-							API key и прокси для метаданных Title и виджета Discover на
-							главной
-						</Text>
+						<Heading level={2}>{t("tmdb.title")}</Heading>
+						<Text type="supporting">{t("tmdb.description")}</Text>
 					</VStack>
 
 					<FormLayout>
 						<SecretInput
-							label="API key"
+							label={t("apiKey", { ns: "common" })}
 							value={apiKey}
 							onChange={setApiKey}
 							isRequired={!settingsQuery.data?.isConfigured}
-							revealLabel="Показать ключ"
-							hideLabel="Скрыть ключ"
+							revealLabel={t("showKey", { ns: "common" })}
+							hideLabel={t("hideKey", { ns: "common" })}
 							placeholder={
 								settingsQuery.data?.isConfigured
-									? "Оставьте пустым, чтобы не менять"
+									? t("tmdb.apiKeyLeaveBlank")
 									: undefined
 							}
 						/>
 						<TextInput
-							label="Proxy"
+							label={t("proxy", { ns: "common" })}
 							value={proxyUrl}
 							onChange={setProxyUrl}
 							isOptional
-							placeholder="socks5://user:pass@host:1080"
-							description="http://, https:// или socks5://, с optional user:pass@"
+							placeholder={t("proxyPlaceholder", { ns: "common" })}
+							description={t("proxyDescription", { ns: "common" })}
 							width="100%"
 						/>
 					</FormLayout>
@@ -646,14 +653,14 @@ function TmdbSettingsForm({ highlighted }: { highlighted: boolean }) {
 
 					<HStack gap={2} wrap="wrap">
 						<Button
-							label="Сохранить"
+							label={t("save", { ns: "common" })}
 							type="submit"
 							variant="primary"
 							isLoading={saveMutation.isPending}
 							isDisabled={!canSave || isBusy}
 						/>
 						<Button
-							label="Проверить"
+							label={t("test", { ns: "common" })}
 							type="button"
 							variant="secondary"
 							isLoading={testMutation.isPending}

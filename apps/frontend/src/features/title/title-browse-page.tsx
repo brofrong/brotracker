@@ -13,6 +13,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { skipToken, useInfiniteQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "#/shared/lib/trpc";
 import { SearchBar } from "#/shared/ui/search-bar";
 import { TitleCard, type TitleCardData } from "#/shared/ui/title-card";
@@ -24,6 +25,8 @@ function getNextPageParam(last: { page: number; totalPages: number }) {
 
 export function TitleBrowsePage({ q }: { q?: string }) {
 	const navigate = useNavigate({ from: "/title/" });
+	const { t } = useTranslation("title");
+	const { t: tCommon } = useTranslation("common");
 	const query = q?.trim() ?? "";
 	const hasQuery = query.length > 0;
 
@@ -92,28 +95,26 @@ export function TitleBrowsePage({ q }: { q?: string }) {
 		<Section padding={4} variant="transparent">
 			<VStack gap={4} width="100%">
 				<VStack gap={1} width="100%">
-					<Heading level={1}>Фильмы и сериалы</Heading>
-					<Text type="supporting">
-						Поиск по TMDB — фильмы и сериалы
-					</Text>
+					<Heading level={1}>{t("browse.heading")}</Heading>
+					<Text type="supporting">{t("browse.subtitle")}</Text>
 				</VStack>
 				<SearchBar
 					initialQuery={query}
 					isSearching={showInitialSpinner}
 					onClear={handleClear}
 					onSearch={handleSearch}
-					placeholder="Название фильма или сериала"
+					placeholder={t("browse.searchPlaceholder")}
 				/>
 
-				{showInitialSpinner ? <Spinner label="Загрузка" /> : null}
+				{showInitialSpinner ? <Spinner label={t("browse.loading")} /> : null}
 
 				{isTmdbUnavailable ? (
 					<Banner
 						container="section"
-						description="Укажите API key TMDB в настройках, чтобы искать фильмы и сериалы."
+						description={t("browse.tmdbUnavailableDescription")}
 						endContent={
 							<Button
-								label="Открыть настройки"
+								label={tCommon("openSettings")}
 								onClick={() =>
 									void navigate({
 										to: "/settings",
@@ -124,14 +125,14 @@ export function TitleBrowsePage({ q }: { q?: string }) {
 							/>
 						}
 						status="warning"
-						title="TMDB недоступен"
+						title={t("browse.tmdbUnavailableTitle")}
 					/>
 				) : null}
 
 				{showError && !isTmdbUnavailable ? (
 					<EmptyState
 						description={active.error.message}
-						title="Не удалось загрузить"
+						title={t("browse.loadFailed")}
 					/>
 				) : null}
 
@@ -139,17 +140,21 @@ export function TitleBrowsePage({ q }: { q?: string }) {
 					<EmptyState
 						description={
 							hasQuery
-								? "Попробуйте другое название"
-								: "Сейчас нет трендов — попробуйте поиск"
+								? t("browse.emptySearchDescription")
+								: t("browse.emptyTrendingDescription")
 						}
-						title={hasQuery ? "Ничего не найдено" : "Пока пусто"}
+						title={
+							hasQuery
+								? t("browse.emptySearchTitle")
+								: t("browse.emptyTrendingTitle")
+						}
 					/>
 				) : null}
 
 				{items.length > 0 ? (
 					<VStack gap={4} width="100%">
 						<Heading level={2}>
-							{hasQuery ? "Результаты поиска" : "В тренде сегодня"}
+							{hasQuery ? t("browse.searchResults") : t("browse.trendingToday")}
 						</Heading>
 						<Grid columns={{ minWidth: 176, max: 6 }} gap={3} width="100%">
 							{items.map((item) => (
@@ -159,7 +164,7 @@ export function TitleBrowsePage({ q }: { q?: string }) {
 						{hasNextPage || isFetchingNextPage ? (
 							<Center height={48} ref={sentinelRef} width="100%">
 								{isFetchingNextPage ? (
-									<Spinner aria-label="Загрузка ещё" size="sm" />
+									<Spinner aria-label={t("browse.loadingMoreAria")} size="sm" />
 								) : null}
 							</Center>
 						) : null}

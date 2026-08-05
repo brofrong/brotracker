@@ -1,0 +1,464 @@
+{
+	"common": {
+		"brand": "torrent-manager",
+		"loading": "Loading",
+		"cancel": "Cancel",
+		"save": "Save",
+		"saved": "Saved",
+		"saveFailed": "Failed to save",
+		"test": "Test",
+		"testFailed": "Test failed",
+		"openSettings": "Open settings",
+		"search": "Search",
+		"find": "Find",
+		"searchPlaceholder": "Search...",
+		"download": "Download",
+		"onTracker": "On tracker",
+		"film": "Movie",
+		"series": "TV series",
+		"emDash": "—",
+		"loadFailed": "Failed to load",
+		"nothingFound": "Nothing found",
+		"torrentAdded": "Torrent added to qBittorrent",
+		"torrentAddFailed": "Failed to add torrent",
+		"showPassword": "Show password",
+		"hidePassword": "Hide password",
+		"showKey": "Show key",
+		"hideKey": "Hide key",
+		"proxy": "Proxy",
+		"proxyPlaceholder": "socks5://user:pass@host:1080",
+		"proxyDescription": "http://, https://, or socks5://, with optional user:pass@",
+		"apiKey": "API key",
+		"tmdb": {
+			"linkLabel": "The Movie Database (TMDB)",
+			"newTabLabel": "(opens in a new tab)",
+			"logoAlt": "The Movie Database (TMDB)",
+			"disclaimer": "This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB."
+		},
+		"theme": {
+			"label": "Theme",
+			"light": "Light",
+			"dark": "Dark",
+			"system": "System"
+		},
+		"runtime": {
+			"minutesOnly": "{{minutes}} min",
+			"hoursOnly": "{{hours}} h",
+			"hoursMinutes": "{{hours}} h {{minutes}} min"
+		},
+		"duration": {
+			"ms": "{{ms}} ms",
+			"seconds": "{{seconds}} s",
+			"minutesOnly": "{{minutes}} min",
+			"minutesSeconds": "{{minutes}} min {{seconds}} s",
+			"hoursOnly": "{{hours}} h",
+			"hoursMinutes": "{{hours}} h {{minutes}} min"
+		},
+		"votes": {
+			"one": "rating",
+			"few": "ratings",
+			"many": "ratings"
+		}
+	},
+	"nav": {
+		"sectionActions": "Actions",
+		"home": "Home",
+		"films": "Movies",
+		"search": "Search",
+		"torrents": "Torrents",
+		"workers": "Workers",
+		"settings": "Settings",
+		"ariaLabel": "Navigation",
+		"brand": "torrent-manager"
+	},
+	"auth": {
+		"gate": {
+			"checkingTitle": "Checking session",
+			"checkingDescription": "Making sure you are signed in",
+			"checkingAria": "Checking authentication",
+			"redirectingTitle": "Going to sign in",
+			"redirectingDescription": "Opening the sign-in page",
+			"redirectingAria": "Redirecting to the sign-in page"
+		},
+		"login": {
+			"brand": "torrent-manager",
+			"loadingAria": "Loading",
+			"modeErrorTitle": "Could not determine auth mode",
+			"authentikRedirectAria": "Redirecting to Authentik",
+			"authentikRedirectLabel": "Opening Authentik",
+			"signInTitle": "Sign in",
+			"signInDescription": "Sign in with email and password",
+			"signUpTitle": "Create account",
+			"signUpDescription": "The first user becomes an administrator",
+			"email": "Email",
+			"name": "Name",
+			"namePlaceholder": "What should we call you",
+			"password": "Password",
+			"confirmPassword": "Confirm password",
+			"signIn": "Sign in",
+			"signUp": "Sign up",
+			"passwordsMismatch": "Passwords do not match",
+			"passwordTooShort": "Password must be at least 8 characters",
+			"signUpFailed": "Could not create account",
+			"invalidCredentials": "Invalid email or password",
+			"authError": "Authentication error"
+		}
+	},
+	"settings": {
+		"title": "Settings",
+		"buildVersion": "Build version {{version}}",
+		"account": {
+			"title": "Account",
+			"description": "Current user info and sign out",
+			"name": "Name",
+			"email": "Email",
+			"signOut": "Sign out",
+			"sessionLoadFailed": "Failed to load session",
+			"userLoadFailed": "Failed to load user data",
+			"userNotFoundTitle": "User not found",
+			"userNotFoundDescription": "Session is active, but user data is unavailable"
+		},
+		"appearance": {
+			"title": "Appearance",
+			"description": "Interface theme: light, dark, or match the system",
+			"locale": {
+				"title": "Interface language",
+				"label": "Interface language",
+				"description": "Changes the app language and TMDB data language",
+				"ru": "Русский",
+				"en": "English"
+			}
+		},
+		"rutracker": {
+			"title": "Rutracker",
+			"description": "Credentials and proxy for tracker search",
+			"login": "Login",
+			"password": "Password",
+			"loadFailed": "Failed to load Rutracker settings",
+			"testSuccess": "Connected to Rutracker successfully"
+		},
+		"qbittorrent": {
+			"title": "qBittorrent",
+			"description": "WebUI, API key, and save paths for movies and TV series",
+			"url": "URL",
+			"urlPlaceholder": "https://torrent.example.com",
+			"urlDescription": "Base WebUI URL without /api/v2",
+			"filmsPath": "Movies path",
+			"filmsPathPlaceholder": "/data/media/movies",
+			"filmsPathDescription": "Where qBittorrent will save movies",
+			"seriesPath": "TV series path",
+			"seriesPathPlaceholder": "/data/media/tv",
+			"seriesPathDescription": "Where qBittorrent will save TV series",
+			"loadFailed": "Failed to load qBittorrent settings",
+			"testSuccess": "Connected successfully (qBittorrent {{version}}, torrents: {{torrentCount}})"
+		},
+		"tmdb": {
+			"title": "TMDB",
+			"description": "API key and proxy for Title metadata and the Discover widget on Home",
+			"apiKeyLeaveBlank": "Leave blank to keep unchanged",
+			"loadFailed": "Failed to load TMDB settings",
+			"testSuccess": "Connected to TMDB successfully"
+		}
+	},
+	"home": {
+		"title": "Home",
+		"transferStats": {
+			"loading": "Loading stats",
+			"loadFailed": "Failed to load stats",
+			"qbUnavailableTitle": "qBittorrent unavailable",
+			"qbUnavailableDescription": "Set the qBittorrent URL and API key in settings to see stats.",
+			"emptyTitle": "No transfer data",
+			"emptyDescription": "Stats will appear after the first data transfer.",
+			"heading": "Transfer stats",
+			"downloaded": "Downloaded",
+			"uploaded": "Uploaded",
+			"ratio": "Ratio",
+			"ratioHint": "uploaded / downloaded",
+			"freeDisk": "Free disk space",
+			"dailyTraffic": "Daily transfer",
+			"cumulativeTraffic": "Traffic over period",
+			"uploadedCumulative": "Uploaded (cumulative)",
+			"downloadedCumulative": "Downloaded (cumulative)",
+			"historyEmpty": "History is empty for now: snapshots are written every hour, daily trends will appear tomorrow."
+		},
+		"discover": {
+			"heading": "Discover",
+			"carouselAria": "Today's trends",
+			"loading": "Loading Discover",
+			"unavailableTitle": "Discover unavailable",
+			"unavailableDescription": "Add a TMDB API key in settings to see recommendations. The rest of Home still works as usual.",
+			"emptyTitle": "Discover is empty",
+			"emptyDescription": "TMDB returned no trends."
+		},
+		"titleWatchFeed": {
+			"heading": "Series updates",
+			"loading": "Loading update feed",
+			"loadFailed": "Failed to load update feed",
+			"emptyTitle": "No updates yet",
+			"emptyDescription": "Follow a series on its Title page to see torrent updates here.",
+			"events": {
+				"torrentUpdated": "Torrent updated",
+				"progressChanged": "Progress updated",
+				"completed": "All episodes downloaded",
+				"checkFailed": "Check failed"
+			}
+		}
+	},
+	"search": {
+		"title": "Search",
+		"subtitle": "Search the tracker",
+		"loading": "Loading",
+		"searchingTracker": "Searching the tracker…",
+		"searchingTrackerAria": "Searching the tracker",
+		"errorTitle": "Search error",
+		"refreshFailed": "Failed to fetch data from the tracker",
+		"foundCount": "Found: {{count}}",
+		"recentReleases": "Recent releases",
+		"emptyFoundTitle": "Nothing found",
+		"emptyRecentTitle": "Nothing here yet",
+		"emptyRecentDescription": "Run a search — results will be cached",
+		"viewModeLabel": "Results view",
+		"viewTable": "Table",
+		"viewCards": "Cards",
+		"columns": {
+			"title": "Title",
+			"tags": "Tags",
+			"size": "Size",
+			"seeds": "Seeds",
+			"leeches": "Leeches",
+			"downloads": "Downloads",
+			"date": "Date"
+		},
+		"download": "Download",
+		"onTracker": "On tracker",
+		"onForum": "On forum",
+		"dialog": {
+			"title": "Download to qBittorrent",
+			"meta": "{{size}} · Seeds: {{seeds}} · Leeches: {{leeches}}",
+			"typeLabel": "Type",
+			"film": "Movie",
+			"series": "TV series",
+			"cancel": "Cancel",
+			"download": "Download",
+			"added": "Torrent added to qBittorrent",
+			"addFailed": "Failed to add torrent"
+		}
+	},
+	"title": {
+		"browse": {
+			"heading": "Movies and TV series",
+			"subtitle": "Search TMDB — movies and TV series",
+			"searchPlaceholder": "Movie or TV series title",
+			"loading": "Loading",
+			"loadingMoreAria": "Loading more",
+			"tmdbUnavailableTitle": "TMDB unavailable",
+			"tmdbUnavailableDescription": "Set a TMDB API key in settings to search movies and TV series.",
+			"loadFailed": "Failed to load",
+			"emptySearchTitle": "Nothing found",
+			"emptySearchDescription": "Try a different title",
+			"emptyTrendingTitle": "Nothing yet",
+			"emptyTrendingDescription": "No trends right now — try searching",
+			"searchResults": "Search results",
+			"trendingToday": "Trending today"
+		},
+		"card": {
+			"film": "Movie",
+			"series": "TV series"
+		},
+		"detail": {
+			"untitled": "Untitled",
+			"loadFailed": "Failed to load",
+			"metaDegradedTitle": "Metadata unavailable",
+			"metaDegradedDescription": "TMDB is temporarily unavailable. The card is open; metadata will appear later.",
+			"metaEmptyTitle": "Empty card",
+			"metaEmptyDescription": "This card is not linked to TMDB yet.",
+			"openPosterAria": "Open poster: {{title}}",
+			"film": "Movie",
+			"series": "TV series",
+			"seasonsCount": "Seasons: {{count}}",
+			"episodeProgressUnknown": "Episode progress unknown",
+			"episodeProgress": "Episodes: {{have}} of {{total}}",
+			"crewHeading": "Crew",
+			"crewLine": "{{job}}: {{names}}",
+			"ratingWithVotes": "{{source}} · {{count}} {{votesWord}}",
+			"castHeading": "Cast",
+			"castCarouselAria": "Cast",
+			"similarHeading": "Similar",
+			"similarCarouselAria": "Similar titles",
+			"crewJobs": {
+				"Director": "Director",
+				"Screenplay": "Screenplay",
+				"Writer": "Writer",
+				"Creator": "Creator",
+				"Executive Producer": "Executive producer"
+			},
+			"ratingSources": {
+				"tmdb": "TMDB",
+				"imdb": "IMDb",
+				"kinopoisk": "Kinopoisk"
+			}
+		},
+		"torrents": {
+			"heading": "Torrents",
+			"seasonLabel": "Season",
+			"seasonOption": "Season {{n}}",
+			"allSeasons": "All seasons",
+			"queryLabel": "Query",
+			"queryPlaceholder": "Search query",
+			"noQueryTitle": "No query",
+			"noQueryDescription": "Enter a query to find torrents.",
+			"loadFailed": "Failed to load torrents",
+			"degradedTitle": "Torrents from cache",
+			"degradedDescription": "Showing local cache. The tracker is temporarily unavailable.",
+			"emptyTitle": "No torrents yet",
+			"emptyDescription": "When candidates appear on the tracker or in local cache, they will show up here.",
+			"progressAria": "Progress {{title}}",
+			"doneStatus": "{{stateLabel}} · Done",
+			"activeStatus": "{{stateLabel}} · {{speed}} · ETA {{eta}}",
+			"download": "Download",
+			"onTracker": "On tracker",
+			"added": "Torrent added to qBittorrent",
+			"addFailed": "Failed to add torrent",
+			"kindDetectFailed": "Could not determine type (movie/TV series)",
+			"seasonQuery": "{{name}} season {{season}}"
+		},
+		"watch": {
+			"heading": "Follow",
+			"follow": "Follow",
+			"statusLabel": "Follow status",
+			"tracking": "Tracking",
+			"paused": "Paused",
+			"checkNow": "Check for update",
+			"checkErrorTitle": "Check error",
+			"lastChecked": "Checked: {{datetime}}",
+			"setFailed": "Failed to update follow",
+			"unchanged": "Torrent unchanged",
+			"updatedApplied": "Torrent updated and replaced in qBittorrent",
+			"updated": "Torrent updated",
+			"checkFailed": "Failed to check for update"
+		}
+	},
+	"transfers": {
+		"title": "Torrents in qBittorrent",
+		"searchLabel": "Search",
+		"searchPlaceholder": "Search by name, path, or status...",
+		"columns": {
+			"name": "Name",
+			"state": "Status",
+			"progress": "Progress",
+			"size": "Size",
+			"downloadSpeed": "Speed ↓",
+			"uploadSpeed": "Speed ↑",
+			"eta": "ETA",
+			"addedOn": "Added",
+			"savePath": "Save path",
+			"actions": "Actions"
+		},
+		"resume": "Resume download",
+		"pause": "Pause",
+		"delete": "Delete",
+		"deleteTooltip": "Delete torrent and files",
+		"pauseAll": "Pause all torrents",
+		"resumeAll": "Resume all torrents",
+		"resumeFailed": "Failed to resume torrent",
+		"pauseFailed": "Failed to pause torrent",
+		"pauseAllFailed": "Failed to pause all torrents",
+		"resumeAllFailed": "Failed to resume all torrents",
+		"deleted": "Torrent and files deleted",
+		"deleteFailed": "Failed to delete torrent",
+		"deleteDialog": {
+			"title": "Delete torrent?",
+			"description": "“{{name}}” will be removed from qBittorrent along with downloaded files. This cannot be undone.",
+			"action": "Delete",
+			"cancel": "Cancel"
+		},
+		"notConfiguredTitle": "qBittorrent is not configured",
+		"notConfiguredDescription": "Set the URL and API key to see the torrent list.",
+		"loadFailed": "Failed to load torrents",
+		"emptyTitle": "No active torrents",
+		"emptyFilteredTitle": "Nothing found",
+		"emptyFilteredDescription": "Try changing the query or clearing the filter.",
+		"optimistic": {
+			"pausedReady": "Paused (done)",
+			"paused": "Paused",
+			"seeding": "Seeding",
+			"downloading": "Downloading"
+		},
+		"connection": {
+			"none": "No connection",
+			"live": "Live (WebSocket)",
+			"error": "Connection error",
+			"notConfiguredTooltip": "qBittorrent is not configured — live updates are unavailable.",
+			"liveTooltip": "Active WebSocket connection: the torrent list updates in real time.",
+			"errorTooltip": "WebSocket disconnected. Statuses are not updating — check the backend and qBittorrent.",
+			"waitingTooltip": "Waiting for a WebSocket connection for live updates."
+		},
+		"disk": {
+			"critical": "Low disk space: {{amount}} free (under 200 GB)",
+			"warning": "Disk space running low: {{amount}} (under 500 GB)",
+			"ok": "qBittorrent free disk space: {{amount}}",
+			"unknown": "Free disk space unknown"
+		}
+	},
+	"workers": {
+		"list": {
+			"title": "Workers",
+			"subtitle": "Background jobs: status, run history, and manual trigger",
+			"loading": "Loading workers",
+			"loadFailed": "Failed to load workers",
+			"emptyTitle": "No workers",
+			"emptyDescription": "Registered workers will appear here.",
+			"run": "Run",
+			"started": "Worker started",
+			"startFailed": "Failed to start",
+			"neverRun": "Never run",
+			"lastRunWithDetail": "{{outcome}} · {{when}} · {{detail}}",
+			"lastRun": "{{outcome}} · {{when}}"
+		},
+		"detail": {
+			"navAria": "Navigation",
+			"breadcrumbWorkers": "Workers",
+			"loading": "Loading worker",
+			"loadFailed": "Failed to load worker",
+			"backToWorkers": "Back to workers",
+			"run": "Run",
+			"started": "Worker started",
+			"startFailed": "Failed to start",
+			"historyLoading": "Loading history",
+			"historyLoadFailed": "Failed to load run history",
+			"noRunsTitle": "No runs",
+			"noRunsDescription": "Run the worker manually or wait for the schedule.",
+			"historyHeading": "Run history",
+			"runMeta": "{{trigger}} · {{duration}}",
+			"noSummary": "No summary",
+			"selectRunTitle": "Select a run",
+			"selectRunDescription": "Click a row in the history to open the log.",
+			"logLoadFailed": "Failed to load log",
+			"logLoading": "Loading log",
+			"logTitle": "Log · {{datetime}}"
+		},
+		"status": {
+			"running": "Running",
+			"idle": "Idle"
+		},
+		"runStatus": {
+			"running": "Running",
+			"succeeded": "Succeeded",
+			"failed": "Failed"
+		},
+		"trigger": {
+			"scheduled": "Scheduled",
+			"manual": "Manual"
+		},
+		"log": {
+			"defaultTitle": "Log",
+			"emptyTitle": "Log is empty",
+			"emptyDescription": "This run has no log entries yet.",
+			"levels": {
+				"info": "Info",
+				"warn": "Warning",
+				"error": "Error"
+			}
+		}
+	}
+}

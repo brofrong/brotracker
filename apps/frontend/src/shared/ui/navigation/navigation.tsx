@@ -14,6 +14,7 @@ import { HStack } from "@astryxdesign/core/Stack";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Bot, Download, Film, Home, Search, Settings } from "lucide-react";
 import { type ComponentPropsWithoutRef, forwardRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const SIDE_NAV_COLLAPSED_KEY = "side-nav-collapsed";
 
@@ -31,7 +32,8 @@ const brandIcon = (
 );
 
 function BrandHeading() {
-	return <SideNavHeading heading="torrent-manager" icon={brandIcon} />;
+	const { t } = useTranslation("nav");
+	return <SideNavHeading heading={t("brand")} icon={brandIcon} />;
 }
 
 function readCollapsed(): boolean {
@@ -52,50 +54,51 @@ const SideNavLink = forwardRef<HTMLAnchorElement, SideNavLinkProps>(
 );
 
 export function NavItems() {
+	const { t } = useTranslation("nav");
 	const pathname = useRouterState({
 		select: (state) => state.location.pathname,
 	});
 
 	return (
-		<SideNavSection title="Действия">
+		<SideNavSection title={t("sectionActions")}>
 			<SideNavItem
 				as={SideNavLink}
-				label="Главная"
+				label={t("home")}
 				href="/"
 				icon={Home}
 				isSelected={pathname === "/"}
 			/>
 			<SideNavItem
 				as={SideNavLink}
-				label="Фильмы"
+				label={t("films")}
 				href="/title"
 				icon={Film}
 				isSelected={pathname === "/title" || pathname.startsWith("/title/")}
 			/>
 			<SideNavItem
 				as={SideNavLink}
-				label="Поиск"
+				label={t("search")}
 				href="/search"
 				icon={Search}
 				isSelected={pathname === "/search"}
 			/>
 			<SideNavItem
 				as={SideNavLink}
-				label="Торренты"
+				label={t("torrents")}
 				href="/torrents"
 				icon={Download}
 				isSelected={pathname === "/torrents"}
 			/>
 			<SideNavItem
 				as={SideNavLink}
-				label="Воркеры"
+				label={t("workers")}
 				href="/workers"
 				icon={Bot}
 				isSelected={pathname === "/workers" || pathname.startsWith("/workers/")}
 			/>
 			<SideNavItem
 				as={SideNavLink}
-				label="Настройки"
+				label={t("settings")}
 				href="/settings"
 				icon={Settings}
 				isSelected={pathname === "/settings"}
@@ -105,11 +108,13 @@ export function NavItems() {
 }
 
 export function MobileNavigation() {
+	const { t } = useTranslation("nav");
+
 	return (
 		<MobileNav
 			header={<BrandHeading />}
 			width={MOBILE_NAV_FULL_WIDTH}
-			label="Навигация"
+			label={t("ariaLabel")}
 		>
 			<SideNavRenderContext value="drawer">
 				<NavItems />

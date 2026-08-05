@@ -24,6 +24,7 @@ import { useToast } from "@astryxdesign/core/Toast";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	DownloadTorrentDialog,
 	type DownloadTorrentItem,
@@ -33,6 +34,7 @@ import {
 	SearchCardTags,
 	SearchResultsCards,
 } from "#/features/search/search-results-cards";
+import { useLocale } from "#/shared/i18n/locale-provider";
 import { formatBytes } from "#/shared/lib/format";
 import { trpc } from "#/shared/lib/trpc";
 import { SearchBar } from "#/shared/ui/search-bar";
@@ -73,76 +75,30 @@ interface TorrentResult {
 	forumId: string;
 }
 
-const staticColumns: TableColumn<SearchRow>[] = [
-	{
-		key: "cover",
-		header: "",
-		width: pixel(72),
-		resizable: false,
-		renderCell: (item) =>
-			item.cover ? (
-				<AspectRatio ratio={2 / 3} fit="contain">
-					<img src={item.cover} alt={item.title} />
-				</AspectRatio>
-			) : null,
-	},
-	{
-		key: "title",
-		header: "Название",
-		width: pixel(480),
-	},
-	{
-		key: "tags",
-		header: "Теги",
-		width: pixel(148),
-		renderCell: (item) => <SearchCardTags item={item} />,
-	},
-	{
-		key: "size",
-		header: "Размер",
-		width: pixel(88),
-	},
-	{
-		key: "seeds",
-		header: "Сиды",
-		width: pixel(64),
-		align: "end",
-	},
-	{
-		key: "leeches",
-		header: "Личи",
-		width: pixel(64),
-		align: "end",
-	},
-	{
-		key: "downloads",
-		header: "Скачивания",
-		width: pixel(96),
-		align: "end",
-	},
-	{
-		key: "date",
-		header: "Дата",
-		width: pixel(104),
-	},
-];
-
-function formatDate(value: string | Date): string {
+function formatDate(
+	value: string | Date,
+	bcp47: string,
+	emDash: string,
+): string {
 	if (value instanceof Date) {
 		return Number.isNaN(value.getTime())
-			? "—"
-			: value.toLocaleDateString("ru-RU");
+			? emDash
+			: value.toLocaleDateString(bcp47);
 	}
 	if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
 		const date = new Date(value);
 		return Number.isNaN(date.getTime())
 			? value
-			: date.toLocaleDateString("ru-RU");
+			: date.toLocaleDateString(bcp47);
 	}
 	return value;
 }
 
-function toSearchRows(data: TorrentResult[] | undefined): SearchRow[] {
+function toSearchRows(
+	data: TorrentResult[] | undefined,
+	bcp47: string,
+	emDash: string,
+): SearchRow[] {
 	return (data ?? []).map((torrent) => ({
 		id: torrent.torrentId || torrent.torrentFileUrl,
 		cover: torrent.imageUrl,
@@ -154,7 +110,7 @@ function toSearchRows(data: TorrentResult[] | undefined): SearchRow[] {
 		seeds: torrent.seeds,
 		leeches: torrent.leeches,
 		downloads: torrent.downloads,
-		date: formatDate(torrent.date),
+		date: formatDate(torrent.date, bcp47, emDash),
 		torrentFileUrl: torrent.torrentFileUrl,
 		topicUrl: torrent.topicUrl,
 		forumId: torrent.forumId,
@@ -163,6 +119,9 @@ function toSearchRows(data: TorrentResult[] | undefined): SearchRow[] {
 
 export function SearchPage({ search }: { search?: string }) {
 	const navigate = useNavigate({ from: "/search" });
+	const { t } = useTranslation("search");
+	const { t: tCommon } = useTranslation("common");
+	const { bcp47 } = useLocale();
 	const hasActiveSearch = Boolean(search?.trim());
 	const toast = useToast();
 	const [viewMode, setViewMode] = useState<ViewMode>("table");
@@ -188,7 +147,57 @@ export function SearchPage({ search }: { search?: string }) {
 
 	const columns = useMemo<TableColumn<SearchRow>[]>(
 		() => [
-			...staticColumns,
+			{
+				key: "cover",
+				header: "",
+				width: pixel(72),
+				resizable: false,
+				renderCell: (item) =>
+					item.cover ? (
+						<AspectRatio ratio={2 / 3} fit="contain">
+							<img src={item.cover} alt={item.title} />
+						</AspectRatio>
+					) : null,
+			},
+			{
+				key: "title",
+				header: t("columns.title"),
+				width: pixel(480),
+			},
+			{
+				key: "tags",
+				header: t("columns.tags"),
+				width: pixel(148),
+				renderCell: (item) => <SearchCardTags item={item} />,
+			},
+			{
+				key: "size",
+				header: t("columns.size"),
+				width: pixel(88),
+			},
+			{
+				key: "seeds",
+				header: t("columns.seeds"),
+				width: pixel(64),
+				align: "end",
+			},
+			{
+				key: "leeches",
+				header: t("columns.leeches"),
+				width: pixel(64),
+				align: "end",
+			},
+			{
+				key: "downloads",
+				header: t("columns.downloads"),
+				width: pixel(96),
+				align: "end",
+			},
+			{
+				key: "date",
+				header: t("columns.date"),
+				width: pixel(104),
+			},
 			{
 				key: "action",
 				header: "",
@@ -196,7 +205,7 @@ export function SearchPage({ search }: { search?: string }) {
 				renderCell: (item) => (
 					<HStack gap={1}>
 						<Button
-							label="Скачать"
+							label={t("download")}
 							size="sm"
 							onClick={() => openDownload(item)}
 						/>
@@ -204,7 +213,7 @@ export function SearchPage({ search }: { search?: string }) {
 							href={item.topicUrl}
 							icon={<Icon icon="externalLink" size="sm" />}
 							isExternalLink
-							label="На трекере"
+							label={t("onTracker")}
 							size="sm"
 							target="_blank"
 							variant="secondary"
@@ -213,7 +222,7 @@ export function SearchPage({ search }: { search?: string }) {
 				),
 			},
 		],
-		[openDownload],
+		[openDownload, t],
 	);
 
 	const columnResize = useTableColumnResize({
@@ -251,19 +260,21 @@ export function SearchPage({ search }: { search?: string }) {
 		if (!refreshQuery.isError) return;
 		toast({
 			type: "error",
-			body:
-				refreshQuery.error.message || "Не удалось получить данные с трекера",
+			body: refreshQuery.error.message || t("refreshFailed"),
 			uniqueID: "search-refresh-error",
 			collisionBehavior: "ignore",
 		});
-	}, [refreshQuery.isError, refreshQuery.error, toast]);
+	}, [refreshQuery.isError, refreshQuery.error, toast, t]);
 
 	const displayData = hasActiveSearch
 		? refreshQuery.isSuccess
 			? refreshQuery.data
 			: localQuery.data
 		: recentQuery.data;
-	const rows = useMemo(() => toSearchRows(displayData?.results), [displayData]);
+	const rows = useMemo(
+		() => toSearchRows(displayData?.results, bcp47, tCommon("emDash")),
+		[displayData, bcp47, tCommon],
+	);
 
 	const showInitialSpinner = hasActiveSearch
 		? localQuery.isLoading && !localQuery.data && !refreshQuery.isSuccess
@@ -289,20 +300,22 @@ export function SearchPage({ search }: { search?: string }) {
 		? localQuery.error?.message
 		: recentQuery.error?.message;
 	const badgeLabel = hasActiveSearch
-		? `Найдено: ${rows.length}`
-		: "Последние релизы";
-	const emptyTitle = hasActiveSearch ? "Ничего не найдено" : "Пока ничего нет";
+		? t("foundCount", { count: rows.length })
+		: t("recentReleases");
+	const emptyTitle = hasActiveSearch
+		? t("emptyFoundTitle")
+		: t("emptyRecentTitle");
 	const emptyDescription = hasActiveSearch
 		? undefined
-		: "Сделайте поиск — результаты попадут в кэш";
+		: t("emptyRecentDescription");
 
 	return (
 		<VStack gap={3} width="100%">
 			<Section padding={4} variant="transparent">
 				<VStack gap={3} width="100%">
 					<VStack gap={1} width="100%">
-						<Heading level={1}>Поиск</Heading>
-						<Text type="supporting">Поиск по трекеру</Text>
+						<Heading level={1}>{t("title")}</Heading>
+						<Text type="supporting">{t("subtitle")}</Text>
 					</VStack>
 					<SearchBar
 						initialQuery={search ?? ""}
@@ -313,13 +326,13 @@ export function SearchPage({ search }: { search?: string }) {
 			</Section>
 			{showTrackerIndicator ? (
 				<HStack gap={2} paddingInline={4} vAlign="center">
-					<Spinner aria-label="Ищем на трекере" size="sm" />
-					<Text type="supporting">Ищем на трекере…</Text>
+					<Spinner aria-label={t("searchingTrackerAria")} size="sm" />
+					<Text type="supporting">{t("searchingTracker")}</Text>
 				</HStack>
 			) : null}
-			{showInitialSpinner ? <Spinner label="Загрузка" /> : null}
+			{showInitialSpinner ? <Spinner label={t("loading")} /> : null}
 			{showLocalError ? (
-				<EmptyState description={errorMessage} title="Ошибка поиска" />
+				<EmptyState description={errorMessage} title={t("errorTitle")} />
 			) : null}
 			{showResultsChrome ? (
 				<HStack
@@ -334,13 +347,13 @@ export function SearchPage({ search }: { search?: string }) {
 						variant={hasActiveSearch ? "teal" : "blue"}
 					/>
 					<SegmentedControl
-						label="Вид результатов"
+						label={t("viewModeLabel")}
 						onChange={(value) => setViewMode(value as ViewMode)}
 						size="sm"
 						value={viewMode}
 					>
-						<SegmentedControlItem label="Таблица" value="table" />
-						<SegmentedControlItem label="Карточки" value="cards" />
+						<SegmentedControlItem label={t("viewTable")} value="table" />
+						<SegmentedControlItem label={t("viewCards")} value="cards" />
 					</SegmentedControl>
 				</HStack>
 			) : null}

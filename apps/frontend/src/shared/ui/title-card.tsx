@@ -9,6 +9,8 @@ import { Text } from "@astryxdesign/core/Text";
 import { useNavigate } from "@tanstack/react-router";
 import { ImageOff, Star } from "lucide-react";
 import type { SVGProps } from "react";
+import { useTranslation } from "react-i18next";
+import { useLocale } from "#/shared/i18n/locale-provider";
 
 export type TitleCardData = {
 	titleId: string;
@@ -19,13 +21,8 @@ export type TitleCardData = {
 	rating: number | null;
 };
 
-const KIND_LABELS: Record<TitleCardData["kind"], string> = {
-	films: "Фильм",
-	tv: "Сериал",
-};
-
-function formatRating(rating: number): string {
-	return rating.toLocaleString("ru-RU", {
+function formatRating(rating: number, bcp47: string): string {
+	return rating.toLocaleString(bcp47, {
 		minimumFractionDigits: 1,
 		maximumFractionDigits: 1,
 	});
@@ -37,6 +34,9 @@ function FilledStarIcon(props: SVGProps<SVGSVGElement>) {
 
 export function TitleCard({ item }: { item: TitleCardData }) {
 	const navigate = useNavigate();
+	const { t } = useTranslation("title");
+	const { bcp47 } = useLocale();
+	const kindLabel = item.kind === "films" ? t("card.film") : t("card.series");
 
 	return (
 		<ClickableCard
@@ -75,13 +75,13 @@ export function TitleCard({ item }: { item: TitleCardData }) {
 							<>
 								<Icon color="warning" icon={FilledStarIcon} size="xsm" />
 								<Text hasTabularNumbers type="supporting">
-									{formatRating(item.rating)}
+									{formatRating(item.rating, bcp47)}
 								</Text>
 								<Text type="supporting">·</Text>
 							</>
 						) : null}
 						<Text type="supporting">
-							{KIND_LABELS[item.kind]}
+							{kindLabel}
 							{item.year != null ? ` · ${item.year}` : ""}
 						</Text>
 					</HStack>

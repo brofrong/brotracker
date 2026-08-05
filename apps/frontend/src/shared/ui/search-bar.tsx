@@ -4,6 +4,7 @@ import { Button } from "@astryxdesign/core/Button";
 import { HStack, StackItem } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { type FormEvent, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type SearchBarProps = {
 	initialQuery?: string;
@@ -17,12 +18,14 @@ type SearchBarProps = {
 export const SearchBar = ({
 	initialQuery = "",
 	isSearching = false,
-	placeholder = "Поиск...",
+	placeholder,
 	onSearch,
 	onClear,
 }: SearchBarProps) => {
+	const { t } = useTranslation("common");
 	const [query, setQuery] = useState(initialQuery);
 	const canSearch = query.trim().length > 0;
+	const resolvedPlaceholder = placeholder ?? t("searchPlaceholder");
 
 	useEffect(() => {
 		setQuery(initialQuery);
@@ -51,18 +54,18 @@ export const SearchBar = ({
 			<HStack gap={2} vAlign="end" width="100%">
 				<StackItem size="fill">
 					<TextInput
-						label="Поиск"
+						label={t("search")}
 						isLabelHidden
 						value={query}
 						onChange={handleChange}
-						placeholder={placeholder}
+						placeholder={resolvedPlaceholder}
 						startIcon="search"
 						hasClear
 						width="100%"
 					/>
 				</StackItem>
 				<Button
-					label="Найти"
+					label={t("find")}
 					type="submit"
 					variant="primary"
 					isDisabled={!canSearch}
