@@ -67,6 +67,17 @@ export function createMemoryWorkerRunStore(): WorkerRunStore {
 			return null;
 		},
 
+		async failAllRunning(input) {
+			for (const run of runs.values()) {
+				if (run.status === "running") {
+					run.status = "failed";
+					run.finishedAt = input.finishedAt;
+					run.summary = null;
+					run.error = input.error;
+				}
+			}
+		},
+
 		async listByWorker(workerId, limit) {
 			return [...runs.values()]
 				.filter((run) => run.workerId === workerId)

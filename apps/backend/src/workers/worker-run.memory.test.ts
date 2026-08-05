@@ -204,4 +204,56 @@ describe("createMemoryWorkerRunStore", () => {
 		expect(await store.get("run-2")).toBeNull();
 		expect(await store.get("other-keep")).not.toBeNull();
 	});
+
+	test("failAllRunning marks every running row failed", async () => {
+		const store = createMemoryWorkerRunStore();
+		const finishedAt = new Date("2026-08-05T12:00:00.000Z");
+
+		await store.insertRunning({
+			id: "run-a",
+			workerId,
+			trigger: "manual",
+			startedAt: new Date("2026-08-05T11:00:00.000Z"),
+		});
+		await store.insertRunning({
+			id: "run-b",
+			workerId: "other-worker",
+			trigger: "scheduled",
+			startedAt: new Date("2026-08-05T11:30:00.000Z"),
+		});
+		await store.insertRunning({
+			id: "run-done",
+			workerId: "third",
+			trigger: "manual",
+			startedAt: new Date("2026-08-05T10:00:00.000Z"),
+		});
+		await store.finish("run-done", {
+			status: "succeeded",
+			finishedAt: new Date("2026-08-05T10:01:00.000Z"),
+			summary: "ok",
+			error: null,
+		});
+
+		await store.failAllRunning({
+			finishedAt,
+			error: "Interrupted by process restart",
+		});
+
+		expect(await store.findRunning(workerId)).toBeNull();
+		expect(await store.findRunning("other-worker")).toBeNull();
+
+		const a = await store.get("run-a");
+		expect(a).toMatchObject({
+			status: "failed",
+			finishedAt,
+			error: "Interrupted by process restart",
+			summary: null,
+		});
+		const b = await store.get("run-b");
+		expect(b).toMatchObject({
+			status: "failed",
+			error: "Interrupted by process restart",
+		});
+		expect((await store.get("run-done"))?.status).toBe("succeeded");
+	});
 });

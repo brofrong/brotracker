@@ -6,6 +6,7 @@ import type {
 	WorkerLogLevel,
 	WorkerRunRecord,
 	WorkerRunStore,
+	WorkerRunTrigger,
 } from "./workers.types";
 
 export type WorkersDeps = {
@@ -80,7 +81,19 @@ export function createWorkers(deps: WorkersDeps) {
 			return deps.store.get(runId);
 		},
 
-		async run(workerId: string): Promise<WorkerRunRecord> {
+		async failInterruptedRuns(
+			error = "Interrupted by process restart",
+		): Promise<void> {
+			await deps.store.failAllRunning({
+				finishedAt: deps.now(),
+				error,
+			});
+		},
+
+		async run(
+			workerId: string,
+			options?: { trigger?: WorkerRunTrigger },
+		): Promise<WorkerRunRecord> {
 			const definition = requireDefinition(workerId);
 			await assertNotRunning(workerId);
 
@@ -88,7 +101,7 @@ export function createWorkers(deps: WorkersDeps) {
 			const record = await deps.store.insertRunning({
 				id: deps.id(),
 				workerId,
-				trigger: "manual",
+				trigger: options?.trigger ?? "manual",
 				startedAt,
 			});
 
