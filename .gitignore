@@ -39,9 +39,13 @@ yarn-error.log*
 *.pem
 apps/backend/public
 
-# Editor / agent local config
-.cursor/
-**/.cursor/
+# Editor / agent local config (track shared rules only)
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
+**/.cursor/*
+!**/.cursor/rules/
+!**/.cursor/rules/**
 
 # Git worktrees
 .worktrees/
