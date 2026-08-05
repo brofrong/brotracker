@@ -140,3 +140,9 @@ export const nightlyWorker = createNightlyWorker({
 
 export { createWatch } from "./watch";
 export type { Watch, WatchDeps } from "./watch.types";
+export {
+	createNightlyWorker,
+	type NightlyWorker,
+	type NightlyRunNowResult,
+	type NightlyTickResult,
+} from "./nightly-worker";
