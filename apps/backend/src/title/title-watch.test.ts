@@ -37,8 +37,11 @@ function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 	const deps: TitleDeps = {
 		fetchTmdbMeta: async () => ({ status: "ok", meta: tvMeta() }),
 		getRatings: async () => stubRatings(),
-		searchLocal: async () => [],
-		searchTracker: async () => ({ status: "unavailable" }),
+		searchTorrents: async () => ({
+			status: "degraded",
+			local: [],
+			trackerError: "unavailable",
+		}),
 		listTaggedTorrents: async () => [],
 		addFromTracker: async () => {},
 		loadWatchByTopicUrl: async (topicUrl) => store.get(topicUrl) ?? null,
@@ -123,20 +126,24 @@ describe("title.setWatch", () => {
 					tags: "brotracker:topic:55",
 				},
 			],
-			searchLocal: async () => [
-				{
-					torrentId: "55",
-					title: "Show",
-					size: 100,
-					seeds: 1,
-					leeches: 0,
-					torrentFileUrl: "https://rutracker.org/forum/dl.php?t=55",
-					topicUrl: "https://rutracker.org/forum/viewtopic.php?t=55",
-					hdr: null,
-					resolution: "1080p",
-					forumId: "1",
-				},
-			],
+			searchTorrents: async () => ({
+				status: "degraded",
+				local: [
+					{
+						torrentId: "55",
+						title: "Show",
+						size: 100,
+						seeds: 1,
+						leeches: 0,
+						torrentFileUrl: "https://rutracker.org/forum/dl.php?t=55",
+						topicUrl: "https://rutracker.org/forum/viewtopic.php?t=55",
+						hdr: null,
+						resolution: "1080p",
+						forumId: "1",
+					},
+				],
+				trackerError: "unavailable",
+			}),
 		});
 
 		await module.setWatch({
@@ -269,20 +276,24 @@ describe("title.get watch", () => {
 					tags: "brotracker:topic:55",
 				},
 			],
-			searchLocal: async () => [
-				{
-					torrentId: "55",
-					title: "Test Show",
-					size: 100,
-					seeds: 1,
-					leeches: 0,
-					torrentFileUrl: "https://rutracker.org/forum/dl.php?t=55",
-					topicUrl,
-					hdr: null,
-					resolution: "1080p",
-					forumId: "1",
-				},
-			],
+			searchTorrents: async () => ({
+				status: "degraded",
+				local: [
+					{
+						torrentId: "55",
+						title: "Test Show",
+						size: 100,
+						seeds: 1,
+						leeches: 0,
+						torrentFileUrl: "https://rutracker.org/forum/dl.php?t=55",
+						topicUrl,
+						hdr: null,
+						resolution: "1080p",
+						forumId: "1",
+					},
+				],
+				trackerError: "unavailable",
+			}),
 		});
 
 		const title = await module.get({ id: "tmdb:tv:1" });

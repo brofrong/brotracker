@@ -182,10 +182,17 @@ export type TitleTorrentsResult = {
 	items: TitleTorrent[];
 };
 
-export type TrackerSearchForTitle =
-	| { status: "ok"; results: TitleTorrentCandidate[] }
-	| { status: "unavailable" }
-	| { status: "error" };
+export type TitleTorrentsSearch =
+	| {
+			status: "ok";
+			local: TitleTorrentCandidate[];
+			tracker: TitleTorrentCandidate[];
+	  }
+	| {
+			status: "degraded";
+			local: TitleTorrentCandidate[];
+			trackerError: "unavailable" | "error";
+	  };
 
 export type TaggedQbTorrent = {
 	hash: string;
@@ -203,8 +210,7 @@ export type TitleDeps = {
 		tmdbId: number,
 	) => Promise<FetchTmdbMetaOutcome>;
 	getRatings: (ctx: RatingsContext) => Promise<TitleRating[]>;
-	searchLocal: (query: string) => Promise<TitleTorrentCandidate[]>;
-	searchTracker: (query: string) => Promise<TrackerSearchForTitle>;
+	searchTorrents: (query: string) => Promise<TitleTorrentsSearch>;
 	listTaggedTorrents: () => Promise<TaggedQbTorrent[]>;
 	addFromTracker: (
 		torrentFileUrl: string,

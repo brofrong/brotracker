@@ -247,12 +247,12 @@ export function createTitleModule(deps: TitleDeps) {
 		titleId: string,
 		query: string,
 	): Promise<TitleWatchRecord | null> {
-		const [local, tracker, live] = await Promise.all([
-			deps.searchLocal(query),
-			deps.searchTracker(query),
+		const [search, live] = await Promise.all([
+			deps.searchTorrents(query),
 			deps.listTaggedTorrents(),
 		]);
-		const candidates = tracker.status === "ok" ? tracker.results : local;
+		const candidates =
+			search.status === "ok" ? search.tracker : search.local;
 
 		for (const candidate of candidates) {
 			const topicId = extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
@@ -288,13 +288,13 @@ export function createTitleModule(deps: TitleDeps) {
 			return null;
 		}
 
-		const [local, tracker, live] = await Promise.all([
-			deps.searchLocal(query),
-			deps.searchTracker(query),
+		const [search, live] = await Promise.all([
+			deps.searchTorrents(query),
 			deps.listTaggedTorrents(),
 		]);
 
-		const candidates = tracker.status === "ok" ? tracker.results : local;
+		const candidates =
+			search.status === "ok" ? search.tracker : search.local;
 
 		for (const candidate of candidates) {
 			const topicId = extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
@@ -386,21 +386,20 @@ export function createTitleModule(deps: TitleDeps) {
 				return { status: "empty", items: [] };
 			}
 
-			const [tracker, local, live] = await Promise.all([
-				deps.searchTracker(query),
-				deps.searchLocal(query),
+			const [search, live] = await Promise.all([
+				deps.searchTorrents(query),
 				deps.listTaggedTorrents(),
 			]);
 
 			let source: "local" | "tracker" = "local";
 			let status: TitleTorrentsResult["status"] = "degraded";
-			let candidates: TitleTorrentCandidate[] = local;
+			let candidates: TitleTorrentCandidate[] = search.local;
 
-			if (tracker.status === "ok") {
+			if (search.status === "ok") {
 				source = "tracker";
 				status = "ok";
-				candidates = tracker.results;
-			} else if (local.length === 0) {
+				candidates = search.tracker;
+			} else if (search.local.length === 0) {
 				return { status: "empty", items: [] };
 			}
 
