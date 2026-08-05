@@ -147,6 +147,18 @@ Add repository secrets:
 
 Version lives in the root `package.json` and is baked into the frontend at build time (`VITE_APP_VERSION`).
 
+Before releasing, add one markdown file per change under `changes/unreleased/`:
+
+```markdown
+---
+type: feature
+---
+
+Short description of the change.
+```
+
+`type` is `feature`, `fix`, or `breaking`. The release script assembles these into GitHub Release notes, then archives them to `changes/vX.Y.Z/`.
+
 ```bash
 bun run release              # interactive patch/minor/major
 bun run release patch        # 0.1.0 → 0.1.1
@@ -154,9 +166,10 @@ bun run release minor        # 0.1.0 → 0.2.0
 bun run release 1.0.0        # set exact version
 bun run release patch --yes  # skip confirmation
 bun run release patch --dry-run
+bun run release patch --notes-file /path/to/draft-notes.md
 ```
 
-The script bumps the version, commits, creates annotated tag `vX.Y.Z`, pushes branch + tag (CI publishes the Docker image).
+The script requires release notes (from `changes/unreleased/` or `--notes-file`), bumps the version, commits, creates annotated tag `vX.Y.Z`, pushes branch + tag, creates a [GitHub Release](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) with the assembled notes, and archives note files (CI publishes the Docker image on tag push).
 
 ## Scripts
 

@@ -1,8 +1,13 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { mkdirSync, writeFileSync, rmSync, existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import {
 	parseNoteFile,
 	suggestBump,
 	renderReleaseNotes,
+	loadUnreleasedNotes,
+	archiveNotes,
 	type ParsedNote,
 } from "./release-notes";
 
@@ -68,5 +73,78 @@ describe("renderReleaseNotes", () => {
 		expect(md).toContain("### Fixes");
 		expect(md.indexOf("Drop legacy")).toBeLessThan(md.indexOf("Add worker"));
 		expect(md.indexOf("Add worker")).toBeLessThan(md.indexOf("Fix login"));
+	});
+});
+
+describe("loadUnreleasedNotes", () => {
+	let dir: string;
+
+	beforeEach(() => {
+		dir = join(tmpdir(), `release-notes-${Date.now()}-${Math.random()}`);
+		mkdirSync(dir, { recursive: true });
+	});
+
+	afterEach(() => {
+		rmSync(dir, { recursive: true, force: true });
+	});
+
+	test("returns empty when directory missing", () => {
+		expect(loadUnreleasedNotes(join(dir, "missing"))).toEqual([]);
+	});
+
+	test("loads and sorts markdown files", () => {
+		writeFileSync(
+			join(dir, "b-fix.md"),
+			`---
+type: fix
+---
+
+Second fix.
+`,
+		);
+		writeFileSync(
+			join(dir, "a-feature.md"),
+			`---
+type: feature
+---
+
+First feature.
+`,
+		);
+		const notes = loadUnreleasedNotes(dir);
+		expect(notes.map((n) => n.file)).toEqual(["a-feature.md", "b-fix.md"]);
+		expect(notes[0]?.type).toBe("feature");
+	});
+});
+
+describe("archiveNotes", () => {
+	let unreleased: string;
+	let archive: string;
+
+	beforeEach(() => {
+		const base = join(tmpdir(), `release-archive-${Date.now()}-${Math.random()}`);
+		unreleased = join(base, "unreleased");
+		archive = join(base, "v1.0.0");
+		mkdirSync(unreleased, { recursive: true });
+	});
+
+	afterEach(() => {
+		rmSync(join(unreleased, ".."), { recursive: true, force: true });
+	});
+
+	test("moves markdown files into archive directory", () => {
+		writeFileSync(
+			join(unreleased, "note.md"),
+			`---
+type: fix
+---
+
+Archived note.
+`,
+		);
+		const moved = archiveNotes(unreleased, archive);
+		expect(moved).toEqual(["note.md"]);
+		expect(existsSync(join(archive, "note.md"))).toBe(true);
+		expect(readdirSync(unreleased).filter((f) => f.endsWith(".md"))).toEqual([]);
 	});
 });
