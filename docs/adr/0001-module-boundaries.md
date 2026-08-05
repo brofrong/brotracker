@@ -12,4 +12,6 @@ We organize the backend as deep feature modules with a directed acyclic import g
 
 **Watch:** the watch pipeline stays under `title/watch/` as a submodule with its own composition entry — not a free cross-import hub from other features. Home may consume watch/feed data only via ports or read-model helpers, not by importing title repositories.
 
+**Workers:** `workers` is a top-level feature that owns WorkerRun persistence and scheduling. It invokes Title watch only through ports/composition — not by importing title repositories.
+
 **Naming debt:** folder `qbittorent` is a known misspelling; migrate to `qbittorrent` when touching that area — do not introduce a second spelling.
