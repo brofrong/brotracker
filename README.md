@@ -35,7 +35,7 @@ docker/                  # Compose files for infra (+ full stack)
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) `>= 1.2`
+- [Bun](https://bun.sh) `>= 1.4`
 - [Docker](https://docs.docker.com/get-docker/) (Postgres, MinIO, Byparr)
 - A [qBittorrent](https://www.qbittorrent.org/) instance with Web UI / API enabled (optional but needed for the Torrents page)
 
