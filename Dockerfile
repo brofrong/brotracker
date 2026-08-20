@@ -4,7 +4,7 @@
 FROM oven/bun:1.4-alpine AS deps
 WORKDIR /app
 
-COPY package.json bun.lock turbo.json ./
+COPY package.json bun.lock turbo.json bunfig.toml ./
 COPY apps/backend/package.json apps/backend/
 COPY apps/frontend/package.json apps/frontend/
 COPY packages/rutracker-ts/package.json packages/rutracker-ts/
@@ -38,7 +38,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY package.json bun.lock turbo.json ./
+COPY package.json bun.lock turbo.json bunfig.toml ./
 COPY apps/backend/package.json apps/backend/
 COPY packages/rutracker-ts/package.json packages/rutracker-ts/
 COPY packages/typescript-config/package.json packages/typescript-config/
@@ -52,7 +52,7 @@ RUN mkdir -p apps/frontend \
 	&& bun -e 'const p=await Bun.file("apps/backend/package.json").json(); delete p.devDependencies; await Bun.write("apps/backend/package.json", JSON.stringify(p, null, 2) + "\n")' \
 	&& bun -e 'const p=await Bun.file("packages/rutracker-ts/package.json").json(); delete p.devDependencies; await Bun.write("packages/rutracker-ts/package.json", JSON.stringify(p, null, 2) + "\n")' \
 	&& rm -f bun.lock \
-	&& bun install --production
+	&& bun install --production --linker=hoisted
 
 # --- runtime: Bun backend + static SPA ---
 FROM oven/bun:1.4-alpine AS runtime
@@ -62,7 +62,7 @@ ENV NODE_ENV=production
 ENV PORT=8080
 ENV STATIC_DIR=/app/apps/backend/public
 
-COPY package.json bun.lock turbo.json ./
+COPY package.json bun.lock turbo.json bunfig.toml ./
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/apps/backend/package.json ./apps/backend/package.json
 COPY --from=prod-deps /app/apps/frontend/package.json ./apps/frontend/package.json
