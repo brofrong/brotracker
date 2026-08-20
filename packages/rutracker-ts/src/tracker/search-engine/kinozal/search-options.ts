@@ -1,14 +1,17 @@
 import type { SearchOptions } from "../../tracker-interface";
 
-/** Aggregate: all films. */
+/** Aggregate: all films (does not include cartoons). */
 export const filmsCategory = 1002;
+
+/** Aggregate: all cartoons. */
+export const cartoonsCategory = 1003;
 
 /** Aggregate: all TV series. */
 export const tvCategory = 1001;
 
 export const filmsCategories = [
 	1002, 8, 6, 15, 17, 35, 39, 13, 14, 24, 11, 10, 9, 47, 18, 37, 12, 7, 48, 49,
-	50, 38, 16, 21, 22, 20,
+	50, 38, 16, 21, 22, 20, 1003,
 ];
 
 export const tvCategories = [1001, 45, 46];
@@ -26,15 +29,12 @@ export function createSearchOptions(
 ): KinozalSearchParams {
 	const params: KinozalSearchParams = {
 		s: query,
-		c: filmsCategory,
 	};
 
 	if (options?.category === "tv") {
 		params.c = tvCategory;
 	} else if (options?.category === "films") {
 		params.c = filmsCategory;
-	} else if (options?.category === null) {
-		delete params.c;
 	}
 
 	if (options?.sortType === "seedsCount") {
