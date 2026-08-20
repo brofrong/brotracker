@@ -16,6 +16,7 @@ import { RUTRACKER_URL } from "./constants";
 import { rutrackerGetCookies } from "./login";
 import { parseResponse } from "./parse";
 import { createSearchOptions } from "./search-options";
+import { toWindows1251Query } from "../../windows-1251-query";
 
 async function doSearchRequest(
 	query: string,
@@ -27,6 +28,7 @@ async function doSearchRequest(
 	const searchOptions = createSearchOptions(query, queryOptions);
 	return axios.get(`${RUTRACKER_URL}/forum/tracker.php`, {
 		params: searchOptions,
+		paramsSerializer: toWindows1251Query,
 		responseType: "arraybuffer",
 		headers: {
 			Cookie: cookies,
