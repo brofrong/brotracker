@@ -106,7 +106,7 @@ describe("cover fetch pipeline", () => {
 		const deps = memoryDeps({
 			keys: new Map([["13", null]]),
 			optimize: async () => {
-				throw new Error("sharp failed");
+				throw new Error("optimize failed");
 			},
 		});
 		const queue = createCoverFetchQueue(deps);

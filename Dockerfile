@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # --- full monorepo install (frontend build needs Vite / React / etc.) ---
-FROM oven/bun:1.2-alpine AS deps
+FROM oven/bun:1.4-alpine AS deps
 WORKDIR /app
 
 COPY package.json bun.lock turbo.json ./
@@ -33,7 +33,7 @@ WORKDIR /app/apps/frontend
 RUN bun run build
 
 # --- production deps only (backend + rutracker-ts workspaces) ---
-FROM oven/bun:1.2-alpine AS prod-deps
+FROM oven/bun:1.4-alpine AS prod-deps
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -55,7 +55,7 @@ RUN mkdir -p apps/frontend \
 	&& bun install --production
 
 # --- runtime: Bun backend + static SPA ---
-FROM oven/bun:1.2-alpine AS runtime
+FROM oven/bun:1.4-alpine AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
