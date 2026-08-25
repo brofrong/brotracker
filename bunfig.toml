@@ -1,5 +1,5 @@
 [install]
 # Keep a flat node_modules. The production Docker image copies only the
 # repo-root node_modules; Bun 1.4 otherwise defaults workspaces to isolated
-# installs when bun.lock is absent (prod-deps stubs the frontend workspace).
+# installs.
 linker = "hoisted"

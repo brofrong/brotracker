@@ -1,5 +1,4 @@
 import { createAuthClient } from "better-auth/client";
-import { genericOAuthClient } from "better-auth/client/plugins";
 import { fetchAuthMode } from "./auth-mode";
 import { env } from "./env";
 
@@ -12,17 +11,20 @@ export function getAuthBaseURL(): string {
 
 export const authClient = createAuthClient({
 	baseURL: getAuthBaseURL(),
-	plugins: [genericOAuthClient()],
 	fetchOptions: {
 		credentials: "include",
 	},
 });
 
+export function authentikSocialSignIn(callbackURL: string) {
+	return {
+		provider: "authentik" as const,
+		callbackURL,
+	};
+}
+
 export async function redirectToAuthentikSignIn(): Promise<void> {
-	await authClient.signIn.oauth2({
-		providerId: "authentik",
-		callbackURL: window.location.href,
-	});
+	await authClient.signIn.social(authentikSocialSignIn(window.location.href));
 }
 
 export async function redirectToSignIn(): Promise<void> {

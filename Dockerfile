@@ -32,7 +32,7 @@ ENV VITE_APP_VERSION=$APP_VERSION
 WORKDIR /app/apps/frontend
 RUN bun run build
 
-# --- production deps only (backend + rutracker-ts workspaces) ---
+# --- production deps (frozen lockfile; frontend SPA is copied as static assets) ---
 FROM oven/bun:1.4-alpine AS prod-deps
 WORKDIR /app
 
@@ -40,19 +40,12 @@ ENV NODE_ENV=production
 
 COPY package.json bun.lock turbo.json bunfig.toml ./
 COPY apps/backend/package.json apps/backend/
+COPY apps/frontend/package.json apps/frontend/
 COPY packages/rutracker-ts/package.json packages/rutracker-ts/
 COPY packages/typescript-config/package.json packages/typescript-config/
 
-# Keep workspace globs valid without pulling frontend/runtime UI deps.
-# Drop the monorepo lockfile after stubbing frontend — otherwise bun refuses
-# to rewrite it (frozen) when package.json no longer matches.
-RUN mkdir -p apps/frontend \
-	&& printf '%s\n' '{"name":"frontend","private":true}' > apps/frontend/package.json \
-	&& bun -e 'const p=await Bun.file("package.json").json(); delete p.devDependencies; await Bun.write("package.json", JSON.stringify(p, null, 2) + "\n")' \
-	&& bun -e 'const p=await Bun.file("apps/backend/package.json").json(); delete p.devDependencies; await Bun.write("apps/backend/package.json", JSON.stringify(p, null, 2) + "\n")' \
-	&& bun -e 'const p=await Bun.file("packages/rutracker-ts/package.json").json(); delete p.devDependencies; await Bun.write("packages/rutracker-ts/package.json", JSON.stringify(p, null, 2) + "\n")' \
-	&& rm -f bun.lock \
-	&& bun install --production --linker=hoisted
+# Keep bun.lock so pinned better-auth cannot float to an untested minor.
+RUN bun install --frozen-lockfile --production --linker=hoisted
 
 # --- runtime: Bun backend + static SPA ---
 FROM oven/bun:1.4-alpine AS runtime
