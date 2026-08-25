@@ -39,8 +39,12 @@ In the Authentik admin UI:
 1. **Applications → Providers → Create** — choose **OAuth2/OpenID Provider**.
 2. Set **Redirect URIs** to:
    ```
-   http://localhost:3101/api/auth/oauth2/callback/authentik
+   http://localhost:3101/api/auth/callback/authentik
    ```
+   Production uses the same path on the public origin, e.g.
+   `https://brotracker.brofrong.ru/api/auth/callback/authentik`.
+   (Better Auth 1.6 used `/api/auth/oauth2/callback/authentik` — keep that URI
+   only until every instance is on 1.7.)
 3. **Applications → Applications → Create** — link the provider above.
 4. Set the application **slug** to `brotracker` (used in the discovery URL below).
 

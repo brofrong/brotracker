@@ -7,10 +7,11 @@ import * as authSchema from "../db/auth/auth.schema";
 import { user } from "../db/auth/auth.schema";
 import { db } from "../db/db";
 import { env } from "../utils/env";
+import { AUTHENTIK_ACCOUNT_ISSUER } from "./account-issuer";
 import {
+	type AuthMode,
 	assertLocalSignUpAllowed,
 	resolveAuthMode,
-	type AuthMode,
 } from "./auth-mode";
 
 export async function countUsers(): Promise<number> {
@@ -40,6 +41,13 @@ export function createAuth(secret: string) {
 	};
 
 	if (mode === "authentik") {
+		const clientId = env.AUTHENTIK_CLIENT_ID;
+		const clientSecret = env.AUTHENTIK_CLIENT_SECRET;
+		if (!clientId || !clientSecret) {
+			throw new Error(
+				"AUTHENTIK_CLIENT_ID and AUTHENTIK_CLIENT_SECRET are required",
+			);
+		}
 		return betterAuth({
 			...base,
 			plugins: [
@@ -48,10 +56,11 @@ export function createAuth(secret: string) {
 						{
 							providerId: "authentik",
 							discoveryUrl: env.AUTHENTIK_DISCOVERY_URL,
-							clientId: env.AUTHENTIK_CLIENT_ID!,
-							clientSecret: env.AUTHENTIK_CLIENT_SECRET!,
+							clientId,
+							clientSecret,
 							scopes: ["openid", "profile", "email"],
 							pkce: true,
+							accountIssuer: AUTHENTIK_ACCOUNT_ISSUER,
 						},
 					],
 				}),
