@@ -80,6 +80,15 @@ describe("extractTopicId", () => {
 		).toBe("kinozal:888");
 	});
 
+	test("reads id= from kinozal mirror URLs", () => {
+		expect(
+			extractTopicId("https://kinozal.guru/details.php?id=777"),
+		).toBe("kinozal:777");
+		expect(
+			extractTopicId("https://dl.kinozal.tv/download.php?id=999"),
+		).toBe("kinozal:999");
+	});
+
 	test("returns null for non-topic URL", () => {
 		expect(extractTopicId("https://example.com/")).toBeNull();
 	});

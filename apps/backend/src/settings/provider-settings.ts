@@ -3,6 +3,7 @@ import {
 	clearRutrackerSession,
 	invalidateTracker,
 } from "../torrent/torrent.tracker";
+import { resetKinozalMirrorProbe } from "../torrent/kinozal-mirror";
 import {
 	loadKinozalConfig,
 	loadQbittorrentConfig,
@@ -41,6 +42,8 @@ export async function saveKinozalSettings(input: {
 	password: string;
 	proxyUrl: string | null | undefined;
 	enabled?: boolean;
+	autoHost?: boolean;
+	host?: string | null;
 }) {
 	const result = await providerConfig.saveKinozal(input);
 	if (result.effects.clearSession) {
@@ -48,6 +51,7 @@ export async function saveKinozalSettings(input: {
 	}
 	if (result.effects.invalidateTracker) {
 		invalidateTracker("kinozal");
+		resetKinozalMirrorProbe();
 	}
 	return result.public;
 }

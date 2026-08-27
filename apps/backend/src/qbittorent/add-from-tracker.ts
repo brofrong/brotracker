@@ -1,5 +1,5 @@
-import { KINOZAL_DL_URL } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/constants";
 import { RUTRACKER_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/constants";
+import { isKinozalDownloadUrl } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/hosts";
 
 export class AddFromTrackerPreconditionError extends Error {
 	constructor(message: string) {
@@ -30,25 +30,11 @@ export function isAllowedRutrackerTorrentUrl(torrentFileUrl: string): boolean {
 	}
 }
 
-function isAllowedKinozalTorrentUrl(torrentFileUrl: string): boolean {
-	try {
-		const url = new URL(torrentFileUrl);
-		const base = new URL(KINOZAL_DL_URL);
-		if (url.protocol !== "https:") return false;
-		if (url.hostname !== base.hostname) return false;
-		if (url.pathname !== "/download.php") return false;
-		const topicId = url.searchParams.get("id");
-		return Boolean(topicId && /^\d+$/.test(topicId));
-	} catch {
-		return false;
-	}
-}
-
 /** Allow RuTracker and Kinozal torrent download endpoints only. */
 export function isAllowedTrackerTorrentUrl(torrentFileUrl: string): boolean {
 	return (
 		isAllowedRutrackerTorrentUrl(torrentFileUrl) ||
-		isAllowedKinozalTorrentUrl(torrentFileUrl)
+		isKinozalDownloadUrl(torrentFileUrl)
 	);
 }
 

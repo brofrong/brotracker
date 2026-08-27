@@ -7,7 +7,7 @@ import {
 	isCloudflareChallenge,
 } from "./http";
 import { acquireKinozalCfClearance } from "./cf";
-import { KINOZAL_URL } from "./constants";
+import { resolveKinozalMirror } from "./hosts";
 import {
 	cookiesToHeader,
 	type FileStore,
@@ -36,6 +36,7 @@ async function ensureCfClearance(
 	fileStore: FileStore,
 	forceRefresh: boolean,
 	solverUrl?: string,
+	baseUrl?: string,
 ): Promise<Result<{ userAgent: string }, Error>> {
 	const stored = await fileStore.read();
 	if (stored.isErr()) {
@@ -46,7 +47,11 @@ async function ensureCfClearance(
 		return ok({ userAgent: stored.value.userAgent ?? DEFAULT_UA });
 	}
 
-	const acquired = await acquireKinozalCfClearance({ fileStore, solverUrl });
+	const acquired = await acquireKinozalCfClearance({
+		fileStore,
+		solverUrl,
+		baseUrl,
+	});
 	if (acquired.isErr()) {
 		return err(acquired.error);
 	}
@@ -111,6 +116,7 @@ async function authorizeOnce(
 	fileStore: FileStore,
 	proxyAgent: ProxyAgent,
 	userAgent: string,
+	baseUrl?: string,
 ): Promise<LoginResult> {
 	const cookieHeader = await buildCookieHeader(fileStore);
 	if (cookieHeader.isErr()) {
@@ -123,8 +129,9 @@ async function authorizeOnce(
 		returnto: "/",
 	});
 
+	const siteUrl = resolveKinozalMirror(baseUrl).url;
 	const response = await axios.post(
-		`${KINOZAL_URL}/takelogin.php`,
+		`${siteUrl}/takelogin.php`,
 		body.toString(),
 		{
 			headers: {
@@ -180,6 +187,7 @@ export async function kinozalGetCookies(
 	fileStore: FileStore,
 	proxyAgent: ProxyAgent = null,
 	cfSolverUrl?: string,
+	baseUrl?: string,
 ): Promise<LoginResult> {
 	const stored = await fileStore.read();
 	if (stored.isErr()) {
@@ -207,10 +215,16 @@ export async function kinozalGetCookies(
 		fileStore,
 		proxyAgent,
 		userAgent,
+		baseUrl,
 	);
 
 	if (attempt.isErr() && attempt.error.message === "CF_CHALLENGE") {
-		const refreshed = await ensureCfClearance(fileStore, true, cfSolverUrl);
+		const refreshed = await ensureCfClearance(
+			fileStore,
+			true,
+			cfSolverUrl,
+			baseUrl,
+		);
 		if (refreshed.isErr()) {
 			return err(refreshed.error);
 		}
@@ -220,6 +234,7 @@ export async function kinozalGetCookies(
 			fileStore,
 			proxyAgent,
 			refreshed.value.userAgent,
+			baseUrl,
 		);
 	}
 

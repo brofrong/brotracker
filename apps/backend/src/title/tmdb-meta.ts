@@ -22,6 +22,7 @@ const KEY_CREW_JOBS = new Set([
 type TmdbGenre = { id: number; name: string };
 
 type TmdbCastMember = {
+	id?: number;
 	name: string;
 	character?: string;
 	profile_path?: string | null;
@@ -106,11 +107,15 @@ export function parseCast(cast: TmdbCastMember[] | undefined): TitleCastMember[]
 		return [];
 	}
 
-	return cast.slice(0, 12).map((member) => ({
-		name: member.name,
-		character: member.character ?? null,
-		profileUrl: profileUrl(member.profile_path),
-	}));
+	return cast
+		.filter((member) => member.id != null)
+		.slice(0, 12)
+		.map((member) => ({
+			id: member.id as number,
+			name: member.name,
+			character: member.character ?? null,
+			profileUrl: profileUrl(member.profile_path),
+		}));
 }
 
 export function parseKeyCrew(

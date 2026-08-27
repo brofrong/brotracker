@@ -11,6 +11,7 @@ export const namespaces = [
 	"home",
 	"search",
 	"title",
+	"person",
 	"transfers",
 	"stats",
 	"workers",

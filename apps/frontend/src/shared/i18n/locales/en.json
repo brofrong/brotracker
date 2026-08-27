@@ -150,6 +150,12 @@
 			"login": "Login",
 			"password": "Password",
 			"enabledDescription": "Include Kinozal in search and torrent lists",
+			"autoHost": "Auto-select mirror",
+			"autoHostDescription": "Probe all Kinozal mirrors and use the fastest one",
+			"host": "Mirror",
+			"hostPlaceholder": "Select a mirror",
+			"hostDescription": "Kinozal address used for search and downloads",
+			"hostDisabled": "Turn off auto-select to choose a mirror manually",
 			"loadFailed": "Failed to load Kinozal settings",
 			"testSuccess": "Connected to Kinozal successfully"
 		},
@@ -299,6 +305,7 @@
 			"ratingWithVotes": "{{source}} · {{count}} {{votesWord}}",
 			"castHeading": "Cast",
 			"castCarouselAria": "Cast",
+			"openPersonAria": "Open filmography: {{name}}",
 			"similarHeading": "Similar",
 			"similarCarouselAria": "Similar titles",
 			"crewJobs": {
@@ -352,6 +359,31 @@
 			"updatedApplied": "Torrent updated and replaced in qBittorrent",
 			"updated": "Torrent updated",
 			"checkFailed": "Failed to check for update"
+		}
+	},
+	"person": {
+		"loadFailed": "Failed to load",
+		"biographyHeading": "Biography",
+		"born": "Born: {{date}}",
+		"bornDied": "{{born}} — {{died}}",
+		"placeOfBirth": "Place of birth: {{place}}",
+		"filmographyHeading": "Filmography",
+		"filmographyCarouselAria": "Filmography",
+		"filmographyEmptyTitle": "No known works",
+		"filmographyEmptyDescription": "This person has no titles linked to TMDB yet.",
+		"departments": {
+			"Acting": "Acting",
+			"Directing": "Directing",
+			"Writing": "Writing",
+			"Production": "Production",
+			"Camera": "Camera",
+			"Sound": "Sound",
+			"Art": "Art",
+			"Editing": "Editing",
+			"Visual Effects": "Visual Effects",
+			"Crew": "Crew",
+			"Costume & Make-Up": "Costume & Make-Up",
+			"Lighting": "Lighting"
 		}
 	},
 	"transfers": {

@@ -115,6 +115,8 @@ describe("provider-config kinozal", () => {
 			password: "",
 			proxyUrl: null,
 			enabled: false,
+			autoHost: true,
+			host: null,
 		});
 	});
 
@@ -134,6 +136,8 @@ describe("provider-config kinozal", () => {
 			password: "kpass",
 			proxyUrl: null,
 			enabled: true,
+			autoHost: true,
+			host: null,
 		});
 	});
 
@@ -160,11 +164,57 @@ describe("provider-config kinozal", () => {
 			password: "secret",
 			proxyUrl: "http://proxy:8080",
 			enabled: true,
+			autoHost: true,
+			host: null,
 		});
 		expect(result.effects).toEqual({
 			clearSession: true,
 			invalidateTracker: true,
 		});
+	});
+
+	test("save stores manual host and reports host change effects", async () => {
+		const providers = createProviderConfig(memoryStore());
+
+		const result = await providers.saveKinozal({
+			login: "kuser",
+			password: "secret",
+			proxyUrl: null,
+			autoHost: false,
+			host: "https://kinozal.guru",
+		});
+
+		expect(result.public).toMatchObject({
+			autoHost: false,
+			host: "https://kinozal.guru",
+		});
+		expect(result.effects).toEqual({
+			clearSession: true,
+			invalidateTracker: true,
+		});
+	});
+
+	test("saving with autoHost clears the manual host", async () => {
+		const store = memoryStore({
+			kinozal: {
+				login: "kuser",
+				password: "secret",
+				proxyUrl: null,
+				enabled: true,
+				autoHost: false,
+				host: "https://kinozal.guru",
+			},
+		});
+		const providers = createProviderConfig(store);
+
+		const result = await providers.saveKinozal({
+			login: "kuser",
+			password: "",
+			proxyUrl: null,
+			autoHost: true,
+		});
+
+		expect(result.public).toMatchObject({ autoHost: true, host: null });
 	});
 
 	test("legacy rutracker rows without enabled default to enabled true", async () => {

@@ -41,6 +41,8 @@ export type KinozalPublic = {
 	password: string;
 	proxyUrl: string | null;
 	enabled: boolean;
+	autoHost: boolean;
+	host: string | null;
 };
 
 export type QbittorrentPublic = {
@@ -77,6 +79,8 @@ const kinozalStoredSchema = z.object({
 	password: z.string(),
 	proxyUrl: z.string().nullable(),
 	enabled: z.boolean().optional(),
+	autoHost: z.boolean().optional(),
+	host: z.string().nullable().optional(),
 });
 
 const qbittorrentStoredSchema = z.object({
@@ -116,13 +120,22 @@ function toRutrackerPublic(
 
 function toKinozalPublic(config: KinozalProviderConfig | null): KinozalPublic {
 	if (!config) {
-		return { login: "", password: "", proxyUrl: null, enabled: false };
+		return {
+			login: "",
+			password: "",
+			proxyUrl: null,
+			enabled: false,
+			autoHost: true,
+			host: null,
+		};
 	}
 	return {
 		login: config.login,
 		password: config.password,
 		proxyUrl: config.proxyUrl,
 		enabled: config.enabled,
+		autoHost: config.autoHost,
+		host: config.host,
 	};
 }
 
@@ -187,6 +200,8 @@ function parseKinozal(raw: unknown): KinozalProviderConfig | null {
 		password: parsed.data.password,
 		proxyUrl: parsed.data.proxyUrl,
 		enabled: parsed.data.enabled ?? false,
+		autoHost: parsed.data.autoHost ?? true,
+		host: parsed.data.host ?? null,
 	};
 }
 
@@ -302,6 +317,8 @@ export function createProviderConfig(store: ProviderStore) {
 			password: string;
 			proxyUrl: string | null | undefined;
 			enabled?: boolean;
+			autoHost?: boolean;
+			host?: string | null;
 		}): Promise<{
 			config: KinozalProviderConfig;
 			public: KinozalPublic;
@@ -317,18 +334,34 @@ export function createProviderConfig(store: ProviderStore) {
 				throw new MissingSecretError("Password is required");
 			}
 
-			const config = kinozalConfigSchema.parse({
+			const parsed = kinozalConfigSchema.parse({
 				login: input.login,
 				password,
 				proxyUrl: input.proxyUrl,
 				enabled: input.enabled ?? existing?.enabled ?? false,
+				autoHost: input.autoHost ?? existing?.autoHost ?? true,
+				host:
+					input.autoHost === true
+						? null
+						: (input.host ?? existing?.host ?? null),
 			});
+			const config: KinozalProviderConfig = {
+				login: parsed.login,
+				password: parsed.password,
+				proxyUrl: parsed.proxyUrl,
+				enabled: parsed.enabled,
+				autoHost: parsed.autoHost,
+				host: parsed.host ?? null,
+			};
 
 			const credentialsChanged =
 				!existing ||
 				existing.login !== config.login ||
 				existing.password !== config.password ||
 				(existing.proxyUrl ?? null) !== (config.proxyUrl ?? null);
+			const hostChanged =
+				(existing?.autoHost ?? true) !== config.autoHost ||
+				(existing?.host ?? null) !== (config.host ?? null);
 
 			await store.save(KINOZAL_PROVIDER, config);
 
@@ -336,8 +369,8 @@ export function createProviderConfig(store: ProviderStore) {
 				config,
 				public: toKinozalPublic(config),
 				effects: {
-					clearSession: credentialsChanged,
-					invalidateTracker: credentialsChanged,
+					clearSession: credentialsChanged || hostChanged,
+					invalidateTracker: credentialsChanged || hostChanged,
 				},
 			};
 		},

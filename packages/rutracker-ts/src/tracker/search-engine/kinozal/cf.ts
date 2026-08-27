@@ -7,7 +7,8 @@ import {
 	normalizeSolverUrl,
 	toStoredCookie,
 } from "../rutracker/cf";
-import { KINOZAL_URL } from "./constants";
+import { KINOZAL_MIRRORS } from "./constants";
+import { resolveKinozalMirror } from "./hosts";
 
 const CHALLENGE_TIMEOUT_MS = 120_000;
 
@@ -35,15 +36,20 @@ const solverResponseSchema = z.object({
 
 export type KinozalCfClearanceOptions = {
 	fileStore: FileStore;
-	solverUrl?: string;
+	solverUrl?: string | undefined;
 	timeoutMs?: number;
 	challengeUrl?: string;
+	/** Mirror base URL; used to derive the default challenge URL. */
+	baseUrl?: string | undefined;
 };
 
 function isKinozalCookieDomain(domain: string | undefined): boolean {
 	if (!domain) return false;
 	const d = domain.replace(/^\./, "").toLowerCase();
-	return d === "kinozal.me" || d.endsWith(".kinozal.me");
+	return KINOZAL_MIRRORS.some((mirror) => {
+		const base = new URL(mirror.url).hostname;
+		return d === base || d.endsWith(`.${base}`);
+	});
 }
 
 export function extractKinozalCfClearance(
@@ -67,7 +73,8 @@ export async function acquireKinozalCfClearance(
 		options.solverUrl ?? DEFAULT_CF_SOLVER_URL,
 	);
 	const timeoutMs = options.timeoutMs ?? CHALLENGE_TIMEOUT_MS;
-	const challengeUrl = options.challengeUrl ?? `${KINOZAL_URL}/`;
+	const challengeUrl =
+		options.challengeUrl ?? `${resolveKinozalMirror(options.baseUrl).url}/`;
 	const maxTimeoutSec = Math.max(1, Math.ceil(timeoutMs / 1000));
 
 	try {

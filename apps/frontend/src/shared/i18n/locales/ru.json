@@ -150,6 +150,12 @@
 			"login": "Login",
 			"password": "Password",
 			"enabledDescription": "Учитывать Kinozal в поиске и списках торрентов",
+			"autoHost": "Автовыбор зеркала",
+			"autoHostDescription": "Проверять все зеркала Kinozal и использовать самое быстрое",
+			"host": "Зеркало",
+			"hostPlaceholder": "Выберите зеркало",
+			"hostDescription": "Адрес Kinozal для поиска и скачивания",
+			"hostDisabled": "Выключите автовыбор, чтобы выбрать зеркало вручную",
 			"loadFailed": "Не удалось загрузить настройки Kinozal",
 			"testSuccess": "Подключение к Kinozal успешно"
 		},
@@ -299,6 +305,7 @@
 			"ratingWithVotes": "{{source}} · {{count}} {{votesWord}}",
 			"castHeading": "Актёры",
 			"castCarouselAria": "Актёры",
+			"openPersonAria": "Открыть фильмографию: {{name}}",
 			"similarHeading": "Похожие",
 			"similarCarouselAria": "Похожие тайтлы",
 			"crewJobs": {
@@ -352,6 +359,31 @@
 			"updatedApplied": "Раздача обновлена и подменена в qBittorrent",
 			"updated": "Раздача обновилась",
 			"checkFailed": "Не удалось проверить обновление"
+		}
+	},
+	"person": {
+		"loadFailed": "Не удалось загрузить",
+		"biographyHeading": "Биография",
+		"born": "Родился: {{date}}",
+		"bornDied": "{{born}} — {{died}}",
+		"placeOfBirth": "Место рождения: {{place}}",
+		"filmographyHeading": "Фильмография",
+		"filmographyCarouselAria": "Фильмография",
+		"filmographyEmptyTitle": "Нет известных работ",
+		"filmographyEmptyDescription": "У этого человека пока нет тайтлов, связанных с TMDB.",
+		"departments": {
+			"Acting": "Актёр",
+			"Directing": "Режиссёр",
+			"Writing": "Сценарист",
+			"Production": "Продюсер",
+			"Camera": "Оператор",
+			"Sound": "Звук",
+			"Art": "Художник",
+			"Editing": "Монтажёр",
+			"Visual Effects": "Визуальные эффекты",
+			"Crew": "Съёмочная группа",
+			"Costume & Make-Up": "Костюмы и грим",
+			"Lighting": "Освещение"
 		}
 	},
 	"transfers": {

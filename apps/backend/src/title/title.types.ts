@@ -18,6 +18,8 @@ export type TitleRef =
 export type TitleMetaStatus = "ok" | "degraded" | "empty";
 
 export type TitleCastMember = {
+	/** TMDB person id — used to link to the person page. */
+	id: number;
 	name: string;
 	character: string | null;
 	profileUrl: string | null;
