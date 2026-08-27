@@ -12,6 +12,10 @@ export type KinozalProviderConfig = {
 	password: string;
 	proxyUrl: string | null;
 	enabled: boolean;
+	/** When true, probe all mirrors and use the fastest one. */
+	autoHost: boolean;
+	/** Fixed mirror base URL; only used when autoHost is false. */
+	host: string | null;
 };
 
 export type QbittorrentProviderConfig = {

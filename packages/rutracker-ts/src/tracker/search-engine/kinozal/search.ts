@@ -12,7 +12,7 @@ import {
 	cloudflareBypassFailedError,
 	isCloudflareChallenge,
 } from "./http";
-import { KINOZAL_URL } from "./constants";
+import { resolveKinozalMirror } from "./hosts";
 import { kinozalGetCookies } from "./login";
 import { parseResponse } from "./parse";
 import { createSearchOptions } from "./search-options";
@@ -26,7 +26,8 @@ async function doSearchRequest(
 	userAgent: string,
 ) {
 	const searchOptions = createSearchOptions(query, queryOptions);
-	return axios.get(`${KINOZAL_URL}/browse.php`, {
+	const mirror = resolveKinozalMirror(options.baseUrl);
+	return axios.get(`${mirror.url}/browse.php`, {
 		params: searchOptions,
 		paramsSerializer: toWindows1251Query,
 		responseType: "arraybuffer",
@@ -50,6 +51,7 @@ export async function makeSearchRequest(
 		options.fileStore,
 		options.proxyAgent,
 		options.cfSolverUrl,
+		options.baseUrl,
 	);
 	if (!cookies.isOk()) {
 		return err(cookies.error);
@@ -68,6 +70,7 @@ export async function makeSearchRequest(
 			const refreshed = await acquireKinozalCfClearance({
 				fileStore: options.fileStore,
 				solverUrl: options.cfSolverUrl,
+				baseUrl: options.baseUrl,
 			});
 			if (refreshed.isErr()) {
 				return err(cloudflareBypassFailedError("search"));
@@ -79,6 +82,7 @@ export async function makeSearchRequest(
 				options.fileStore,
 				options.proxyAgent,
 				options.cfSolverUrl,
+				options.baseUrl,
 			);
 			if (again.isErr()) {
 				return err(again.error);
@@ -120,9 +124,6 @@ export async function kinozalSearch(
 		return err(response.error);
 	}
 
-	const results = parseResponse(response.value);
-	if (results.isErr()) {
-		return err(new Error(`Failed to parse response: ${results.error.message}`));
-	}
+	const results = parseResponse(response.value, new Date(), options.baseUrl);
 	return ok(results.value);
 }

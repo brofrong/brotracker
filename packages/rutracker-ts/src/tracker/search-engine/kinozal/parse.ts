@@ -2,18 +2,22 @@ import { ok } from "neverthrow";
 import parse, { type HTMLElement } from "node-html-parser";
 import type { SearchPage, SearchResult } from "../../tracker-interface";
 import { formatTorrentId } from "../../torrent-id";
-import { KINOZAL_DL_URL, KINOZAL_URL } from "./constants";
+import { resolveKinozalMirror } from "./hosts";
 import { checkHDR, checkResolution, formatDate, formatSize } from "./format";
 
-const SITE_BASE = `${KINOZAL_URL}/`;
-
-export function parseResponse(html: string, now = new Date()) {
+export function parseResponse(
+	html: string,
+	now = new Date(),
+	baseUrl?: string,
+) {
+	const mirror = resolveKinozalMirror(baseUrl);
+	const siteBase = `${mirror.url}/`;
 	const root = parse(html);
 	const rows = root.querySelectorAll("table.t_peer tr");
 	const results: SearchResult[] = [];
 
 	for (const row of rows) {
-		const result = parseRow(row, now);
+		const result = parseRow(row, now, mirror);
 		if (result) {
 			results.push(result);
 		}
@@ -34,17 +38,17 @@ function parseTotalResults(html: string): number | null {
 	return Number.isFinite(value) ? value : null;
 }
 
-function absoluteUrl(href: string): string {
+function absoluteUrl(href: string, siteBase: string): string {
 	try {
-		return new URL(href, SITE_BASE).href;
+		return new URL(href, siteBase).href;
 	} catch {
-		return `${SITE_BASE}${href.replace(/^\//, "")}`;
+		return `${siteBase}${href.replace(/^\//, "")}`;
 	}
 }
 
-function hrefParam(href: string, key: string): string {
+function hrefParam(href: string, key: string, siteBase: string): string {
 	try {
-		return new URL(href, SITE_BASE).searchParams.get(key) ?? "";
+		return new URL(href, siteBase).searchParams.get(key) ?? "";
 	} catch {
 		return href.match(new RegExp(`[?&]${key}=(\\d+)`))?.[1] ?? "";
 	}
@@ -67,15 +71,20 @@ function parseForumId(row: HTMLElement): string {
 	return src.match(/\/pic\/cat\/(\d+)\.gif/i)?.[1] ?? "";
 }
 
-function parseRow(row: HTMLElement, now: Date): SearchResult | null {
+function parseRow(
+	row: HTMLElement,
+	now: Date,
+	mirror: ReturnType<typeof resolveKinozalMirror>,
+): SearchResult | null {
 	if (row.classList.contains("mn")) {
 		return null;
 	}
 
+	const siteBase = `${mirror.url}/`;
 	const titleLink = row.querySelector('a[href*="details.php?id="]');
 	const title = titleLink?.textContent?.trim() ?? "";
 	const topicHref = titleLink?.getAttribute("href")?.trim() ?? "";
-	const rawTorrentId = hrefParam(topicHref, "id");
+	const rawTorrentId = hrefParam(topicHref, "id", siteBase);
 
 	if (!rawTorrentId || !title) {
 		return null;
@@ -84,7 +93,11 @@ function parseRow(row: HTMLElement, now: Date): SearchResult | null {
 	const torrentId = formatTorrentId("kinozal", rawTorrentId);
 	const forumId = parseForumId(row);
 	const authorLink = row.querySelector('a[href*="userdetails.php?id="]');
-	const authorId = hrefParam(authorLink?.getAttribute("href") ?? "", "id");
+	const authorId = hrefParam(
+		authorLink?.getAttribute("href") ?? "",
+		"id",
+		siteBase,
+	);
 
 	const seedsCell = row.querySelector("td.sl_s");
 	const leechesCell = row.querySelector("td.sl_p");
@@ -102,8 +115,11 @@ function parseRow(row: HTMLElement, now: Date): SearchResult | null {
 		leeches: textNumber(leechesCell),
 		downloads: 0,
 		date: formatDate(dateCell?.textContent?.trim() ?? "", now),
-		torrentFileUrl: `${KINOZAL_DL_URL}/download.php?id=${rawTorrentId}`,
-		topicUrl: absoluteUrl(topicHref || `/details.php?id=${rawTorrentId}`),
+		torrentFileUrl: `${mirror.dlUrl}/download.php?id=${rawTorrentId}`,
+		topicUrl: absoluteUrl(
+			topicHref || `/details.php?id=${rawTorrentId}`,
+			siteBase,
+		),
 		hdr: checkHDR(title),
 		resolution: checkResolution(title),
 	};

@@ -69,6 +69,7 @@ export async function kinozalGetTorrent(
 			const refreshed = await acquireKinozalCfClearance({
 				fileStore: options.fileStore,
 				solverUrl: options.cfSolverUrl,
+				baseUrl: options.baseUrl,
 			});
 			if (refreshed.isErr()) {
 				return err(cloudflareBypassFailedError("getTorrent"));
@@ -80,6 +81,7 @@ export async function kinozalGetTorrent(
 				options.fileStore,
 				options.proxyAgent,
 				options.cfSolverUrl,
+				options.baseUrl,
 			);
 			if (again.isErr()) {
 				return err(again.error);

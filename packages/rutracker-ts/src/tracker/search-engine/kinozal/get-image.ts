@@ -5,7 +5,7 @@ import parse from "node-html-parser";
 import type { KinozalOptions } from "../../tracker-interface";
 import { parseTorrentId } from "../../torrent-id";
 import { acquireKinozalCfClearance } from "./cf";
-import { KINOZAL_URL } from "./constants";
+import { isKinozalSiteHostname, resolveKinozalMirror } from "./hosts";
 import {
 	axiosAgentConfig,
 	cloudflareBypassFailedError,
@@ -19,7 +19,8 @@ async function doGetImageRequest(
 	cookies: string,
 	userAgent: string,
 ) {
-	return axios.get(`${KINOZAL_URL}/details.php`, {
+	const mirror = resolveKinozalMirror(options.baseUrl);
+	return axios.get(`${mirror.url}/details.php`, {
 		params: { id: rawTorrentId },
 		responseType: "arraybuffer",
 		headers: {
@@ -31,27 +32,42 @@ async function doGetImageRequest(
 	});
 }
 
-export function parseImageUrl(html: string): Result<string, Error> {
+export function parseImageUrl(
+	html: string,
+	siteUrl: string = resolveKinozalMirror().url,
+): Result<string, Error> {
 	const root = parse(html);
 	const poster = root.querySelector('img[src*="/i/poster/"]');
 	if (poster) {
 		const src = poster.getAttribute("src")?.trim() ?? "";
 		if (src) {
 			try {
-				return ok(new URL(src, `${KINOZAL_URL}/`).href);
+				return ok(new URL(src, `${siteUrl}/`).href);
 			} catch {
-				return ok(`${KINOZAL_URL}${src.startsWith("/") ? "" : "/"}${src}`);
+				return ok(`${siteUrl}${src.startsWith("/") ? "" : "/"}${src}`);
 			}
 		}
 	}
 
 	const external = root.querySelector("img[src^='http']");
 	const externalSrc = external?.getAttribute("src")?.trim();
-	if (externalSrc && !externalSrc.includes("kinozal.me/pic/")) {
+	if (externalSrc && !isKinozalPicUrl(externalSrc)) {
 		return ok(externalSrc);
 	}
 
 	return err(new Error("No image found"));
+}
+
+function isKinozalPicUrl(url: string): boolean {
+	try {
+		const parsed = new URL(url);
+		return (
+			isKinozalSiteHostname(parsed.hostname) &&
+			parsed.pathname.startsWith("/pic/")
+		);
+	} catch {
+		return false;
+	}
 }
 
 export async function kinozalGetImage(
@@ -69,12 +85,15 @@ export async function kinozalGetImage(
 		return err(error instanceof Error ? error : new Error(String(error)));
 	}
 
+	const siteUrl = resolveKinozalMirror(options.baseUrl).url;
+
 	const cookies = await kinozalGetCookies(
 		options.auth.login,
 		options.auth.password,
 		options.fileStore,
 		options.proxyAgent,
 		options.cfSolverUrl,
+		options.baseUrl,
 	);
 	if (!cookies.isOk()) {
 		return err(cookies.error);
@@ -91,6 +110,7 @@ export async function kinozalGetImage(
 			const refreshed = await acquireKinozalCfClearance({
 				fileStore: options.fileStore,
 				solverUrl: options.cfSolverUrl,
+				baseUrl: options.baseUrl,
 			});
 			if (refreshed.isErr()) {
 				return err(cloudflareBypassFailedError("getImage"));
@@ -102,6 +122,7 @@ export async function kinozalGetImage(
 				options.fileStore,
 				options.proxyAgent,
 				options.cfSolverUrl,
+				options.baseUrl,
 			);
 			if (again.isErr()) {
 				return err(again.error);
@@ -123,13 +144,13 @@ export async function kinozalGetImage(
 			return err(new Error(`getImage failed with HTTP ${response.status}`));
 		}
 
-		return parseImageFromResponse(response);
+		return parseImageFromResponse(response, siteUrl);
 	} catch (error) {
 		return err(new Error(`Failed to make getImage request: ${error}`));
 	}
 }
 
-function parseImageFromResponse(response: AxiosResponse) {
+function parseImageFromResponse(response: AxiosResponse, siteUrl: string) {
 	const html = iconv.decode(response.data, "windows-1251");
-	return parseImageUrl(html);
+	return parseImageUrl(html, siteUrl);
 }

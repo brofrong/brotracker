@@ -35,7 +35,14 @@ const sampleMeta = (overrides: Partial<TmdbMeta> = {}): TmdbMeta => ({
 	year: 2010,
 	overview: "A thief who steals secrets.",
 	genres: ["Action", "Sci-Fi"],
-	cast: [{ name: "Leonardo DiCaprio", character: "Cobb", profileUrl: null }],
+	cast: [
+		{
+			id: 6193,
+			name: "Leonardo DiCaprio",
+			character: "Cobb",
+			profileUrl: null,
+		},
+	],
 	crew: [{ name: "Christopher Nolan", job: "Director" }],
 	similar: [],
 	runtimeMinutes: 148,

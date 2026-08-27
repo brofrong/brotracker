@@ -14,6 +14,7 @@ import {
 	MetadataListItem,
 } from "@astryxdesign/core/MetadataList";
 import { Section } from "@astryxdesign/core/Section";
+import { Selector } from "@astryxdesign/core/Selector";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { Switch } from "@astryxdesign/core/Switch";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
@@ -23,6 +24,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { KINOZAL_MIRRORS } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/constants";
 import { authClient, signOutAndRedirect } from "#/shared/lib/auth-client";
 import { env } from "#/shared/lib/env";
 import { trpc } from "#/shared/lib/trpc";
@@ -200,7 +202,7 @@ function SecretInput({
 	const toggleLabel = isVisible ? hideLabel : revealLabel;
 
 	return (
-		<InputGroup label={label} isRequired={isRequired} width="100%">
+		<InputGroup label={label} isRequired={isRequired}>
 			<TextInput
 				label={label}
 				isLabelHidden
@@ -235,42 +237,72 @@ function TrackerProviderSettingsForm({
 	const { t } = useTranslation(["settings", "common"]);
 	const queryClient = useQueryClient();
 	const settingsQuery = useQuery(
-		provider === "rutracker"
+		(provider === "rutracker"
 			? trpc.settings.providers.rutracker.get.queryOptions()
-			: trpc.settings.providers.kinozal.get.queryOptions(),
+			: trpc.settings.providers.kinozal.get.queryOptions()) as never,
 	);
 
 	const [login, setLogin] = useState("");
 	const [password, setPassword] = useState("");
 	const [proxyUrl, setProxyUrl] = useState("");
 	const [enabled, setEnabled] = useState(true);
+	const [autoHost, setAutoHost] = useState(true);
+	const [host, setHost] = useState("");
 	const [message, setMessage] = useState<StatusMessage>(null);
 
 	useEffect(() => {
 		if (!settingsQuery.data) {
 			return;
 		}
-		setLogin(settingsQuery.data.login);
-		setPassword(settingsQuery.data.password);
-		setProxyUrl(settingsQuery.data.proxyUrl ?? "");
-		setEnabled(settingsQuery.data.enabled);
+		const data = settingsQuery.data as {
+			login: string;
+			password: string;
+			proxyUrl: string | null;
+			enabled: boolean;
+			autoHost?: boolean;
+			host?: string | null;
+		};
+		setLogin(data.login);
+		setPassword(data.password);
+		setProxyUrl(data.proxyUrl ?? "");
+		setEnabled(data.enabled);
+		if (typeof data.autoHost === "boolean") {
+			setAutoHost(data.autoHost);
+		}
+		if ("host" in data) {
+			setHost(data.host ?? "");
+		}
 	}, [settingsQuery.data]);
 
 	const saveMutation = useMutation({
 		...(provider === "rutracker"
 			? trpc.settings.providers.rutracker.set.mutationOptions()
-			: trpc.settings.providers.kinozal.set.mutationOptions()),
+			: trpc.settings.providers.kinozal.set.mutationOptions() as never),
 		onSuccess: async (data) => {
+			const typed = data as {
+				login: string;
+				password: string;
+				proxyUrl: string | null;
+				enabled: boolean;
+				autoHost?: boolean;
+				host?: string | null;
+			};
 			await queryClient.invalidateQueries({
 				queryKey:
 					provider === "rutracker"
 						? trpc.settings.providers.rutracker.get.queryKey()
 						: trpc.settings.providers.kinozal.get.queryKey(),
 			});
-			setLogin(data.login);
-			setPassword(data.password);
-			setProxyUrl(data.proxyUrl ?? "");
-			setEnabled(data.enabled);
+			setLogin(typed.login);
+			setPassword(typed.password);
+			setProxyUrl(typed.proxyUrl ?? "");
+			setEnabled(typed.enabled);
+			if (typeof typed.autoHost === "boolean") {
+				setAutoHost(typed.autoHost);
+			}
+			if ("host" in typed) {
+				setHost(typed.host ?? "");
+			}
 			setMessage({ status: "success", text: t("saved", { ns: "common" }) });
 		},
 		onError: (error) => {
@@ -284,7 +316,7 @@ function TrackerProviderSettingsForm({
 	const testMutation = useMutation({
 		...(provider === "rutracker"
 			? trpc.settings.providers.rutracker.test.mutationOptions()
-			: trpc.settings.providers.kinozal.test.mutationOptions()),
+			: (trpc.settings.providers.kinozal.test.mutationOptions() as never)),
 		onSuccess: () => {
 			setMessage({
 				status: "success",
@@ -302,11 +334,12 @@ function TrackerProviderSettingsForm({
 	const onSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setMessage(null);
-		saveMutation.mutate({
+		(saveMutation.mutate as (vars: Record<string, unknown>) => void)({
 			login: login.trim(),
 			password,
 			proxyUrl: proxyUrl.trim() === "" ? null : proxyUrl.trim(),
 			enabled,
+			...(provider === "kinozal" ? { autoHost, host: host || null } : {}),
 		});
 	};
 
@@ -324,7 +357,9 @@ function TrackerProviderSettingsForm({
 		);
 	}
 
-	const canTest = Boolean(settingsQuery.data?.password);
+	const canTest = Boolean(
+		(settingsQuery.data as { password?: string } | undefined)?.password,
+	);
 	const isBusy = saveMutation.isPending || testMutation.isPending;
 	const canSave = Boolean(login.trim()) && Boolean(password.trim());
 
@@ -370,6 +405,32 @@ function TrackerProviderSettingsForm({
 							description={t("proxyDescription", { ns: "common" })}
 							width="100%"
 						/>
+						{provider === "kinozal" ? (
+							<>
+								<Switch
+									label={t("kinozal.autoHost")}
+									description={t("kinozal.autoHostDescription")}
+									value={autoHost}
+									onChange={setAutoHost}
+									width="100%"
+									labelSpacing="spread"
+								/>
+								<Selector
+									label={t("kinozal.host")}
+									options={KINOZAL_MIRRORS.map((mirror) => ({
+										value: mirror.url,
+										label: mirror.label,
+									}))}
+									value={host}
+									onChange={setHost}
+									isDisabled={autoHost}
+									disabledMessage={t("kinozal.hostDisabled")}
+									placeholder={t("kinozal.hostPlaceholder")}
+									description={t("kinozal.hostDescription")}
+									width="100%"
+								/>
+							</>
+						) : null}
 					</FormLayout>
 
 					{message ? (

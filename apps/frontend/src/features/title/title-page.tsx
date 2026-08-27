@@ -28,6 +28,7 @@ import { useToast } from "@astryxdesign/core/Toast";
 import { MediaTheme } from "@astryxdesign/core/theme";
 import { detectMediaType } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/media-type";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { ImageOff, Star } from "lucide-react";
 import { type SVGProps, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -791,6 +792,63 @@ function TitleHero({
 	);
 }
 
+type CastMember = {
+	id: number;
+	name: string;
+	character: string | null;
+	profileUrl: string | null;
+};
+
+function CastMemberCard({ member }: { member: CastMember }) {
+	const navigate = useNavigate();
+	const { t } = useTranslation("title");
+
+	const content = (
+		<VStack gap={2} hAlign="center" width={128}>
+			<Avatar
+				name={member.name}
+				size={96}
+				src={member.profileUrl ?? undefined}
+				tooltip={false}
+			/>
+			<VStack gap={0.5} hAlign="center" width="100%">
+				<Text display="block" justify="center" maxLines={2} weight="medium">
+					{member.name}
+				</Text>
+				{member.character ? (
+					<Text display="block" justify="center" maxLines={2} type="supporting">
+						{member.character}
+					</Text>
+				) : null}
+			</VStack>
+		</VStack>
+	);
+
+	if (!member.id) {
+		return content;
+	}
+
+	return (
+		<VStack
+			aria-label={t("detail.openPersonAria", { name: member.name })}
+			as="button"
+			className="cursor-pointer rounded-lg transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-accent"
+			gap={2}
+			hAlign="center"
+			onClick={() =>
+				void navigate({
+					to: "/person/$id",
+					params: { id: String(member.id) },
+				})
+			}
+			type="button"
+			width={128}
+		>
+			{content}
+		</VStack>
+	);
+}
+
 export function TitlePage({ id }: { id: string }) {
 	const { t } = useTranslation("title");
 	const [isPosterOpen, setIsPosterOpen] = useState(false);
@@ -894,39 +952,10 @@ export function TitlePage({ id }: { id: string }) {
 						<Heading level={2}>{t("detail.castHeading")}</Heading>
 						<Carousel aria-label={t("detail.castCarouselAria")} gap={3} hasSnap>
 							{meta.cast.map((member) => (
-								<VStack
-									gap={2}
-									hAlign="center"
+								<CastMemberCard
 									key={`${member.name}-${member.character ?? ""}`}
-									width={128}
-								>
-									<Avatar
-										name={member.name}
-										size={96}
-										src={member.profileUrl ?? undefined}
-										tooltip={false}
-									/>
-									<VStack gap={0.5} hAlign="center" width="100%">
-										<Text
-											display="block"
-											justify="center"
-											maxLines={2}
-											weight="medium"
-										>
-											{member.name}
-										</Text>
-										{member.character ? (
-											<Text
-												display="block"
-												justify="center"
-												maxLines={2}
-												type="supporting"
-											>
-												{member.character}
-											</Text>
-										) : null}
-									</VStack>
-								</VStack>
+									member={member}
+								/>
 							))}
 						</Carousel>
 					</VStack>

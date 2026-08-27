@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { KINOZAL_MIRRORS } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/constants";
 import { proxyUrlSchema } from "./rutracker-config";
 
 export const trackerProviderConfigSchema = z.object({
@@ -8,7 +9,15 @@ export const trackerProviderConfigSchema = z.object({
 	enabled: z.boolean().optional().default(true),
 });
 
-export const kinozalConfigSchema = trackerProviderConfigSchema;
+const kinozalMirrorUrls = KINOZAL_MIRRORS.map((mirror) => mirror.url) as [
+	string,
+	...string[],
+];
+
+export const kinozalConfigSchema = trackerProviderConfigSchema.extend({
+	autoHost: z.boolean().optional().default(true),
+	host: z.enum(kinozalMirrorUrls).nullable().optional(),
+});
 
 export {
 	loadKinozalConfig,

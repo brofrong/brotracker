@@ -14,7 +14,10 @@ import {
 	loadRutrackerConfig,
 } from "../settings/provider-config.live";
 import { env } from "../utils/env";
+import type { KinozalProviderConfig } from "../db/settings/provider-settings.schema";
+import type { RutrackerProviderConfig } from "../db/settings/provider-settings.schema";
 import { createProxyAgent } from "../http/proxy-agent";
+import { probeFastestKinozalMirror } from "./kinozal-mirror";
 import { createKinozalDbStore } from "./kinozal-db-store";
 import { createRutrackerDbStore } from "./rutracker-db-store";
 
@@ -47,10 +50,14 @@ function sourceToTracker(source: TrackerSource): Tracker {
 	return source === "rutracker" ? "Rutracker" : "Kinozal";
 }
 
-async function loadConfig(source: TrackerSource) {
+type LoadedConfig =
+	| { kind: "rutracker"; config: RutrackerProviderConfig | null }
+	| { kind: "kinozal"; config: KinozalProviderConfig | null };
+
+async function loadConfig(source: TrackerSource): Promise<LoadedConfig> {
 	return source === "rutracker"
-		? loadRutrackerConfig()
-		: loadKinozalConfig();
+		? { kind: "rutracker", config: await loadRutrackerConfig() }
+		: { kind: "kinozal", config: await loadKinozalConfig() };
 }
 
 function createDbStore(source: TrackerSource) {
@@ -62,10 +69,18 @@ function createDbStore(source: TrackerSource) {
 async function createTrackerForSource(
 	source: TrackerSource,
 ): Promise<TrackerInterface> {
-	const config = await loadConfig(source);
-	if (!config) {
+	const loaded = await loadConfig(source);
+	if (!loaded.config) {
 		throw new TrackerNotConfiguredError(source);
 	}
+
+	let baseUrl: string | undefined;
+	if (loaded.kind === "kinozal") {
+		baseUrl = loaded.config.autoHost
+			? await probeFastestKinozalMirror(loaded.config.proxyUrl)
+			: (loaded.config.host ?? undefined);
+	}
+	const { config } = loaded;
 
 	return createTracker(sourceToTracker(source), {
 		auth: {
@@ -75,6 +90,7 @@ async function createTrackerForSource(
 		fileStore: createDbStore(source),
 		proxyAgent: createProxyAgent(config.proxyUrl),
 		cfSolverUrl: env.BYPARR_URL,
+		baseUrl,
 	});
 }
 

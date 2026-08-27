@@ -16,6 +16,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as TorrentsRouteImport } from './routes/torrents'
 import { Route as WorkersRouteImport } from './routes/workers'
+import { Route as PersonIdRouteImport } from './routes/person.$id'
 import { Route as TitleIndexRouteImport } from './routes/title.index'
 import { Route as TitleIdRouteImport } from './routes/title.$id'
 import { Route as WorkersIdRouteImport } from './routes/workers.$id'
@@ -55,6 +56,11 @@ const WorkersRoute = WorkersRouteImport.update({
   path: '/workers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PersonIdRoute = PersonIdRouteImport.update({
+  id: '/person/$id',
+  path: '/person/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TitleIndexRoute = TitleIndexRouteImport.update({
   id: '/title/',
   path: '/title/',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/stats': typeof StatsRoute
   '/torrents': typeof TorrentsRoute
   '/workers': typeof WorkersRouteWithChildren
+  '/person/$id': typeof PersonIdRoute
   '/title/$id': typeof TitleIdRoute
   '/workers/$id': typeof WorkersIdRoute
   '/title/': typeof TitleIndexRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/stats': typeof StatsRoute
   '/torrents': typeof TorrentsRoute
   '/workers': typeof WorkersRouteWithChildren
+  '/person/$id': typeof PersonIdRoute
   '/title/$id': typeof TitleIdRoute
   '/workers/$id': typeof WorkersIdRoute
   '/title': typeof TitleIndexRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/stats': typeof StatsRoute
   '/torrents': typeof TorrentsRoute
   '/workers': typeof WorkersRouteWithChildren
+  '/person/$id': typeof PersonIdRoute
   '/title/$id': typeof TitleIdRoute
   '/workers/$id': typeof WorkersIdRoute
   '/title/': typeof TitleIndexRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/stats'
     | '/torrents'
     | '/workers'
+    | '/person/$id'
     | '/title/$id'
     | '/workers/$id'
     | '/title/'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/stats'
     | '/torrents'
     | '/workers'
+    | '/person/$id'
     | '/title/$id'
     | '/workers/$id'
     | '/title'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/stats'
     | '/torrents'
     | '/workers'
+    | '/person/$id'
     | '/title/$id'
     | '/workers/$id'
     | '/title/'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   StatsRoute: typeof StatsRoute
   TorrentsRoute: typeof TorrentsRoute
   WorkersRoute: typeof WorkersRouteWithChildren
+  PersonIdRoute: typeof PersonIdRoute
   TitleIdRoute: typeof TitleIdRoute
   TitleIndexRoute: typeof TitleIndexRoute
 }
@@ -210,6 +223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/person/$id': {
+      id: '/person/$id'
+      path: '/person/$id'
+      fullPath: '/person/$id'
+      preLoaderRoute: typeof PersonIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/title/': {
       id: '/title/'
       path: '/title'
@@ -253,6 +273,7 @@ const rootRouteChildren: RootRouteChildren = {
   StatsRoute: StatsRoute,
   TorrentsRoute: TorrentsRoute,
   WorkersRoute: WorkersRouteWithChildren,
+  PersonIdRoute: PersonIdRoute,
   TitleIdRoute: TitleIdRoute,
   TitleIndexRoute: TitleIndexRoute,
 }

@@ -1,4 +1,5 @@
 import { homeRouter } from "./home/home.router";
+import { personRouter } from "./person/person.router";
 import { qbittorentRouter } from "./qbittorent/qbittorent.router";
 import { settingsRouter } from "./settings/settings.router";
 import { titleRouter } from "./title/title.router";
@@ -13,6 +14,7 @@ export const appRouter = router({
 	qbittorent: qbittorentRouter,
 	settings: settingsRouter,
 	title: titleRouter,
+	person: personRouter,
 	workers: workersRouter,
 });
 

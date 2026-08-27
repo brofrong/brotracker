@@ -10,6 +10,7 @@ import { logger } from "../utils/logger";
 import { protectedProcedure, router } from "../trpc";
 import { MissingSecretError, proxyUrlSchema } from "./provider-config";
 import { providerConfig } from "./provider-config.live";
+import { kinozalConfigSchema } from "./kinozal-config";
 import {
 	resolveTmdbCredentials,
 	saveKinozalSettings,
@@ -25,6 +26,11 @@ const trackerSetInputSchema = z.object({
 	password: z.string(),
 	proxyUrl: proxyUrlSchema,
 	enabled: z.boolean().optional(),
+});
+
+const kinozalSetInputSchema = trackerSetInputSchema.extend({
+	autoHost: z.boolean().optional(),
+	host: kinozalConfigSchema.shape.host,
 });
 
 const qbittorrentSetInputSchema = z.object({
@@ -143,7 +149,7 @@ export const settingsRouter = router({
 			get: protectedProcedure.query(async () => providerConfig.getKinozal()),
 
 			set: protectedProcedure
-				.input(trackerSetInputSchema)
+				.input(kinozalSetInputSchema)
 				.mutation(async ({ input }) => {
 					try {
 						return await saveKinozalSettings(input);

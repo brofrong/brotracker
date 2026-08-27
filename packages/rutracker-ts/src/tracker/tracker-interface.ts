@@ -71,6 +71,11 @@ export type TrackerAuthOptions = {
 	 * Default: http://localhost:8191/v1
 	 */
 	cfSolverUrl?: string;
+	/**
+	 * Mirror base URL override (Kinozal only). Must be one of KINOZAL_MIRRORS.
+	 * Default: https://kinozal.me
+	 */
+	baseUrl?: string;
 };
 
 /** @deprecated Use TrackerAuthOptions */
