@@ -8,6 +8,7 @@ import { user } from "../db/auth/auth.schema";
 import { db } from "../db/db";
 import { env } from "../utils/env";
 import { OIDC_ACCOUNT_ISSUER, OIDC_PROVIDER_ID } from "./account-issuer";
+import { OIDC_ACCOUNT_OPTIONS } from "./account-linking";
 import {
 	type AuthMode,
 	assertLocalSignUpAllowed,
@@ -30,6 +31,7 @@ export function createAuth(secret: string) {
 		baseURL: env.BETTER_AUTH_URL,
 		secret,
 		trustedOrigins: [env.CORS_ORIGIN],
+		account: OIDC_ACCOUNT_OPTIONS,
 		session: {
 			expiresIn: 60 * 60 * 24 * 365, // 1 year
 			updateAge: 60 * 60 * 24 * 7, // refresh expiry every 7 days of use
