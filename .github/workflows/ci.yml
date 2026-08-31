@@ -15,8 +15,9 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     env:
-      AUTHENTIK_CLIENT_ID: "ci-client-id"
-      AUTHENTIK_CLIENT_SECRET: "ci-client-secret"
+      OIDC_CLIENT_ID: "ci-client-id"
+      OIDC_CLIENT_SECRET: "ci-client-secret"
+      OIDC_DISCOVERY_URL: "http://localhost:9080/application/o/brotracker/.well-known/openid-configuration"
       BETTER_AUTH_URL: "http://localhost:3101"
     steps:
       - name: Checkout

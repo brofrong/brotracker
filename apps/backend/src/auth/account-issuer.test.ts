@@ -10,6 +10,7 @@ describe("account issuer (Better Auth 1.7)", () => {
 
 	test("backfills credential vs generic OAuth namespaces", () => {
 		expect(issuerForExistingAccount("credential")).toBe("local:credential");
+		expect(issuerForExistingAccount("oidc")).toBe("local:oauth:oidc");
 		expect(issuerForExistingAccount("authentik")).toBe("local:oauth:authentik");
 		expect(issuerForExistingAccount("team/github")).toBe(
 			"local:oauth:team%2Fgithub",
@@ -24,5 +25,14 @@ describe("account issuer (Better Auth 1.7)", () => {
 		expect(sql).toContain("local:oauth:");
 		expect(sql.indexOf("UPDATE")).toBeGreaterThan(-1);
 		expect(sql.indexOf("UPDATE")).toBeLessThan(sql.indexOf("SET NOT NULL"));
+	});
+
+	test("drizzle migration renames authentik accounts to oidc", async () => {
+		const sql = await Bun.file(
+			`${import.meta.dir}/../../drizzle/20260831144703_rename_authentik_accounts_to_oidc/migration.sql`,
+		).text();
+		expect(sql).toContain("\"provider_id\" = 'oidc'");
+		expect(sql).toContain("\"issuer\" = 'local:oauth:oidc'");
+		expect(sql).toContain("WHERE \"provider_id\" = 'authentik'");
 	});
 });

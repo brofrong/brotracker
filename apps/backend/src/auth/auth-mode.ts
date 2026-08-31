@@ -1,10 +1,10 @@
-export type AuthMode = "local" | "authentik";
+export type AuthMode = "local" | "oidc";
 
 export function resolveAuthMode(input: {
-	AUTHENTIK_CLIENT_ID?: string | undefined;
+	OIDC_CLIENT_ID?: string | undefined;
 }): AuthMode {
-	const id = input.AUTHENTIK_CLIENT_ID?.trim();
-	return id ? "authentik" : "local";
+	const id = input.OIDC_CLIENT_ID?.trim();
+	return id ? "oidc" : "local";
 }
 
 export function buildAuthModeResponse(input: {

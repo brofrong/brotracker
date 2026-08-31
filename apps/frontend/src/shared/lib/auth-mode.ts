@@ -1,4 +1,4 @@
-export type AuthMode = "local" | "authentik";
+export type AuthMode = "local" | "oidc";
 
 export type AuthModeResponse = {
 	mode: AuthMode;

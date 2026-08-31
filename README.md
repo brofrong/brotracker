@@ -2,7 +2,7 @@
 
 Self-hosted torrent search and download helper. Search RuTracker, cache results locally, fetch covers, and monitor downloads in qBittorrent — from one UI.
 
-> **Intended for personal / local use.** Sign-in is always required. Without `AUTHENTIK_CLIENT_ID`, the first visitor registers with email/password (then login-only). With Authentik configured, OIDC is used instead — see [docker/AUTHENTIK.md](docker/AUTHENTIK.md). Do not expose the app without TLS.
+> **Intended for personal / local use.** Sign-in is always required. Without `OIDC_CLIENT_ID`, the first visitor registers with email/password (then login-only). With OIDC configured, any OpenID Connect IdP is used instead — Authentik is documented as a local example in [docker/AUTHENTIK.md](docker/AUTHENTIK.md). Do not expose the app without TLS.
 
 ## Features
 
@@ -113,11 +113,11 @@ Compose uses demo credentials (`brotracker` / `minioadmin`). Change them before 
 | `BYPARR_URL` | `http://localhost:8191/v1` | Cloudflare solver API |
 | `STATIC_DIR` | _(unset)_ | SPA assets dir (set in Docker) |
 | `BETTER_AUTH_URL` | `http://localhost:3101` | Public backend URL for auth callbacks |
-| `AUTHENTIK_CLIENT_ID` | _(optional)_ | When set, enables Authentik OIDC; when unset, local email/password |
-| `AUTHENTIK_CLIENT_SECRET` | _(optional)_ | Required together with `AUTHENTIK_CLIENT_ID` |
-| `AUTHENTIK_DISCOVERY_URL` | see `.env.example` | Authentik OpenID discovery endpoint |
+| `OIDC_CLIENT_ID` | _(optional)_ | When set, enables generic OIDC; when unset, local email/password |
+| `OIDC_CLIENT_SECRET` | _(optional)_ | Required together with `OIDC_CLIENT_ID` |
+| `OIDC_DISCOVERY_URL` | _(required with OIDC)_ | OpenID Connect discovery URL (`…/.well-known/openid-configuration`) |
 
-RuTracker and qBittorrent credentials are stored in the database via the Settings UI, not via env. The Better Auth signing secret is auto-generated into `app_settings` on first boot. OIDC setup steps: [docker/AUTHENTIK.md](docker/AUTHENTIK.md).
+RuTracker and qBittorrent credentials are stored in the database via the Settings UI, not via env. The Better Auth signing secret is auto-generated into `app_settings` on first boot. Example IdP setup (Authentik): [docker/AUTHENTIK.md](docker/AUTHENTIK.md).
 
 ### Frontend (`apps/frontend`)
 
@@ -193,8 +193,8 @@ bun run db:studio
 ## Security notes
 
 - Auth protects all tRPC procedures and WebSocket subscriptions; unauthenticated requests receive `UNAUTHORIZED`.
-- Without Authentik: local email/password with one-time bootstrap registration (first user only).
-- With Authentik: OIDC — restrict who can sign in via Authentik policies.
+- Without OIDC: local email/password with one-time bootstrap registration (first user only).
+- With OIDC: any OpenID Connect IdP — restrict who can sign in via that IdP’s policies. Local Authentik: [docker/AUTHENTIK.md](docker/AUTHENTIK.md).
 - Settings still store RuTracker / qBittorrent credentials in the database.
 - Never commit `.env`, `.env.local`, `docker/authentik.env`, or real OIDC client secrets.
 - Default Docker passwords are for local demos only.

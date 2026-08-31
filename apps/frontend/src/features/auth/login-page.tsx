@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import {
 	authClient,
 	getAuthBaseURL,
-	redirectToAuthentikSignIn,
+	redirectToOidcSignIn,
 } from "#/shared/lib/auth-client";
 import { fetchAuthMode } from "#/shared/lib/auth-mode";
 
@@ -53,8 +53,8 @@ export function LoginPage() {
 
 	const { mode, registrationOpen } = modeQuery.data;
 
-	if (mode === "authentik") {
-		return <AuthentikRedirect />;
+	if (mode === "oidc") {
+		return <OidcRedirect />;
 	}
 
 	return (
@@ -76,18 +76,18 @@ export function LoginPage() {
 	);
 }
 
-function AuthentikRedirect() {
+function OidcRedirect() {
 	const { t } = useTranslation("auth");
 
 	useEffect(() => {
-		void redirectToAuthentikSignIn();
+		void redirectToOidcSignIn();
 	}, []);
 
 	return (
 		<Center height="100dvh" width="100%">
 			<Spinner
-				aria-label={t("login.authentikRedirectAria")}
-				label={t("login.authentikRedirectLabel")}
+				aria-label={t("login.oidcRedirectAria")}
+				label={t("login.oidcRedirectLabel")}
 				size="lg"
 			/>
 		</Center>
