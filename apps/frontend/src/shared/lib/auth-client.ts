@@ -16,21 +16,21 @@ export const authClient = createAuthClient({
 	},
 });
 
-export function authentikSocialSignIn(callbackURL: string) {
+export function oidcSocialSignIn(callbackURL: string) {
 	return {
-		provider: "authentik" as const,
+		provider: "oidc" as const,
 		callbackURL,
 	};
 }
 
-export async function redirectToAuthentikSignIn(): Promise<void> {
-	await authClient.signIn.social(authentikSocialSignIn(window.location.href));
+export async function redirectToOidcSignIn(): Promise<void> {
+	await authClient.signIn.social(oidcSocialSignIn(window.location.href));
 }
 
 export async function redirectToSignIn(): Promise<void> {
 	const { mode } = await fetchAuthMode(getAuthBaseURL());
-	if (mode === "authentik") {
-		await redirectToAuthentikSignIn();
+	if (mode === "oidc") {
+		await redirectToOidcSignIn();
 		return;
 	}
 	if (window.location.pathname !== "/login") {

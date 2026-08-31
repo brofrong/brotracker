@@ -1,13 +1,11 @@
 import { describe, expect, test } from "vitest";
-import { authentikSocialSignIn } from "./auth-client";
+import { oidcSocialSignIn } from "./auth-client";
 
-describe("authentikSocialSignIn", () => {
+describe("oidcSocialSignIn", () => {
 	test("uses the 1.7 social sign-in payload", () => {
-		expect(authentikSocialSignIn("https://brotracker.example/catalog")).toEqual(
-			{
-				provider: "authentik",
-				callbackURL: "https://brotracker.example/catalog",
-			},
-		);
+		expect(oidcSocialSignIn("https://brotracker.example/catalog")).toEqual({
+			provider: "oidc",
+			callbackURL: "https://brotracker.example/catalog",
+		});
 	});
 });

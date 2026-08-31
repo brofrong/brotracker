@@ -7,7 +7,7 @@ import * as authSchema from "../db/auth/auth.schema";
 import { user } from "../db/auth/auth.schema";
 import { db } from "../db/db";
 import { env } from "../utils/env";
-import { AUTHENTIK_ACCOUNT_ISSUER } from "./account-issuer";
+import { OIDC_ACCOUNT_ISSUER, OIDC_PROVIDER_ID } from "./account-issuer";
 import {
 	type AuthMode,
 	assertLocalSignUpAllowed,
@@ -40,12 +40,13 @@ export function createAuth(secret: string) {
 		}),
 	};
 
-	if (mode === "authentik") {
-		const clientId = env.AUTHENTIK_CLIENT_ID;
-		const clientSecret = env.AUTHENTIK_CLIENT_SECRET;
-		if (!clientId || !clientSecret) {
+	if (mode === "oidc") {
+		const clientId = env.OIDC_CLIENT_ID;
+		const clientSecret = env.OIDC_CLIENT_SECRET;
+		const discoveryUrl = env.OIDC_DISCOVERY_URL;
+		if (!clientId || !clientSecret || !discoveryUrl) {
 			throw new Error(
-				"AUTHENTIK_CLIENT_ID and AUTHENTIK_CLIENT_SECRET are required",
+				"OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, and OIDC_DISCOVERY_URL are required",
 			);
 		}
 		return betterAuth({
@@ -54,13 +55,13 @@ export function createAuth(secret: string) {
 				genericOAuth({
 					config: [
 						{
-							providerId: "authentik",
-							discoveryUrl: env.AUTHENTIK_DISCOVERY_URL,
+							providerId: OIDC_PROVIDER_ID,
+							discoveryUrl,
 							clientId,
 							clientSecret,
 							scopes: ["openid", "profile", "email"],
 							pkce: true,
-							accountIssuer: AUTHENTIK_ACCOUNT_ISSUER,
+							accountIssuer: OIDC_ACCOUNT_ISSUER,
 						},
 					],
 				}),

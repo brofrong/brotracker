@@ -11,10 +11,10 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
       BYPARR_URL: http://byparr:8191/v1
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:8080}
-      # Omit AUTHENTIK_* for local email/password (bootstrap registration).
-      AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID:-}
-      AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET:-}
-      AUTHENTIK_DISCOVERY_URL: ${AUTHENTIK_DISCOVERY_URL:-http://host.docker.internal:9080/application/o/brotracker/.well-known/openid-configuration}
+      # Omit OIDC_* for local email/password (bootstrap registration).
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_DISCOVERY_URL: ${OIDC_DISCOVERY_URL:-}
     networks:
       - brotracker
     depends_on:

@@ -6,4 +6,6 @@ export function issuerForExistingAccount(providerId: string): string {
 	return `local:oauth:${encodeURIComponent(providerId)}`;
 }
 
-export const AUTHENTIK_ACCOUNT_ISSUER = issuerForExistingAccount("authentik");
+export const OIDC_PROVIDER_ID = "oidc";
+
+export const OIDC_ACCOUNT_ISSUER = issuerForExistingAccount(OIDC_PROVIDER_ID);
