@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { resolveKinozalMirror } from "../../src/tracker/search-engine/kinozal/hosts";
+import {
+	isKinozalDownloadUrl,
+	resolveKinozalMirror,
+} from "../../src/tracker/search-engine/kinozal/hosts";
 import {
 	DEFAULT_KINOZAL_MIRROR,
 	KINOZAL_MIRRORS,
@@ -27,5 +30,33 @@ describe("resolveKinozalMirror", () => {
 		expect(resolveKinozalMirror("https://example.com")).toEqual(
 			DEFAULT_KINOZAL_MIRROR,
 		);
+	});
+});
+
+describe("isKinozalDownloadUrl", () => {
+	test("accepts download.php on every official dl host", () => {
+		expect(
+			isKinozalDownloadUrl("https://dl.kinozal.me/download.php?id=2021740"),
+		).toBe(true);
+		expect(
+			isKinozalDownloadUrl(
+				"https://dl.kinozal.guru/download.php?id=2021740",
+			),
+		).toBe(true);
+		expect(
+			isKinozalDownloadUrl("https://dl.kinozal.tv/download.php?id=2021740"),
+		).toBe(true);
+	});
+
+	test("rejects non-download Kinozal URLs and other hosts", () => {
+		expect(
+			isKinozalDownloadUrl("https://kinozal.guru/details.php?id=2021740"),
+		).toBe(false);
+		expect(
+			isKinozalDownloadUrl("https://evil.example/download.php?id=1"),
+		).toBe(false);
+		expect(
+			isKinozalDownloadUrl("http://dl.kinozal.guru/download.php?id=1"),
+		).toBe(false);
 	});
 });
