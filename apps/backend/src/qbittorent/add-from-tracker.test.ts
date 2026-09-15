@@ -32,10 +32,20 @@ describe("isAllowedRutrackerTorrentUrl", () => {
 });
 
 describe("isAllowedTrackerTorrentUrl", () => {
-	test("accepts kinozal download URL", () => {
+	test("accepts kinozal download URL on every official mirror", () => {
 		expect(
 			isAllowedTrackerTorrentUrl(
 				"https://dl.kinozal.me/download.php?id=12345",
+			),
+		).toBe(true);
+		expect(
+			isAllowedTrackerTorrentUrl(
+				"https://dl.kinozal.guru/download.php?id=2021740",
+			),
+		).toBe(true);
+		expect(
+			isAllowedTrackerTorrentUrl(
+				"https://dl.kinozal.tv/download.php?id=1",
 			),
 		).toBe(true);
 	});

@@ -8,14 +8,10 @@ import {
 	cloudflareBypassFailedError,
 	isCloudflareChallenge,
 } from "./http";
-import { KINOZAL_DL_URL } from "./constants";
+import { isKinozalDownloadUrl } from "./hosts";
 import { kinozalGetCookies } from "./login";
 
 export { isTorrentPayload };
-
-const ALLOWED_DOWNLOAD = new RegExp(
-	`^${KINOZAL_DL_URL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/download\\.php\\?id=\\d+$`,
-);
 
 function toUint8Array(data: ArrayBuffer | Buffer): Uint8Array {
 	return new Uint8Array(data);
@@ -42,7 +38,7 @@ export async function kinozalGetTorrent(
 	torrentFileUrl: string,
 	options: KinozalOptions,
 ): Promise<Result<Uint8Array, Error>> {
-	if (!ALLOWED_DOWNLOAD.test(torrentFileUrl)) {
+	if (!isKinozalDownloadUrl(torrentFileUrl)) {
 		return err(new Error(`Torrent URL not allowlisted: ${torrentFileUrl}`));
 	}
 
