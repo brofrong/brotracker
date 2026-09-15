@@ -30,6 +30,7 @@ async function doSearchRequest(
 		params: searchOptions,
 		paramsSerializer: toWindows1251Query,
 		responseType: "arraybuffer",
+		timeout: 30_000,
 		headers: {
 			Cookie: cookies,
 			"User-Agent": userAgent,
@@ -106,7 +107,15 @@ export async function makeSearchRequest(
 		const html = iconv.decode(response.data, "windows-1251");
 		return ok(html);
 	} catch (error) {
-		return err(new Error(`Failed to make search request: ${error}`));
+		const detail = error instanceof Error ? error.message : String(error);
+		const code =
+			error &&
+			typeof error === "object" &&
+			"code" in error &&
+			typeof error.code === "string"
+				? ` (${error.code})`
+				: "";
+		return err(new Error(`Failed to make search request${code}: ${detail}`));
 	}
 }
 
