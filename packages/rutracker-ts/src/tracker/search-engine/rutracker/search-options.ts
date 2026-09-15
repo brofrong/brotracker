@@ -32,10 +32,15 @@ export const SortTypeMap: Record<(typeof SortType)[number], number> = {
 
 export type RutrackerSearchOptions = {
 	nm: string;
-	"f[]"?: number[];
+	/** Comma-separated forum ids (`tracker.php?f=7,22`), not PHP `f[]`. */
+	f?: string;
 	o?: number;
 	s?: number;
 };
+
+function forumFilter(ids: number[]): string {
+	return [...ids].sort((a, b) => a - b).join(",");
+}
 
 export function createSearchOptions(
 	query: string,
@@ -43,19 +48,14 @@ export function createSearchOptions(
 ) {
 	const searchOptions: RutrackerSearchOptions = {
 		nm: query,
-		"f[]": [...tvCategories, ...filmsCategories], // category
-		o: SortTypeMap[options?.sortType ?? "downloadsTimes"], // sort type
-		s: options?.sortOrder === "ascending" ? 1 : 2, // sort order
+		o: SortTypeMap[options?.sortType ?? "downloadsTimes"],
+		s: options?.sortOrder === "ascending" ? 1 : 2,
 	};
 
-	if (options?.category || options?.category === null) {
-		if (options.category === null) {
-			delete searchOptions["f[]"];
-		} else if (options.category === "tv") {
-			searchOptions["f[]"] = tvCategories;
-		} else if (options.category === "films") {
-			searchOptions["f[]"] = filmsCategories;
-		}
+	if (options.category === "tv") {
+		searchOptions.f = forumFilter(tvCategories);
+	} else if (options.category === "films") {
+		searchOptions.f = forumFilter(filmsCategories);
 	}
 
 	if (options?.sortType === null) {
