@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { checkTopicNow } from "./watch/check-topic-now";
-import type { CheckResult, TitleWatchRecord } from "./watch/check-topic-now";
-import { processWatchTask } from "./watch/process-watch-task";
-import type { WatchTask } from "./watch/process-watch-task";
 import { createTitleModule, type TitleDeps } from "./title";
 import type { TitleRating, TmdbMeta } from "./title.types";
+import type { CheckResult, TitleWatchRecord } from "./watch/check-topic-now";
+import { checkTopicNow } from "./watch/check-topic-now";
+import type { WatchTask } from "./watch/process-watch-task";
+import { processWatchTask } from "./watch/process-watch-task";
 
 const stubRatings = (): TitleRating[] => [
 	{ source: "tmdb", status: "unavailable" },
@@ -116,6 +116,9 @@ function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 					now: deps.now,
 				},
 			),
+		upsertLink: async () => {},
+		loadAllLinks: async () => ({}),
+		listTitledWatches: async () => [],
 		...overrides,
 	};
 
@@ -166,9 +169,7 @@ describe("title.setWatch", () => {
 			watch: "tracking",
 		});
 
-		const record = store.get(
-			"https://rutracker.org/forum/viewtopic.php?t=55",
-		);
+		const record = store.get("https://rutracker.org/forum/viewtopic.php?t=55");
 		expect(record).toMatchObject({
 			titleId: "tmdb:tv:1",
 			watch: "tracking",
@@ -240,7 +241,8 @@ describe("title.checkNow", () => {
 			source: "manual",
 			size: 4,
 			registeredAt: "2024-01-01T00:00:00.000Z",
-			contentHash: "9f64a747e1b97f131fabb6b447296c9b6f0201e79fb3c5356e6c77e89b6a806a",
+			contentHash:
+				"9f64a747e1b97f131fabb6b447296c9b6f0201e79fb3c5356e6c77e89b6a806a",
 			qbHash: "h1",
 			lastCheckedAt: null,
 			lastChangedAt: null,

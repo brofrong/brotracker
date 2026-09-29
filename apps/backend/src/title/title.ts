@@ -1,7 +1,4 @@
 import { scoreTorrentQuality } from "../torrent/quality-score";
-import type { CheckResult, TitleWatchRecord } from "./watch/check-topic-now";
-import { parseEpisodeProgress } from "./watch/episode-progress";
-import type { SyncQbTorrent } from "./watch/sync-watches-from-qb";
 import type {
 	Title,
 	TitleDeps,
@@ -16,7 +13,15 @@ import type {
 	TitleWatchView,
 	TmdbMeta,
 } from "./title.types";
-import { extractTopicId, findTransferForTopic, topicTag } from "./topic-tag";
+import {
+	extractTopicId,
+	extractTopicIdFromTags,
+	findTransferForTopic,
+	topicTag,
+} from "./topic-tag";
+import type { CheckResult, TitleWatchRecord } from "./watch/check-topic-now";
+import { parseEpisodeProgress } from "./watch/episode-progress";
+import type { SyncQbTorrent } from "./watch/sync-watches-from-qb";
 
 export function encodeTopicUrl(topicUrl: string): string {
 	return Buffer.from(topicUrl, "utf8")
@@ -195,6 +200,13 @@ export class TitleWatchError extends Error {
 	}
 }
 
+export class TitleLinkError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "TitleLinkError";
+	}
+}
+
 export function createTitleModule(deps: TitleDeps) {
 	async function resolveWatchForTitle(
 		titleId: string,
@@ -237,8 +249,7 @@ export function createTitleModule(deps: TitleDeps) {
 			deps.searchTorrents(query),
 			deps.listTaggedTorrents(),
 		]);
-		const candidates =
-			search.status === "ok" ? search.tracker : search.local;
+		const candidates = search.status === "ok" ? search.tracker : search.local;
 
 		for (const candidate of candidates) {
 			const topicId = extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
@@ -279,8 +290,7 @@ export function createTitleModule(deps: TitleDeps) {
 			deps.listTaggedTorrents(),
 		]);
 
-		const candidates =
-			search.status === "ok" ? search.tracker : search.local;
+		const candidates = search.status === "ok" ? search.tracker : search.local;
 
 		for (const candidate of candidates) {
 			const topicId = extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
@@ -430,6 +440,11 @@ export function createTitleModule(deps: TitleDeps) {
 				topicTag(topicId),
 			]);
 
+			// Save topic link for both films and tv when titleId is provided
+			if (input.titleId) {
+				await deps.upsertLink(`topic:${topicId}`, input.titleId);
+			}
+
 			if (input.kind === "tv") {
 				const existing = await deps.loadWatchByTopicUrl(input.topicUrl);
 				if (
@@ -550,6 +565,58 @@ export function createTitleModule(deps: TitleDeps) {
 				message: "Не удалось выполнить проверку задачи",
 			};
 		},
+
+		/**
+		 * Map live qB hash → Title id. Priority: manual `qb:<hash>` link, then a
+		 * `topic:<id>` link recorded on add, then a TitleWatch for the same
+		 * qB hash or Topic.
+		 */
+		async transferLinks(): Promise<{ links: Record<string, string> }> {
+			const [allLinks, qbTorrents, watches] = await Promise.all([
+				deps.loadAllLinks(),
+				deps.listTaggedTorrents(),
+				deps.listTitledWatches(),
+			]);
+
+			const watchByHash = new Map<string, string>();
+			const watchByTopicId = new Map<string, string>();
+			for (const watch of watches) {
+				if (watch.qbHash) {
+					watchByHash.set(watch.qbHash, watch.titleId);
+				}
+				const topicId = extractTopicId(watch.topicUrl);
+				if (topicId) {
+					watchByTopicId.set(topicId, watch.titleId);
+				}
+			}
+
+			const links: Record<string, string> = {};
+			for (const torrent of qbTorrents) {
+				const topicId = extractTopicIdFromTags(torrent.tags);
+				const titleId =
+					allLinks[`qb:${torrent.hash}`] ??
+					(topicId ? allLinks[`topic:${topicId}`] : undefined) ??
+					watchByHash.get(torrent.hash) ??
+					(topicId ? watchByTopicId.get(topicId) : undefined);
+				if (titleId) {
+					links[torrent.hash] = titleId;
+				}
+			}
+
+			return { links };
+		},
+
+		async linkTransfer(input: {
+			hash: string;
+			titleId: string;
+		}): Promise<{ ok: true }> {
+			if (!input.titleId.startsWith("tmdb:")) {
+				throw new TitleLinkError("Only TMDB titles can be linked");
+			}
+
+			await deps.upsertLink(`qb:${input.hash}`, input.titleId);
+			return { ok: true };
+		},
 	};
 
 	return module;
@@ -557,5 +624,5 @@ export function createTitleModule(deps: TitleDeps) {
 
 export type TitleModule = ReturnType<typeof createTitleModule>;
 
-export type { CheckResult } from "./watch/check-topic-now";
 export type { FetchTmdbMetaOutcome, TitleDeps } from "./title.types";
+export type { CheckResult } from "./watch/check-topic-now";

@@ -62,6 +62,16 @@
 			"one": "оценка",
 			"few": "оценки",
 			"many": "оценок"
+		},
+		"trackerError": {
+			"timeout": "Трекер не ответил вовремя. Скорее всего, он заблокирован в сети сервера: проверьте VPN или укажите прокси.",
+			"unreachable": "Не удалось подключиться к трекеру (соединение отклонено или ошибка DNS). Скорее всего, он заблокирован в сети сервера: проверьте VPN или укажите прокси.",
+			"proxy": "Прокси не отвечает. Проверьте адрес прокси и что он запущен.",
+			"solver": "Byparr не смог пройти Cloudflare: он не запущен или тоже не может достучаться до трекера.",
+			"cloudflare": "Cloudflare продолжает блокировать запросы даже после решения проверки.",
+			"auth": "Трекер не принял вход. Проверьте логин и пароль.",
+			"http": "Трекер вернул ошибку. Попробуйте позже.",
+			"unknown": "Неожиданная ошибка трекера."
 		}
 	},
 	"nav": {
@@ -141,8 +151,7 @@
 			"login": "Login",
 			"password": "Password",
 			"enabledDescription": "Учитывать RuTracker в поиске и списках торрентов",
-			"loadFailed": "Не удалось загрузить настройки RuTracker",
-			"testSuccess": "Подключение к RuTracker успешно"
+			"loadFailed": "Не удалось загрузить настройки RuTracker"
 		},
 		"kinozal": {
 			"title": "Kinozal",
@@ -156,8 +165,7 @@
 			"hostPlaceholder": "Выберите зеркало",
 			"hostDescription": "Адрес Kinozal для поиска и скачивания",
 			"hostDisabled": "Выключите автовыбор, чтобы выбрать зеркало вручную",
-			"loadFailed": "Не удалось загрузить настройки Kinozal",
-			"testSuccess": "Подключение к Kinozal успешно"
+			"loadFailed": "Не удалось загрузить настройки Kinozal"
 		},
 		"qbittorrent": {
 			"title": "qBittorrent",
@@ -180,6 +188,23 @@
 			"apiKeyLeaveBlank": "Оставьте пустым, чтобы не менять",
 			"loadFailed": "Не удалось загрузить настройки TMDB",
 			"testSuccess": "Подключение к TMDB успешно"
+		},
+		"diagnostics": {
+			"title": "Проверка подключения",
+			"ok": "Всё работает",
+			"failed": "Проверка не прошла",
+			"steps": {
+				"egress": "Доступ в интернет",
+				"egressProxy": "Прокси",
+				"tracker": "Сайт трекера",
+				"login": "Вход и поиск"
+			},
+			"status": {
+				"ok": "Пройдено",
+				"failed": "Ошибка",
+				"skipped": "Пропущено"
+			},
+			"latency": "{{ms}} мс"
 		}
 	},
 	"home": {
@@ -264,7 +289,8 @@
 			"download": "Скачать",
 			"added": "Торрент добавлен в qBittorrent",
 			"addFailed": "Не удалось добавить торрент"
-		}
+		},
+		"trackerFailed": "{{tracker}} не ответил"
 	},
 	"title": {
 		"browse": {
@@ -395,8 +421,8 @@
 			"state": "Статус",
 			"progress": "Прогресс",
 			"size": "Размер",
-			"downloadSpeed": "Скорость ↓",
-			"uploadSpeed": "Скорость ↑",
+			"downloadSpeed": "Загрузка",
+			"uploadSpeed": "Отдача",
 			"eta": "ETA",
 			"addedOn": "Добавлен",
 			"savePath": "Путь сохранения",
@@ -426,12 +452,6 @@
 		"emptyTitle": "Нет активных торрентов",
 		"emptyFilteredTitle": "Ничего не найдено",
 		"emptyFilteredDescription": "Попробуйте изменить запрос или очистить фильтр.",
-		"optimistic": {
-			"pausedReady": "На паузе (готов)",
-			"paused": "На паузе",
-			"seeding": "Раздача",
-			"downloading": "Загрузка"
-		},
 		"connection": {
 			"none": "Нет подключения",
 			"live": "Live (WebSocket)",
@@ -446,6 +466,85 @@
 			"warning": "Свободное место заканчивается: {{amount}} (меньше 500 ГБ)",
 			"ok": "Свободное место на диске qBittorrent: {{amount}}",
 			"unknown": "Свободное место на диске неизвестно"
+		},
+		"states": {
+			"error": "Ошибка",
+			"missingFiles": "Нет файлов",
+			"uploading": "Раздаётся",
+			"pausedUP": "Пауза",
+			"stoppedUP": "Пауза",
+			"queuedUP": "В очереди",
+			"stalledUP": "Раздаётся",
+			"checkingUP": "Проверка",
+			"forcedUP": "Раздаётся (принуд.)",
+			"allocating": "Выделение места",
+			"downloading": "Качается",
+			"metaDL": "Метаданные",
+			"pausedDL": "Пауза",
+			"stoppedDL": "Пауза",
+			"queuedDL": "В очереди",
+			"stalledDL": "Нет пиров",
+			"checkingDL": "Проверка",
+			"forcedDL": "Качается (принуд.)",
+			"checkingResumeData": "Проверка данных",
+			"moving": "Перемещение",
+			"unknown": "Неизвестно"
+		},
+		"filters": {
+			"label": "Фильтр по статусу",
+			"all": "Все",
+			"downloading": "Качаются",
+			"seeding": "Раздаются",
+			"paused": "Пауза",
+			"error": "Ошибки"
+		},
+		"summary": {
+			"count_one": "{{count}} торрент",
+			"count_few": "{{count}} торрента",
+			"count_many": "{{count}} торрентов",
+			"count_other": "{{count}} торрента",
+			"downloadSpeed": "Общая скорость загрузки",
+			"uploadSpeed": "Общая скорость отдачи"
+		},
+		"selection": {
+			"selected": "Выбрано: {{count}}",
+			"pause": "Пауза",
+			"resume": "Продолжить",
+			"delete": "Удалить",
+			"clear": "Снять выбор",
+			"pauseFailed": "Не удалось поставить выбранные торренты на паузу",
+			"resumeFailed": "Не удалось продолжить выбранные торренты",
+			"deleted_one": "Удалён {{count}} торрент",
+			"deleted_few": "Удалено {{count}} торрента",
+			"deleted_many": "Удалено {{count}} торрентов",
+			"deleted_other": "Удалено {{count}} торрента",
+			"deleteFailed": "Не удалось удалить выбранные торренты",
+			"deleteDialogTitle": "Удалить выбранные торренты?",
+			"deleteDialogDescription_one": "{{count}} торрент будет удалён из qBittorrent вместе со скачанными файлами. Это действие нельзя отменить.",
+			"deleteDialogDescription_few": "{{count}} торрента будут удалены из qBittorrent вместе со скачанными файлами. Это действие нельзя отменить.",
+			"deleteDialogDescription_many": "{{count}} торрентов будут удалены из qBittorrent вместе со скачанными файлами. Это действие нельзя отменить.",
+			"deleteDialogDescription_other": "{{count}} торрента будут удалены из qBittorrent вместе со скачанными файлами. Это действие нельзя отменить."
+		},
+		"menu": {
+			"pauseSelected": "Пауза для выбранных ({{count}})",
+			"resumeSelected": "Продолжить выбранные ({{count}})",
+			"deleteSelected": "Удалить выбранные ({{count}})",
+			"openTitle": "Открыть страницу тайтла",
+			"linkTitle": "Привязать к тайтлу…",
+			"relinkTitle": "Изменить привязку…"
+		},
+		"link": {
+			"openTitle": "Открыть страницу тайтла",
+			"dialogTitle": "Привязать к тайтлу",
+			"searchLabel": "Поиск в TMDB",
+			"searchPlaceholder": "Название фильма или сериала",
+			"film": "Фильм",
+			"series": "Сериал",
+			"empty": "Ничего не найдено",
+			"loading": "Поиск…",
+			"searchFailed": "Не удалось выполнить поиск в TMDB",
+			"linked": "Торрент привязан к «{{name}}»",
+			"linkFailed": "Не удалось привязать торрент"
 		}
 	},
 	"stats": {

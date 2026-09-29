@@ -39,7 +39,7 @@ export function TransferProgressBar({
 			aria-valuemax={100}
 			aria-valuenow={Math.round(pct)}
 			aria-valuetext={valueLabel}
-			className="relative h-[calc(var(--spacing-5)/1.3)] w-full overflow-hidden rounded-sm"
+			className="relative h-5 w-full overflow-hidden rounded-sm"
 			style={{ backgroundColor: "var(--color-skeleton)" }}
 		>
 			<div
@@ -52,7 +52,7 @@ export function TransferProgressBar({
 			{/* Empty track: primary text contrasts with skeleton in both themes. */}
 			<span
 				aria-hidden
-				className="pointer-events-none absolute inset-0 flex items-center justify-center text-2xs font-semibold tabular-nums"
+				className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-semibold tabular-nums"
 				style={{
 					color: "var(--color-text-primary)",
 					clipPath: `inset(0 0 0 ${pct}%)`,
@@ -63,7 +63,7 @@ export function TransferProgressBar({
 			{/* Fill: on-dark in light mode, on-light in dark — opposite of fill luminance. */}
 			<span
 				aria-hidden
-				className="pointer-events-none absolute inset-0 flex items-center justify-center text-2xs font-semibold tabular-nums"
+				className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-semibold tabular-nums"
 				style={{
 					color: ON_FILL,
 					clipPath: `inset(0 ${unfilled}% 0 0)`,

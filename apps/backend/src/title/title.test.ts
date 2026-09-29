@@ -3,6 +3,7 @@ import {
 	createTitleModule,
 	encodeTopicUrl,
 	type TitleDeps,
+	TitleLinkError,
 } from "./title";
 import type {
 	FetchTmdbMetaOutcome,
@@ -59,9 +60,7 @@ const stubRatings = (): TitleRating[] => [
 	{ source: "kinopoisk", status: "unconfigured" },
 ];
 
-function deps(
-	overrides: Partial<TitleDeps> = {},
-): TitleDeps {
+function deps(overrides: Partial<TitleDeps> = {}): TitleDeps {
 	return {
 		fetchTmdbMeta: async () => ({ status: "unavailable" }),
 		getRatings: async () => stubRatings(),
@@ -89,6 +88,9 @@ function deps(
 			finishedAt: null,
 		}),
 		processWatchTask: async () => ({ outcome: "not_found" }),
+		upsertLink: async () => {},
+		loadAllLinks: async () => ({}),
+		listTitledWatches: async () => [],
 		...overrides,
 	};
 }
@@ -97,9 +99,9 @@ describe("title.resolve", () => {
 	test("tmdb film ref resolves to deterministic id", () => {
 		const title = createTitleModule(deps());
 
-		expect(
-			title.resolve({ type: "tmdb", kind: "films", tmdbId: 123 }),
-		).toEqual({ id: "tmdb:films:123" });
+		expect(title.resolve({ type: "tmdb", kind: "films", tmdbId: 123 })).toEqual(
+			{ id: "tmdb:films:123" },
+		);
 	});
 
 	test("tmdb tv ref resolves to deterministic id", () => {
@@ -122,9 +124,9 @@ describe("title.resolve", () => {
 	test("qb hash ref resolves to stable id", () => {
 		const title = createTitleModule(deps());
 
-		expect(
-			title.resolve({ type: "qb", hash: "abc123def456" }),
-		).toEqual({ id: "qb:abc123def456" });
+		expect(title.resolve({ type: "qb", hash: "abc123def456" })).toEqual({
+			id: "qb:abc123def456",
+		});
 	});
 });
 
@@ -303,5 +305,262 @@ describe("title.get", () => {
 		expect(result.facet).toBe("tv");
 		expect(result.meta.name).toBe("Game of Thrones");
 		expect(result.metaStatus).toBe("ok");
+	});
+});
+
+describe("title.add and title links", () => {
+	test("add() stores topic link for films with titleId", async () => {
+		const upsertedLinks: Array<{ key: string; titleId: string }> = [];
+		const title = createTitleModule(
+			deps({
+				upsertLink: async (key, titleId) => {
+					upsertedLinks.push({ key, titleId });
+				},
+				addFromTracker: async () => {},
+			}),
+		);
+
+		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=12345";
+		await title.add({
+			torrentFileUrl: topicUrl,
+			kind: "films",
+			topicUrl,
+			titleId: "tmdb:films:550",
+		});
+
+		expect(upsertedLinks).toEqual([
+			{ key: "topic:rutracker:12345", titleId: "tmdb:films:550" },
+		]);
+	});
+
+	test("add() stores topic link for tv with titleId", async () => {
+		const upsertedLinks: Array<{ key: string; titleId: string }> = [];
+		const title = createTitleModule(
+			deps({
+				upsertLink: async (key, titleId) => {
+					upsertedLinks.push({ key, titleId });
+				},
+				addFromTracker: async () => {},
+			}),
+		);
+
+		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=99999";
+		await title.add({
+			torrentFileUrl: topicUrl,
+			kind: "tv",
+			topicUrl,
+			titleId: "tmdb:tv:1399",
+		});
+
+		expect(upsertedLinks).toEqual([
+			{ key: "topic:rutracker:99999", titleId: "tmdb:tv:1399" },
+		]);
+	});
+
+	test("add() does not create link without titleId", async () => {
+		const upsertedLinks: Array<{ key: string; titleId: string }> = [];
+		const title = createTitleModule(
+			deps({
+				upsertLink: async (key, titleId) => {
+					upsertedLinks.push({ key, titleId });
+				},
+				addFromTracker: async () => {},
+			}),
+		);
+
+		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=12345";
+		await title.add({
+			torrentFileUrl: topicUrl,
+			kind: "films",
+			topicUrl,
+		});
+
+		expect(upsertedLinks).toHaveLength(0);
+	});
+});
+
+describe("title.transferLinks", () => {
+	test("transferLinks returns manual link with priority 1", async () => {
+		const title = createTitleModule(
+			deps({
+				loadAllLinks: async () => ({
+					"qb:abc123": "tmdb:films:123",
+					"topic:rutracker:12345": "tmdb:films:456",
+				}),
+				listTaggedTorrents: async () => [
+					{
+						hash: "abc123",
+						progress: 100,
+						stateKind: "completed",
+						stateLabel: "Completed",
+						downloadSpeed: 0,
+						etaSeconds: 0,
+						tags: "brotracker:topic:rutracker:12345",
+					},
+				],
+			}),
+		);
+
+		const result = await title.transferLinks();
+
+		expect(result.links.abc123).toBe("tmdb:films:123");
+	});
+
+	test("transferLinks returns topic link when no manual link", async () => {
+		const title = createTitleModule(
+			deps({
+				loadAllLinks: async () => ({
+					"topic:rutracker:12345": "tmdb:films:456",
+				}),
+				listTaggedTorrents: async () => [
+					{
+						hash: "def456",
+						progress: 50,
+						stateKind: "downloading",
+						stateLabel: "Downloading",
+						downloadSpeed: 1000000,
+						etaSeconds: 3600,
+						tags: "brotracker:topic:rutracker:12345",
+					},
+				],
+			}),
+		);
+
+		const result = await title.transferLinks();
+
+		expect(result.links.def456).toBe("tmdb:films:456");
+	});
+
+	test("transferLinks falls back to a TitleWatch by qB hash or Topic", async () => {
+		const title = createTitleModule(
+			deps({
+				loadAllLinks: async () => ({}),
+				listTitledWatches: async () => [
+					{
+						topicUrl: "https://rutracker.org/forum/viewtopic.php?t=111",
+						titleId: "tmdb:tv:1",
+						qbHash: "byhash",
+					},
+					{
+						topicUrl: "https://rutracker.org/forum/viewtopic.php?t=222",
+						titleId: "tmdb:tv:2",
+						qbHash: null,
+					},
+				],
+				listTaggedTorrents: async () => [
+					{
+						hash: "byhash",
+						progress: 1,
+						stateKind: "uploading",
+						stateLabel: "",
+						downloadSpeed: 0,
+						etaSeconds: 0,
+						tags: "",
+					},
+					{
+						hash: "bytopic",
+						progress: 1,
+						stateKind: "uploading",
+						stateLabel: "",
+						downloadSpeed: 0,
+						etaSeconds: 0,
+						tags: "brotracker:topic:222",
+					},
+				],
+			}),
+		);
+
+		const result = await title.transferLinks();
+
+		expect(result.links).toEqual({ byhash: "tmdb:tv:1", bytopic: "tmdb:tv:2" });
+	});
+
+	test("transferLinks prefers a recorded link over a TitleWatch", async () => {
+		const title = createTitleModule(
+			deps({
+				loadAllLinks: async () => ({ "qb:h": "tmdb:tv:manual" }),
+				listTitledWatches: async () => [
+					{
+						topicUrl: "https://rutracker.org/forum/viewtopic.php?t=1",
+						titleId: "tmdb:tv:watch",
+						qbHash: "h",
+					},
+				],
+				listTaggedTorrents: async () => [
+					{
+						hash: "h",
+						progress: 1,
+						stateKind: "uploading",
+						stateLabel: "",
+						downloadSpeed: 0,
+						etaSeconds: 0,
+						tags: "",
+					},
+				],
+			}),
+		);
+
+		expect((await title.transferLinks()).links).toEqual({
+			h: "tmdb:tv:manual",
+		});
+	});
+
+	test("transferLinks returns empty object when no links", async () => {
+		const title = createTitleModule(
+			deps({
+				loadAllLinks: async () => ({}),
+				listTaggedTorrents: async () => [
+					{
+						hash: "ghi789",
+						progress: 0,
+						stateKind: "allocating",
+						stateLabel: "Allocating",
+						downloadSpeed: 0,
+						etaSeconds: 0,
+						tags: "",
+					},
+				],
+			}),
+		);
+
+		const result = await title.transferLinks();
+
+		expect(result.links).toEqual({});
+	});
+});
+
+describe("title.linkTransfer", () => {
+	test("linkTransfer accepts tmdb: titleIds", async () => {
+		const upsertedLinks: Array<{ key: string; titleId: string }> = [];
+		const title = createTitleModule(
+			deps({
+				upsertLink: async (key, titleId) => {
+					upsertedLinks.push({ key, titleId });
+				},
+			}),
+		);
+
+		const result = await title.linkTransfer({
+			hash: "abc123def456",
+			titleId: "tmdb:films:550",
+		});
+
+		expect(result).toEqual({ ok: true });
+		expect(upsertedLinks).toHaveLength(1);
+		expect(upsertedLinks[0]).toEqual({
+			key: "qb:abc123def456",
+			titleId: "tmdb:films:550",
+		});
+	});
+
+	test("linkTransfer rejects non-tmdb titleIds", async () => {
+		const title = createTitleModule(deps());
+
+		await expect(
+			title.linkTransfer({
+				hash: "abc123def456",
+				titleId: "topic:some-topic",
+			}),
+		).rejects.toBeInstanceOf(TitleLinkError);
 	});
 });

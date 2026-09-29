@@ -8,6 +8,7 @@ export { kinozalStore } from "./kinozal-store/kinozal-store.schema";
 export { rutrackerStore } from "./rutracker-store/rutracker-store.schema";
 export { appSettings } from "./settings/app-settings.schema";
 export { providerSettings } from "./settings/provider-settings.schema";
+export { titleLinks } from "./title/title-link.schema";
 export { titleWatches } from "./title/title-watch.schema";
 export { titleWatchEvents } from "./title/title-watch-event.schema";
 export { watchTasks } from "./title/watch-task.schema";

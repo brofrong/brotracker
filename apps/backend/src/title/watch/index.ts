@@ -142,11 +142,12 @@ export const nightlyWorker = createNightlyWorker({
 	now: () => new Date(),
 });
 
-export { createWatch } from "./watch";
-export type { Watch, WatchDeps } from "./watch.types";
 export {
 	createNightlyWorker,
-	type NightlyWorker,
 	type NightlyRunNowResult,
 	type NightlyTickResult,
+	type NightlyWorker,
 } from "./nightly-worker";
+export { listTitledWatches } from "./title-watch.repository";
+export { createWatch } from "./watch";
+export type { Watch, WatchDeps } from "./watch.types";

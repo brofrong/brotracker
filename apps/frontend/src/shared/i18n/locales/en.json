@@ -62,6 +62,16 @@
 			"one": "rating",
 			"few": "ratings",
 			"many": "ratings"
+		},
+		"trackerError": {
+			"timeout": "The tracker did not respond in time. It is probably blocked on the server's network: check the VPN or set a proxy.",
+			"unreachable": "Could not connect to the tracker (connection refused or DNS failure). It is probably blocked on the server's network: check the VPN or set a proxy.",
+			"proxy": "The proxy is not responding. Check the proxy address and that it is running.",
+			"solver": "Byparr could not get past Cloudflare: it is down or cannot reach the tracker either.",
+			"cloudflare": "Cloudflare keeps blocking requests even after solving the challenge.",
+			"auth": "The tracker rejected the login. Check the login and password.",
+			"http": "The tracker returned an error response. Try again later.",
+			"unknown": "Unexpected tracker error."
 		}
 	},
 	"nav": {
@@ -141,8 +151,7 @@
 			"login": "Login",
 			"password": "Password",
 			"enabledDescription": "Include RuTracker in search and torrent lists",
-			"loadFailed": "Failed to load RuTracker settings",
-			"testSuccess": "Connected to RuTracker successfully"
+			"loadFailed": "Failed to load RuTracker settings"
 		},
 		"kinozal": {
 			"title": "Kinozal",
@@ -156,8 +165,7 @@
 			"hostPlaceholder": "Select a mirror",
 			"hostDescription": "Kinozal address used for search and downloads",
 			"hostDisabled": "Turn off auto-select to choose a mirror manually",
-			"loadFailed": "Failed to load Kinozal settings",
-			"testSuccess": "Connected to Kinozal successfully"
+			"loadFailed": "Failed to load Kinozal settings"
 		},
 		"qbittorrent": {
 			"title": "qBittorrent",
@@ -180,6 +188,23 @@
 			"apiKeyLeaveBlank": "Leave blank to keep unchanged",
 			"loadFailed": "Failed to load TMDB settings",
 			"testSuccess": "Connected to TMDB successfully"
+		},
+		"diagnostics": {
+			"title": "Connection check",
+			"ok": "Everything works",
+			"failed": "Check failed",
+			"steps": {
+				"egress": "Internet access",
+				"egressProxy": "Proxy",
+				"tracker": "Tracker site",
+				"login": "Login and search"
+			},
+			"status": {
+				"ok": "Passed",
+				"failed": "Failed",
+				"skipped": "Skipped"
+			},
+			"latency": "{{ms}} ms"
 		}
 	},
 	"home": {
@@ -264,7 +289,8 @@
 			"download": "Download",
 			"added": "Torrent added to qBittorrent",
 			"addFailed": "Failed to add torrent"
-		}
+		},
+		"trackerFailed": "{{tracker}} did not respond"
 	},
 	"title": {
 		"browse": {
@@ -395,8 +421,8 @@
 			"state": "Status",
 			"progress": "Progress",
 			"size": "Size",
-			"downloadSpeed": "Speed ↓",
-			"uploadSpeed": "Speed ↑",
+			"downloadSpeed": "Down",
+			"uploadSpeed": "Up",
 			"eta": "ETA",
 			"addedOn": "Added",
 			"savePath": "Save path",
@@ -426,12 +452,6 @@
 		"emptyTitle": "No active torrents",
 		"emptyFilteredTitle": "Nothing found",
 		"emptyFilteredDescription": "Try changing the query or clearing the filter.",
-		"optimistic": {
-			"pausedReady": "Paused (done)",
-			"paused": "Paused",
-			"seeding": "Seeding",
-			"downloading": "Downloading"
-		},
 		"connection": {
 			"none": "No connection",
 			"live": "Live (WebSocket)",
@@ -446,6 +466,79 @@
 			"warning": "Disk space running low: {{amount}} (under 500 GB)",
 			"ok": "qBittorrent free disk space: {{amount}}",
 			"unknown": "Free disk space unknown"
+		},
+		"states": {
+			"error": "Error",
+			"missingFiles": "Missing files",
+			"uploading": "Seeding",
+			"pausedUP": "Paused",
+			"stoppedUP": "Paused",
+			"queuedUP": "Queued",
+			"stalledUP": "Seeding",
+			"checkingUP": "Checking",
+			"forcedUP": "Seeding (forced)",
+			"allocating": "Allocating",
+			"downloading": "Downloading",
+			"metaDL": "Metadata",
+			"pausedDL": "Paused",
+			"stoppedDL": "Paused",
+			"queuedDL": "Queued",
+			"stalledDL": "No peers",
+			"checkingDL": "Checking",
+			"forcedDL": "Downloading (forced)",
+			"checkingResumeData": "Checking data",
+			"moving": "Moving",
+			"unknown": "Unknown"
+		},
+		"filters": {
+			"label": "Filter by status",
+			"all": "All",
+			"downloading": "Downloading",
+			"seeding": "Seeding",
+			"paused": "Paused",
+			"error": "Errors"
+		},
+		"summary": {
+			"count_one": "{{count}} torrent",
+			"count_other": "{{count}} torrents",
+			"downloadSpeed": "Total download speed",
+			"uploadSpeed": "Total upload speed"
+		},
+		"selection": {
+			"selected": "{{count}} selected",
+			"pause": "Pause",
+			"resume": "Resume",
+			"delete": "Delete",
+			"clear": "Clear selection",
+			"pauseFailed": "Failed to pause selected torrents",
+			"resumeFailed": "Failed to resume selected torrents",
+			"deleted_one": "Deleted {{count}} torrent",
+			"deleted_other": "Deleted {{count}} torrents",
+			"deleteFailed": "Failed to delete selected torrents",
+			"deleteDialogTitle": "Delete selected torrents?",
+			"deleteDialogDescription_one": "{{count}} torrent will be removed from qBittorrent along with downloaded files. This cannot be undone.",
+			"deleteDialogDescription_other": "{{count}} torrents will be removed from qBittorrent along with downloaded files. This cannot be undone."
+		},
+		"menu": {
+			"pauseSelected": "Pause selected ({{count}})",
+			"resumeSelected": "Resume selected ({{count}})",
+			"deleteSelected": "Delete selected ({{count}})",
+			"openTitle": "Open title page",
+			"linkTitle": "Link to title…",
+			"relinkTitle": "Change linked title…"
+		},
+		"link": {
+			"openTitle": "Open title page",
+			"dialogTitle": "Link to title",
+			"searchLabel": "Search TMDB",
+			"searchPlaceholder": "Film or series name",
+			"film": "Film",
+			"series": "Series",
+			"empty": "Nothing found",
+			"loading": "Searching…",
+			"searchFailed": "TMDB search failed",
+			"linked": "Torrent linked to “{{name}}”",
+			"linkFailed": "Failed to link torrent"
 		}
 	},
 	"stats": {

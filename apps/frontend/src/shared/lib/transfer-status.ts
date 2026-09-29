@@ -59,6 +59,82 @@ export function getTransferStateVisual(state: string): TransferStateVisual {
 	return transferStateVisuals[state] ?? fallbackVisual;
 }
 
+/** Coarse status group used by the Torrents page filter. */
+export type TransferBucket = "downloading" | "seeding" | "paused" | "error";
+
+export const TRANSFER_BUCKETS: readonly TransferBucket[] = [
+	"downloading",
+	"seeding",
+	"paused",
+	"error",
+];
+
+export function getTransferBucket(stateKind: string): TransferBucket {
+	if (stateKind === "error" || stateKind === "missingFiles") {
+		return "error";
+	}
+	if (isTransferPaused(stateKind)) {
+		return "paused";
+	}
+	if (stateKind === "uploading" || stateKind.endsWith("UP")) {
+		return "seeding";
+	}
+	return "downloading";
+}
+
+export type TransferStatusDotVariant =
+	| "success"
+	| "warning"
+	| "error"
+	| "accent"
+	| "neutral";
+
+const statusDotVariants: Record<string, TransferStatusDotVariant> = {
+	error: "error",
+	missingFiles: "error",
+	uploading: "success",
+	forcedUP: "success",
+	stalledUP: "success",
+	queuedUP: "neutral",
+	checkingUP: "neutral",
+	pausedUP: "neutral",
+	stoppedUP: "neutral",
+	downloading: "accent",
+	forcedDL: "accent",
+	metaDL: "accent",
+	stalledDL: "warning",
+	queuedDL: "neutral",
+	checkingDL: "neutral",
+	pausedDL: "neutral",
+	stoppedDL: "neutral",
+	allocating: "neutral",
+	checkingResumeData: "neutral",
+	moving: "neutral",
+};
+
+/** StatusDot color + pulse for a qBittorrent state (pulse = data is moving). */
+export function getTransferStatusDot(stateKind: string): {
+	variant: TransferStatusDotVariant;
+	isPulsing: boolean;
+} {
+	return {
+		variant: statusDotVariants[stateKind] ?? "neutral",
+		isPulsing:
+			stateKind === "downloading" ||
+			stateKind === "forcedDL" ||
+			stateKind === "metaDL",
+	};
+}
+
+const knownTransferStates = new Set(Object.keys(transferStateVisuals));
+
+/** i18n key (in the `transfers` namespace) for a qBittorrent state label. */
+export function transferStateLabelKey(stateKind: string): `states.${string}` {
+	return knownTransferStates.has(stateKind)
+		? `states.${stateKind}`
+		: "states.unknown";
+}
+
 /** Whether the Transfer is paused/stopped (download or seeding). */
 export function isTransferPaused(stateKind: string): boolean {
 	return (
@@ -84,24 +160,14 @@ function isSeedingLike(transfer: {
 export function getOptimisticStoppedState(transfer: {
 	progress: number;
 	stateKind: string;
-}): { stateKind: string; stateLabelKey: OptimisticStateLabelKey } {
-	return isSeedingLike(transfer)
-		? { stateKind: "stoppedUP", stateLabelKey: "optimistic.pausedReady" }
-		: { stateKind: "stoppedDL", stateLabelKey: "optimistic.paused" };
+}): string {
+	return isSeedingLike(transfer) ? "stoppedUP" : "stoppedDL";
 }
 
 /** Optimistic status after start. */
 export function getOptimisticStartedState(transfer: {
 	progress: number;
 	stateKind: string;
-}): { stateKind: string; stateLabelKey: OptimisticStateLabelKey } {
-	return isSeedingLike(transfer)
-		? { stateKind: "uploading", stateLabelKey: "optimistic.seeding" }
-		: { stateKind: "downloading", stateLabelKey: "optimistic.downloading" };
+}): string {
+	return isSeedingLike(transfer) ? "uploading" : "downloading";
 }
-
-export type OptimisticStateLabelKey =
-	| "optimistic.pausedReady"
-	| "optimistic.paused"
-	| "optimistic.seeding"
-	| "optimistic.downloading";

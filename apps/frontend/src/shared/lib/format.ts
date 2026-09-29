@@ -13,17 +13,24 @@ export function formatSpeed(bytesPerSec: number): string {
 	return `${formatBytes(bytesPerSec)}/s`;
 }
 
-export function formatEta(seconds: number): string {
+export function formatEta(seconds: number, locale = "ru-RU"): string {
 	if (seconds >= 8640000) return "∞";
 	if (seconds <= 0) return "—";
 	const hours = Math.floor(seconds / 3600);
 	const minutes = Math.floor((seconds % 3600) / 60);
-	if (hours > 0) return `${hours}h ${minutes}m`;
-	return `${minutes}m`;
+	const isRu = locale.startsWith("ru");
+	if (hours > 0) {
+		return isRu ? `${hours} ч ${minutes} мин` : `${hours}h ${minutes}m`;
+	}
+	return isRu ? `${minutes} мин` : `${minutes}m`;
 }
 
+/** Whole numbers stay short ("100%", "0%"); partial progress keeps one decimal. */
 export function formatProgress(progress: number): string {
-	return `${(progress * 100).toFixed(1)}%`;
+	const pct = Math.min(100, Math.max(0, progress * 100));
+	if (pct >= 100) return "100%";
+	if (pct <= 0) return "0%";
+	return `${pct.toFixed(1)}%`;
 }
 
 /** Formats a qBittorrent `added_on` unix timestamp (seconds). */

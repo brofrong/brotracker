@@ -232,4 +232,12 @@ export type TitleDeps = {
 	}) => Promise<WatchTask>;
 	/** Same path the nightly worker uses to drain pending tasks. */
 	processWatchTask: (taskId: string) => Promise<ProcessWatchTaskResult>;
+	/** Upsert a link between a key and a titleId. */
+	upsertLink: (key: string, titleId: string) => Promise<void>;
+	/** Load all title links. */
+	loadAllLinks: () => Promise<Record<string, string>>;
+	/** TitleWatches that point at a Title (fallback link for tracked series). */
+	listTitledWatches: () => Promise<
+		Array<{ topicUrl: string; titleId: string; qbHash: string | null }>
+	>;
 };

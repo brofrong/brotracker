@@ -72,6 +72,9 @@ function deps(overrides: Partial<TitleDeps> = {}): TitleDeps {
 			finishedAt: null,
 		}),
 		processWatchTask: async () => ({ outcome: "not_found" }),
+		upsertLink: async () => {},
+		loadAllLinks: async () => ({}),
+		listTitledWatches: async () => [],
 		...overrides,
 	};
 }

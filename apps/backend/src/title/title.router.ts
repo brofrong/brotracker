@@ -5,10 +5,11 @@ import {
 	AddFromTrackerGatewayError,
 	AddFromTrackerPreconditionError,
 } from "../qbittorent/qbittorent.service";
-import { protectedProcedure, router } from "../trpc";
 import type { BrowseOutcome } from "../tmdb/browse";
+import { protectedProcedure, router } from "../trpc";
 import {
 	TitleAddError,
+	TitleLinkError,
 	TitleWatchError,
 	titleModule,
 	tmdbBrowse,
@@ -184,5 +185,22 @@ export const titleRouter = router({
 		.mutation(async ({ input }) => {
 			assertTitleId(input.id);
 			return titleModule.checkNow(input);
+		}),
+
+	transferLinks: protectedProcedure.query(async () => {
+		return titleModule.transferLinks();
+	}),
+
+	linkTransfer: protectedProcedure
+		.input(z.object({ hash: z.string().min(1), titleId: z.string().min(1) }))
+		.mutation(async ({ input }) => {
+			try {
+				return await titleModule.linkTransfer(input);
+			} catch (error) {
+				if (error instanceof TitleLinkError) {
+					throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+				}
+				throw error;
+			}
 		}),
 });

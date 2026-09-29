@@ -40,6 +40,7 @@ import {
 	formatProgress,
 	formatSpeed,
 } from "#/shared/lib/format";
+import { transferStateLabelKey } from "#/shared/lib/transfer-status";
 import { trpc } from "#/shared/lib/trpc";
 import { TitleCard } from "#/shared/ui/title-card";
 import { TmdbAttribution } from "#/shared/ui/tmdb-attribution";
@@ -168,6 +169,8 @@ function TitleTorrentsList({
 	seasons: number | null;
 }) {
 	const { t } = useTranslation("title");
+	const { t: tTransfers } = useTranslation("transfers");
+	const { bcp47 } = useLocale();
 	const toast = useToast();
 	const queryClient = useQueryClient();
 	const isTv = facet === "tv";
@@ -280,7 +283,7 @@ function TitleTorrentsList({
 					options={seasonOptions}
 					placeholder={t("torrents.allSeasons")}
 					size="sm"
-					value={season ?? undefined}
+					value={season ?? null}
 					width={200}
 				/>
 			) : null}
@@ -399,12 +402,16 @@ function TitleTorrentsList({
 												<Text hasTabularNumbers type="supporting">
 													{done
 														? t("torrents.doneStatus", {
-																stateLabel: transfer.stateLabel,
+																stateLabel: tTransfers(
+																	transferStateLabelKey(transfer.stateKind),
+																),
 															})
 														: t("torrents.activeStatus", {
-																stateLabel: transfer.stateLabel,
+																stateLabel: tTransfers(
+																	transferStateLabelKey(transfer.stateKind),
+																),
 																speed: formatSpeed(transfer.downloadSpeed),
-																eta: formatEta(transfer.etaSeconds),
+																eta: formatEta(transfer.etaSeconds, bcp47),
 															})}
 												</Text>
 											</VStack>
@@ -425,7 +432,7 @@ function TitleTorrentsList({
 										<Button
 											href={item.topicUrl}
 											icon={<Icon icon="externalLink" size="sm" />}
-											isExternalLink
+											rel="noopener noreferrer"
 											label={t("torrents.onTracker")}
 											size="sm"
 											target="_blank"
@@ -656,7 +663,6 @@ function TitleHero({
 						as="button"
 						className="cursor-pointer"
 						onClick={onOpenPoster}
-						type="button"
 						width="100%"
 					>
 						<AspectRatio
@@ -841,7 +847,6 @@ function CastMemberCard({ member }: { member: CastMember }) {
 					params: { id: String(member.id) },
 				})
 			}
-			type="button"
 			width={128}
 		>
 			{content}
@@ -1008,7 +1013,7 @@ export function TitlePage({ id }: { id: string }) {
 				className="pointer-events-none fixed inset-0 z-0 bg-overlay opacity-100"
 			/>
 			<svg
-				aria-hidden
+				aria-hidden="true"
 				className="pointer-events-none fixed inset-0 z-0 size-full opacity-50 mix-blend-overlay"
 			>
 				<filter id="title-backdrop-grain">

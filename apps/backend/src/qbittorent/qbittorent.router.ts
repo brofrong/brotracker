@@ -1,11 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
-import {
-	AddFromTrackerGatewayError,
-	AddFromTrackerPreconditionError,
-	addFromTracker,
-} from "./qbittorent.service";
+import { toLiveTorrents } from "./live-torrent";
 import {
 	deleteTorrent,
 	getFreeSpaceOnDisk,
@@ -13,11 +9,22 @@ import {
 	pauseTorrent,
 	resumeTorrent,
 } from "./qbittorent.client";
-import { iterateTorrentUpdates, refreshTorrentUpdates } from "./qbittorent.poller";
-import { toLiveTorrents } from "./live-torrent";
+import {
+	iterateTorrentUpdates,
+	refreshTorrentUpdates,
+} from "./qbittorent.poller";
+import {
+	AddFromTrackerGatewayError,
+	AddFromTrackerPreconditionError,
+	addFromTracker,
+} from "./qbittorent.service";
 
 const torrentIdInput = z.object({
 	id: z.string().min(1),
+});
+
+const bulkTorrentIdsInput = z.object({
+	ids: z.array(z.string().min(1)).min(1),
 });
 
 export const qbittorentRouter = router({
@@ -36,17 +43,27 @@ export const qbittorentRouter = router({
 		}
 	}),
 
-	pause: protectedProcedure.input(torrentIdInput).mutation(async ({ input }) => {
-		await pauseTorrent(input.id);
-		await refreshTorrentUpdates();
-		return { ok: true as const };
-	}),
+	pause: protectedProcedure
+		.input(torrentIdInput)
+		.mutation(async ({ input }) => {
+			await pauseTorrent(input.id);
+			await refreshTorrentUpdates();
+			return { ok: true as const };
+		}),
 
 	pauseAll: protectedProcedure.mutation(async () => {
 		await pauseTorrent("all");
 		await refreshTorrentUpdates();
 		return { ok: true as const };
 	}),
+
+	pauseMany: protectedProcedure
+		.input(bulkTorrentIdsInput)
+		.mutation(async ({ input }) => {
+			await pauseTorrent(input.ids.join("|"));
+			await refreshTorrentUpdates();
+			return { ok: true as const };
+		}),
 
 	resume: protectedProcedure
 		.input(torrentIdInput)
@@ -62,10 +79,26 @@ export const qbittorentRouter = router({
 		return { ok: true as const };
 	}),
 
+	resumeMany: protectedProcedure
+		.input(bulkTorrentIdsInput)
+		.mutation(async ({ input }) => {
+			await resumeTorrent(input.ids.join("|"));
+			await refreshTorrentUpdates();
+			return { ok: true as const };
+		}),
+
 	delete: protectedProcedure
 		.input(torrentIdInput)
 		.mutation(async ({ input }) => {
 			await deleteTorrent(input.id);
+			await refreshTorrentUpdates();
+			return { ok: true as const };
+		}),
+
+	deleteMany: protectedProcedure
+		.input(bulkTorrentIdsInput)
+		.mutation(async ({ input }) => {
+			await deleteTorrent(input.ids.join("|"));
 			await refreshTorrentUpdates();
 			return { ok: true as const };
 		}),

@@ -1,5 +1,5 @@
-import { catalog } from "../catalog";
 import type { CatalogSearchResult } from "../catalog";
+import { catalog } from "../catalog";
 import { toLiveTorrent } from "../qbittorent/live-torrent";
 import {
 	getTorrents,
@@ -11,14 +11,18 @@ import { createTmdbBrowse } from "../tmdb/browse";
 import { logger } from "../utils/logger";
 import { createFetchTmdbMeta } from "./fetch-tmdb-meta";
 import { createDefaultRatingsPort } from "./ratings-port";
-import { createTitleModule, TitleAddError, TitleWatchError } from "./title";
-import type {
-	TitleTorrentCandidate,
-	TitleTorrentsSearch,
-} from "./title.types";
+import {
+	createTitleModule,
+	TitleAddError,
+	TitleLinkError,
+	TitleWatchError,
+} from "./title";
+import type { TitleTorrentCandidate, TitleTorrentsSearch } from "./title.types";
+import { loadAllLinks, upsertLink } from "./title-link.repository";
 import {
 	getTitleWatchFeed,
 	listQbTorrents,
+	listTitledWatches,
 	nightlyWorker,
 	watch,
 } from "./watch";
@@ -41,9 +45,9 @@ function toCandidate(hit: CatalogSearchResult): TitleTorrentCandidate {
 async function searchTorrentsForTitle(
 	query: string,
 ): Promise<TitleTorrentsSearch> {
-	const localPromise = catalog.search(query).then((page) =>
-		page.results.map(toCandidate),
-	);
+	const localPromise = catalog
+		.search(query)
+		.then((page) => page.results.map(toCandidate));
 
 	try {
 		const [local, trackerPage] = await Promise.all([
@@ -113,12 +117,21 @@ export const titleModule = createTitleModule({
 	now: watch.now,
 	enqueueWatchTask: watch.enqueueTask,
 	processWatchTask: watch.processTask,
+	upsertLink,
+	loadAllLinks,
+	listTitledWatches,
 });
 
 export const tmdbBrowse = createTmdbBrowse({
 	resolveCredentials: resolveTmdbCredentials,
 });
 
-export { getTitleWatchFeed, nightlyWorker };
-export { createTitleModule, TitleAddError, TitleWatchError };
 export { createFetchTmdbMeta } from "./fetch-tmdb-meta";
+export {
+	createTitleModule,
+	getTitleWatchFeed,
+	nightlyWorker,
+	TitleAddError,
+	TitleLinkError,
+	TitleWatchError,
+};

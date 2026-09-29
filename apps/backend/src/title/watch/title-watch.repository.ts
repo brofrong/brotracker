@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, isNotNull } from "drizzle-orm";
 import { db } from "../../db/db";
 import { titleWatches } from "../../db/title/title-watch.schema";
 import type { TitleWatchRecord } from "./check-topic-now";
@@ -30,17 +30,11 @@ function toRow(record: TitleWatchRecord) {
 		watch: record.watch,
 		source: record.source,
 		size: record.size,
-		registeredAt: record.registeredAt
-			? new Date(record.registeredAt)
-			: null,
+		registeredAt: record.registeredAt ? new Date(record.registeredAt) : null,
 		contentHash: record.contentHash,
 		qbHash: record.qbHash,
-		lastCheckedAt: record.lastCheckedAt
-			? new Date(record.lastCheckedAt)
-			: null,
-		lastChangedAt: record.lastChangedAt
-			? new Date(record.lastChangedAt)
-			: null,
+		lastCheckedAt: record.lastCheckedAt ? new Date(record.lastCheckedAt) : null,
+		lastChangedAt: record.lastChangedAt ? new Date(record.lastChangedAt) : null,
 		lastError: record.lastError,
 		updatedAt: new Date(),
 	};
@@ -91,4 +85,23 @@ export async function saveWatch(record: TitleWatchRecord): Promise<void> {
 				updatedAt: values.updatedAt,
 			},
 		});
+}
+
+/** Watches that already point at a Title (used to link live Transfers to Titles). */
+export async function listTitledWatches(): Promise<
+	Array<{ topicUrl: string; titleId: string; qbHash: string | null }>
+> {
+	const rows = await db
+		.select({
+			topicUrl: titleWatches.topicUrl,
+			titleId: titleWatches.titleId,
+			qbHash: titleWatches.qbHash,
+		})
+		.from(titleWatches)
+		.where(isNotNull(titleWatches.titleId));
+	return rows.flatMap((row) =>
+		row.titleId
+			? [{ topicUrl: row.topicUrl, titleId: row.titleId, qbHash: row.qbHash }]
+			: [],
+	);
 }
