@@ -1,5 +1,5 @@
 import type { BetterAuthOptions } from "better-auth";
-import { OIDC_PROVIDER_ID } from "./account-issuer";
+import { OIDC_PROVIDER_ID } from "./oidc-provider";
 
 export const OIDC_ACCOUNT_OPTIONS = {
 	accountLinking: {

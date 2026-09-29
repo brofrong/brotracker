@@ -1,11 +1,4 @@
-import {
-	boolean,
-	index,
-	pgTable,
-	text,
-	timestamp,
-	uniqueIndex,
-} from "drizzle-orm/pg-core";
+import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
 	id: text("id").primaryKey(),
@@ -45,7 +38,6 @@ export const account = pgTable(
 		id: text("id").primaryKey(),
 		accountId: text("account_id").notNull(),
 		providerId: text("provider_id").notNull(),
-		issuer: text("issuer").notNull(),
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
@@ -61,13 +53,7 @@ export const account = pgTable(
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
-	(table) => [
-		index("account_userId_idx").on(table.userId),
-		uniqueIndex("account_issuer_accountId_uidx").on(
-			table.issuer,
-			table.accountId,
-		),
-	],
+	(table) => [index("account_userId_idx").on(table.userId)],
 );
 
 export const verification = pgTable(

@@ -32,7 +32,7 @@
     "@trpc/client": "^11.19.0",
     "@trpc/server": "^11.19.0",
     "@trpc/tanstack-react-query": "^11.19.0",
-    "better-auth": "1.7.1",
+    "better-auth": "1.7.6",
     "i18next": "^26.4.2",
     "lucide-react": "^1.48.0",
     "react": "^19.3.0",

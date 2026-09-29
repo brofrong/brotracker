@@ -7,13 +7,13 @@ import * as authSchema from "../db/auth/auth.schema";
 import { user } from "../db/auth/auth.schema";
 import { db } from "../db/db";
 import { env } from "../utils/env";
-import { OIDC_ACCOUNT_ISSUER, OIDC_PROVIDER_ID } from "./account-issuer";
 import { OIDC_ACCOUNT_OPTIONS } from "./account-linking";
 import {
 	type AuthMode,
 	assertLocalSignUpAllowed,
 	resolveAuthMode,
 } from "./auth-mode";
+import { OIDC_PROVIDER_ID } from "./oidc-provider";
 
 export async function countUsers(): Promise<number> {
 	const [row] = await db.select({ value: count() }).from(user);
@@ -63,7 +63,6 @@ export function createAuth(secret: string) {
 							clientSecret,
 							scopes: ["openid", "profile", "email"],
 							pkce: true,
-							accountIssuer: OIDC_ACCOUNT_ISSUER,
 						},
 					],
 				}),
