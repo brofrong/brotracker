@@ -3,11 +3,20 @@ import { inArray } from "drizzle-orm";
 import { db } from "../db/db";
 import { torrents } from "../db/torrent/torrent.schema";
 import { publicUrl } from "../storage/s3";
-import { logger } from "../utils/logger";
 import { enqueueCoverFetch } from "../torrent/cover.queue";
 import { normalizeTitle } from "../torrent/title-norm";
-import { searchLocal, listRecent, upsertFromTracker } from "../torrent/torrent.repository";
+import {
+	listRecent,
+	searchLocal,
+	upsertFromTracker,
+} from "../torrent/torrent.repository";
 import { getTracker, listEnabledTrackers } from "../torrent/torrent.tracker";
+import {
+	classifyTrackerError,
+	errorMessage,
+	type TrackerFailure,
+} from "../torrent/tracker-error";
+import { logger } from "../utils/logger";
 import { createCatalog } from "./catalog";
 
 async function loadImageKeys(
@@ -49,29 +58,31 @@ export const catalog = createCatalog({
 			return { status: "unavailable" };
 		}
 
-		const settled = await Promise.allSettled(
+		const attempts = await Promise.all(
 			sources.map(async (source) => {
-				const tracker = await getTracker(source);
-				const page = await tracker.search(query, options);
-				if (page.isErr()) {
-					throw page.error;
+				try {
+					const tracker = await getTracker(source);
+					const page = await tracker.search(query, options);
+					if (page.isErr()) {
+						throw page.error;
+					}
+					return { source, ok: true as const, page: page.value };
+				} catch (reason) {
+					return { source, ok: false as const, reason };
 				}
-				return page.value;
 			}),
 		);
 
 		const results: SearchResult[] = [];
+		const failures: TrackerFailure[] = [];
+		let firstError: Error | null = null;
 		let totalResults: number | null = 0;
 		let allTotalsNumeric = true;
-		let successCount = 0;
 
-		for (let i = 0; i < settled.length; i++) {
-			const outcome = settled[i];
-			const source = sources[i];
-			if (outcome.status === "fulfilled") {
-				successCount += 1;
-				results.push(...outcome.value.results);
-				const total = outcome.value.totalResults;
+		for (const attempt of attempts) {
+			if (attempt.ok) {
+				results.push(...attempt.page.results);
+				const total = attempt.page.totalResults;
 				if (total == null) {
 					allTotalsNumeric = false;
 				} else if (allTotalsNumeric) {
@@ -80,36 +91,32 @@ export const catalog = createCatalog({
 				continue;
 			}
 
+			const { source, reason } = attempt;
+			const message = errorMessage(reason);
+			const code = classifyTrackerError(message);
+			failures.push({ source, code, message });
+			firstError ??= reason instanceof Error ? reason : new Error(message);
 			logger.error(
-				{
-					source,
-					err:
-						outcome.reason instanceof Error
-							? outcome.reason.message
-							: String(outcome.reason),
-					query,
-				},
+				{ source, code, err: message, query },
 				"torrent search: tracker failed",
 			);
 		}
 
-		if (successCount === 0) {
-			const firstError = settled.find((o) => o.status === "rejected");
-			if (
-				firstError?.status === "rejected" &&
-				firstError.reason instanceof Error
-			) {
-				return { status: "error", error: firstError.reason };
-			}
-			return { status: "unavailable" };
+		if (firstError && failures.length === attempts.length) {
+			return { status: "error", error: firstError, failures };
 		}
 
 		return {
 			status: "ok",
 			results,
 			totalResults: allTotalsNumeric ? totalResults : null,
+			failures,
 		};
 	},
 });
 
-export type { CatalogSearchResponse, CatalogSearchResult } from "./catalog";
+export type {
+	CatalogRefreshResponse,
+	CatalogSearchResponse,
+	CatalogSearchResult,
+} from "./catalog";

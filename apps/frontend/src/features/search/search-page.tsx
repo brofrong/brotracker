@@ -2,6 +2,7 @@
 
 import { AspectRatio } from "@astryxdesign/core/AspectRatio";
 import { Badge } from "@astryxdesign/core/Badge";
+import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Heading } from "@astryxdesign/core/Heading";
@@ -214,7 +215,7 @@ export function SearchPage({ search }: { search?: string }) {
 						<Button
 							href={item.topicUrl}
 							icon={<Icon icon="externalLink" size="sm" />}
-							isExternalLink
+							rel="noopener noreferrer"
 							label={t("onTracker")}
 							size="sm"
 							target="_blank"
@@ -227,9 +228,10 @@ export function SearchPage({ search }: { search?: string }) {
 		[openDownload, t],
 	);
 
-	const columnResize = useTableColumnResize({
+	const columnResize = useTableColumnResize<SearchRow>({
 		columnWidths,
-		columns,
+		// Library config is not generic over the row type.
+		columns: columns as unknown as TableColumn<Record<string, unknown>>[],
 		minWidth: 64,
 		onColumnResizeEnd: (updates) => {
 			setColumnWidths((prev) => ({ ...prev, ...updates }));
@@ -267,6 +269,11 @@ export function SearchPage({ search }: { search?: string }) {
 			collisionBehavior: "ignore",
 		});
 	}, [refreshQuery.isError, refreshQuery.error, toast, t]);
+
+	const trackerFailures =
+		hasActiveSearch && refreshQuery.isSuccess
+			? refreshQuery.data.trackerFailures
+			: [];
 
 	const displayData = hasActiveSearch
 		? refreshQuery.isSuccess
@@ -332,6 +339,29 @@ export function SearchPage({ search }: { search?: string }) {
 					<Text type="supporting">{t("searchingTracker")}</Text>
 				</HStack>
 			) : null}
+			{trackerFailures.map((failure) => (
+				<Banner
+					key={failure.source}
+					container="section"
+					description={tCommon(`trackerError.${failure.code}`)}
+					endContent={
+						<Button
+							label={tCommon("openSettings")}
+							onClick={() =>
+								void navigate({
+									to: "/settings",
+									search: { section: failure.source },
+								})
+							}
+							variant="secondary"
+						/>
+					}
+					status="warning"
+					title={t("trackerFailed", {
+						tracker: tCommon(`trackerSource.${failure.source}`),
+					})}
+				/>
+			))}
 			{showInitialSpinner ? <Spinner label={t("loading")} /> : null}
 			{showLocalError ? (
 				<EmptyState description={errorMessage} title={t("errorTitle")} />

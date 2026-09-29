@@ -31,6 +31,10 @@ import { trpc } from "#/shared/lib/trpc";
 import { LocaleToggle } from "#/shared/ui/LocaleToggle";
 import { ThemeToggle } from "#/shared/ui/ThemeToggle";
 import { TmdbAttribution } from "#/shared/ui/tmdb-attribution";
+import {
+	TrackerDiagnostics,
+	type TrackerDiagnosticsResult,
+} from "./tracker-diagnostics";
 
 export type SettingsSection =
 	| "account"
@@ -249,6 +253,8 @@ function TrackerProviderSettingsForm({
 	const [autoHost, setAutoHost] = useState(true);
 	const [host, setHost] = useState("");
 	const [message, setMessage] = useState<StatusMessage>(null);
+	const [diagnostics, setDiagnostics] =
+		useState<TrackerDiagnosticsResult | null>(null);
 
 	useEffect(() => {
 		if (!settingsQuery.data) {
@@ -317,11 +323,8 @@ function TrackerProviderSettingsForm({
 		...(provider === "rutracker"
 			? trpc.settings.providers.rutracker.test.mutationOptions()
 			: (trpc.settings.providers.kinozal.test.mutationOptions() as never)),
-		onSuccess: () => {
-			setMessage({
-				status: "success",
-				text: t(`${provider}.testSuccess`),
-			});
+		onSuccess: (result) => {
+			setDiagnostics(result);
 		},
 		onError: (error) => {
 			setMessage({
@@ -334,6 +337,7 @@ function TrackerProviderSettingsForm({
 	const onSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setMessage(null);
+		setDiagnostics(null);
 		(saveMutation.mutate as (vars: Record<string, unknown>) => void)({
 			login: login.trim(),
 			password,
@@ -436,6 +440,7 @@ function TrackerProviderSettingsForm({
 					{message ? (
 						<Banner status={message.status} title={message.text} />
 					) : null}
+					{diagnostics ? <TrackerDiagnostics result={diagnostics} /> : null}
 
 					<HStack gap={2} wrap="wrap">
 						<Button
@@ -453,6 +458,7 @@ function TrackerProviderSettingsForm({
 							isDisabled={!canTest || isBusy}
 							onClick={() => {
 								setMessage(null);
+								setDiagnostics(null);
 								testMutation.mutate();
 							}}
 						/>

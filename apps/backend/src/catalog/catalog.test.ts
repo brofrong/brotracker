@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { SearchResult } from "@brotracker/rutracker-ts/tracker/tracker-interface";
-import { createCatalog, type CatalogDeps } from "./catalog";
+import { type CatalogDeps, createCatalog, TrackerSearchError } from "./catalog";
 
 const hit = (overrides: Partial<SearchResult> = {}): SearchResult => ({
 	torrentId: "100",
@@ -126,6 +126,7 @@ describe("catalog.searchRefresh", () => {
 			},
 			searchTracker: async () => ({
 				status: "ok",
+				failures: [],
 				totalResults: 2,
 				results: [
 					hit({ torrentId: "10" }),
@@ -152,6 +153,7 @@ describe("catalog.searchRefresh", () => {
 		expect(enqueued).toEqual([["11"]]);
 		expect(response).toEqual({
 			totalResults: 2,
+			trackerFailures: [],
 			results: [
 				{
 					...hit({ torrentId: "10" }),
@@ -176,6 +178,7 @@ describe("catalog.searchRefresh", () => {
 			},
 			searchTracker: async () => ({
 				status: "ok",
+				failures: [],
 				totalResults: 2,
 				// Tracker order: higher leeches / 1080p first (as RuTracker returns)
 				results: [
@@ -228,9 +231,7 @@ describe("catalog.searchRefresh", () => {
 			},
 		});
 
-		await expect(catalog.searchRefresh("film", {})).rejects.toThrow(
-			/tracker/i,
-		);
+		await expect(catalog.searchRefresh("film", {})).rejects.toThrow(/tracker/i);
 	});
 
 	test("throws when tracker returns error", async () => {
@@ -243,6 +244,9 @@ describe("catalog.searchRefresh", () => {
 			searchTracker: async () => ({
 				status: "error",
 				error: new Error("timeout"),
+				failures: [
+					{ source: "rutracker", code: "timeout", message: "timeout" },
+				],
 			}),
 			upsertFromTracker: async () => {
 				throw new Error("should not upsert on error");
@@ -268,6 +272,7 @@ describe("catalog.searchRefresh", () => {
 			},
 			searchTracker: async () => ({
 				status: "ok",
+				failures: [],
 				totalResults: 3,
 				results: [
 					hit({ torrentId: "rutracker:1", title: "RuTracker hit" }),
@@ -292,5 +297,121 @@ describe("catalog.searchRefresh", () => {
 			"rutracker:1",
 			"kinozal:2",
 		]);
+	});
+
+	test("reports trackers that failed while others answered", async () => {
+		const kinozalDown = {
+			source: "kinozal" as const,
+			code: "timeout" as const,
+			message: "timeout of 30000ms exceeded",
+		};
+		const catalog = createCatalog({
+			normalizeTitle: (q) => q,
+			searchLocal: async () => {
+				throw new Error("local search should not run for refresh");
+			},
+			listRecent: async () => {
+				throw new Error("listRecent should not run for refresh");
+			},
+			searchTracker: async () => ({
+				status: "ok",
+				failures: [kinozalDown],
+				totalResults: 1,
+				results: [hit({ torrentId: "rutracker:1" })],
+			}),
+			upsertFromTracker: async () => {},
+			loadImageKeys: async () => new Map(),
+			publicUrl: (key) => key,
+			enqueueCoverFetch: () => {},
+		});
+
+		const response = await catalog.searchRefresh("film", {});
+
+		expect(response.trackerFailures).toEqual([kinozalDown]);
+	});
+
+	test("throws TrackerSearchError carrying failures when every tracker fails", async () => {
+		const failures = [
+			{
+				source: "rutracker" as const,
+				code: "solver" as const,
+				message: "CF solver failed",
+			},
+			{
+				source: "kinozal" as const,
+				code: "timeout" as const,
+				message: "timeout",
+			},
+		];
+		const catalog = createCatalog({
+			normalizeTitle: (q) => q,
+			searchLocal: async () => [],
+			listRecent: async () => [],
+			searchTracker: async () => ({
+				status: "error",
+				error: new Error("CF solver failed"),
+				failures,
+			}),
+			upsertFromTracker: async () => {},
+			loadImageKeys: async () => new Map(),
+			publicUrl: (key) => key,
+			enqueueCoverFetch: () => {},
+		});
+
+		const error = await catalog.searchRefresh("film", {}).catch((e) => e);
+
+		expect(error).toBeInstanceOf(TrackerSearchError);
+		expect(error.message).toBe("CF solver failed");
+		expect(error.failures).toEqual(failures);
+	});
+});
+
+describe("catalog.searchRefreshOrLocal", () => {
+	test("falls back to local hits with failures when every tracker fails", async () => {
+		const failures = [
+			{
+				source: "rutracker" as const,
+				code: "timeout" as const,
+				message: "timeout",
+			},
+		];
+		const catalog = createCatalog({
+			normalizeTitle: (q) => q,
+			searchLocal: async () => [
+				{ ...hit({ torrentId: "cached" }), imageKey: null },
+			],
+			listRecent: async () => [],
+			searchTracker: async () => ({
+				status: "error",
+				error: new Error("timeout"),
+				failures,
+			}),
+			upsertFromTracker: async () => {},
+			loadImageKeys: async () => new Map(),
+			publicUrl: (key) => key,
+			enqueueCoverFetch: () => {},
+		});
+
+		const response = await catalog.searchRefreshOrLocal("film", {});
+
+		expect(response.results.map((r) => r.torrentId)).toEqual(["cached"]);
+		expect(response.trackerFailures).toEqual(failures);
+	});
+
+	test("still throws when no tracker is enabled", async () => {
+		const catalog = createCatalog({
+			normalizeTitle: (q) => q,
+			searchLocal: async () => [],
+			listRecent: async () => [],
+			searchTracker: async () => ({ status: "unavailable" }),
+			upsertFromTracker: async () => {},
+			loadImageKeys: async () => new Map(),
+			publicUrl: (key) => key,
+			enqueueCoverFetch: () => {},
+		});
+
+		await expect(catalog.searchRefreshOrLocal("film", {})).rejects.toThrow(
+			/tracker/i,
+		);
 	});
 });

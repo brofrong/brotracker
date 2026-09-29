@@ -1,16 +1,15 @@
-import type { SearchResult } from "@brotracker/rutracker-ts/tracker/tracker-interface";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { fetchWithProxy } from "../http/fetch-with-proxy";
 import { testQbittorrentConnection } from "../qbittorent/qbittorent.client";
-import {
-	getTracker,
-	TrackerNotConfiguredError,
-} from "../torrent/torrent.tracker";
-import { logger } from "../utils/logger";
+import { TrackerNotConfiguredError } from "../torrent/torrent.tracker";
+import type { TrackerDiagnosticsResult } from "../torrent/tracker-diagnostics";
+import { trackerDiagnostics } from "../torrent/tracker-diagnostics.live";
 import { protectedProcedure, router } from "../trpc";
+import { logger } from "../utils/logger";
+import { kinozalConfigSchema } from "./kinozal-config";
 import { MissingSecretError, proxyUrlSchema } from "./provider-config";
 import { providerConfig } from "./provider-config.live";
-import { kinozalConfigSchema } from "./kinozal-config";
 import {
 	resolveTmdbCredentials,
 	saveKinozalSettings,
@@ -18,7 +17,6 @@ import {
 	saveRutrackerSettings,
 	saveTmdbSettings,
 } from "./provider-settings";
-import { fetchWithProxy } from "../http/fetch-with-proxy";
 
 const trackerSetInputSchema = z.object({
 	login: z.string().trim().min(1, "Login is required"),
@@ -97,17 +95,9 @@ async function testTmdbConnection(): Promise<{ ok: true }> {
 
 async function testTrackerConnection(
 	source: "rutracker" | "kinozal",
-): Promise<{ ok: true }> {
+): Promise<TrackerDiagnosticsResult> {
 	try {
-		const tracker = await getTracker(source);
-		const result = await tracker._getHTML("test", {});
-		if (result.isErr()) {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message: result.error.message,
-			});
-		}
-		return { ok: true as const };
+		return await trackerDiagnostics.diagnose(source);
 	} catch (error) {
 		if (error instanceof TrackerNotConfiguredError) {
 			throw new TRPCError({
@@ -115,13 +105,7 @@ async function testTrackerConnection(
 				message: error.message,
 			});
 		}
-		if (error instanceof TRPCError) {
-			throw error;
-		}
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: error instanceof Error ? error.message : String(error),
-		});
+		throw error;
 	}
 }
 
@@ -184,8 +168,7 @@ export const settingsRouter = router({
 				} catch (error) {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
-						message:
-							error instanceof Error ? error.message : String(error),
+						message: error instanceof Error ? error.message : String(error),
 					});
 				}
 			}),

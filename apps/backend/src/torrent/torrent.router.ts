@@ -55,8 +55,8 @@ export const torrentRouter = router({
 		.query(async ({ input }) => {
 			const searchText = input.search?.trim();
 			if (!searchText) {
-				return { results: [], totalResults: null };
+				return { results: [], totalResults: null, trackerFailures: [] };
 			}
-			return catalog.searchRefresh(searchText, input.options);
+			return catalog.searchRefreshOrLocal(searchText, input.options);
 		}),
 });
