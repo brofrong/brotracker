@@ -4,22 +4,29 @@ import type { WatchTask } from "./process-watch-task";
 import type { SyncQbTorrent } from "./sync-watches-from-qb";
 import type { TitleWatchEvent } from "./title-watch-event";
 import { createWatch } from "./watch";
-import type { WatchDeps, WatchStore, WatchTransfers, WatchTracker } from "./watch.types";
+import type {
+	WatchDeps,
+	WatchStore,
+	WatchTracker,
+	WatchTransfers,
+} from "./watch.types";
 
 const NOW = "2026-08-05T12:00:00.000Z";
 const TOPIC_URL = "https://rutracker.org/forum/viewtopic.php?t=100";
 
-function createInMemoryDeps(options: {
-	qbTorrents?: SyncQbTorrent[];
-	seriesPath?: string | null;
-	torrentBytes?: Uint8Array;
-	topicMeta?: {
-		size: number;
-		registeredAt: string | null;
-		torrentFileUrl: string;
-	};
-	isCompletePack?: (name: string) => boolean;
-} = {}): {
+function createInMemoryDeps(
+	options: {
+		qbTorrents?: SyncQbTorrent[];
+		seriesPath?: string | null;
+		torrentBytes?: Uint8Array;
+		topicMeta?: {
+			size: number;
+			registeredAt: string | null;
+			torrentFileUrl: string;
+		};
+		isCompletePack?: (name: string) => boolean;
+	} = {},
+): {
 	deps: WatchDeps;
 	watches: Map<string, TitleWatchRecord>;
 	tasks: Map<string, WatchTask>;
@@ -238,7 +245,9 @@ describe("createWatch", () => {
 		expect(enqueued).toBe(1);
 		const pendingIds = await watch.listPendingTaskIds();
 		expect(pendingIds).toHaveLength(1);
-		const task = await deps.store.loadTask(pendingIds[0]!);
+		const [pendingId] = pendingIds;
+		if (!pendingId) throw new Error("expected a pending task");
+		const task = await deps.store.loadTask(pendingId);
 		expect(task).toMatchObject({
 			topicUrl: TOPIC_URL,
 			titleId: "tmdb:tv:1",

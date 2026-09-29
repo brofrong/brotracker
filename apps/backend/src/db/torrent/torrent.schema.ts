@@ -1,10 +1,4 @@
-import {
-	bigint,
-	integer,
-	pgTable,
-	text,
-	timestamp,
-} from "drizzle-orm/pg-core";
+import { bigint, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const torrents = pgTable("torrents", {
 	torrentId: text("torrent_id").primaryKey(),

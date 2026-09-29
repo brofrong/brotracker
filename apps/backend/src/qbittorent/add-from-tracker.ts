@@ -1,5 +1,5 @@
-import { RUTRACKER_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/constants";
 import { isKinozalDownloadUrl } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/hosts";
+import { RUTRACKER_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/constants";
 
 export class AddFromTrackerPreconditionError extends Error {
 	constructor(message: string) {

@@ -1,5 +1,5 @@
-import { eq } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
+import { eq } from "drizzle-orm";
 import { db } from "../db/db";
 import { appSettings } from "../db/settings/app-settings.schema";
 import { logger } from "../utils/logger";

@@ -92,7 +92,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 		<html lang="ru-RU" suppressHydrationWarning>
 			<head>
 				<HeadContent />
+				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: static inline script (no user input) to avoid a theme flash */}
 				<script dangerouslySetInnerHTML={{ __html: themeFlashScript }} />
+				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: static inline script (no user input) to set <html lang> before paint */}
 				<script dangerouslySetInnerHTML={{ __html: localeFlashScript }} />
 			</head>
 			<body className="bg-body text-primary antialiased">

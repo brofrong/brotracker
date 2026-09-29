@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { QbittorentTorrent } from "./qbittorent.types";
 import { toLiveTorrent } from "./live-torrent";
+import type { QbittorentTorrent } from "./qbittorent.types";
 
 const wire = (overrides: Partial<QbittorentTorrent> = {}): QbittorentTorrent =>
 	({

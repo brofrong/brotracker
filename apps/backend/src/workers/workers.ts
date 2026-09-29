@@ -31,13 +31,13 @@ export function createWorkers(deps: WorkersDeps) {
 	async function assertNotRunning(workerId: string): Promise<void> {
 		const running = await deps.store.findRunning(workerId);
 		if (running) {
-			throw new Error(
-				`Worker ${workerId} already running (run ${running.id})`,
-			);
+			throw new Error(`Worker ${workerId} already running (run ${running.id})`);
 		}
 	}
 
-	async function toListItem(definition: WorkerDefinition): Promise<WorkerListItem> {
+	async function toListItem(
+		definition: WorkerDefinition,
+	): Promise<WorkerListItem> {
 		const [running, recent] = await Promise.all([
 			deps.store.findRunning(definition.id),
 			deps.store.listByWorker(definition.id, 1),
@@ -69,10 +69,7 @@ export function createWorkers(deps: WorkersDeps) {
 			return toListItem(definition);
 		},
 
-		async listRuns(
-			workerId: string,
-			limit = 50,
-		): Promise<WorkerRunRecord[]> {
+		async listRuns(workerId: string, limit = 50): Promise<WorkerRunRecord[]> {
 			requireDefinition(workerId);
 			return deps.store.listByWorker(workerId, limit);
 		},
@@ -129,8 +126,7 @@ export function createWorkers(deps: WorkersDeps) {
 				return finished;
 			} catch (err) {
 				await Promise.allSettled(pending);
-				const message =
-					err instanceof Error ? err.message : String(err);
+				const message = err instanceof Error ? err.message : String(err);
 				const finished = await deps.store.finish(record.id, {
 					status: "failed",
 					finishedAt: deps.now(),
@@ -171,8 +167,7 @@ export function createWorkers(deps: WorkersDeps) {
 				await prune(input.workerId);
 				return finished;
 			} catch (err) {
-				const message =
-					err instanceof Error ? err.message : String(err);
+				const message = err instanceof Error ? err.message : String(err);
 				try {
 					await deps.store.finish(record.id, {
 						status: "failed",

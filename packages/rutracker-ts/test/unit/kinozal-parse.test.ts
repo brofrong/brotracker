@@ -84,9 +84,7 @@ describe("kinozal parseResponse", () => {
 		expect(first.torrentFileUrl).toBe(
 			"https://dl.kinozal.me/download.php?id=2095995",
 		);
-		expect(first.topicUrl).toBe(
-			"https://kinozal.me/details.php?id=2095995",
-		);
+		expect(first.topicUrl).toBe("https://kinozal.me/details.php?id=2095995");
 		expect(first.resolution).toBe("1080p");
 
 		const hdrTitle = page.value.results.find((r) =>

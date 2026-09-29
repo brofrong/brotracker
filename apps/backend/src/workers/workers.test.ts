@@ -10,8 +10,7 @@ import type {
 const workerId = "nightly-torrent-check";
 
 const baseDef = (
-	overrides: Partial<WorkerDefinition> &
-		Pick<WorkerDefinition, "execute"> = {
+	overrides: Partial<WorkerDefinition> & Pick<WorkerDefinition, "execute"> = {
 		execute: async () => ({ summary: "ok" }),
 	},
 ): WorkerDefinition => ({

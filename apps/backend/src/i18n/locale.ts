@@ -2,7 +2,9 @@ export type AppLocale = "ru" | "en";
 
 const DEFAULT_LOCALE: AppLocale = "ru";
 
-export function parseAppLocale(value: string | string[] | undefined): AppLocale {
+export function parseAppLocale(
+	value: string | string[] | undefined,
+): AppLocale {
 	const raw = Array.isArray(value) ? value[0] : value;
 	if (raw === "en" || raw === "ru") {
 		return raw;

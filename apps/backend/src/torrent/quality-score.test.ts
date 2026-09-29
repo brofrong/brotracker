@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
 	compareTorrentQuality,
+	type QualityInput,
 	scoreSeeds,
 	scoreTorrentQuality,
-	type QualityInput,
 } from "./quality-score";
 
 const base = (overrides: Partial<QualityInput> = {}): QualityInput => ({
@@ -39,9 +39,9 @@ describe("scoreTorrentQuality", () => {
 	});
 
 	test("HDR beats SDR when everything else matches", () => {
-		expect(
-			scoreTorrentQuality(base({ hdr: "HDR" })),
-		).toBeGreaterThan(scoreTorrentQuality(base({ hdr: "SDR" })));
+		expect(scoreTorrentQuality(base({ hdr: "HDR" }))).toBeGreaterThan(
+			scoreTorrentQuality(base({ hdr: "SDR" })),
+		);
 	});
 
 	test("smaller file ranks higher when quality factors match", () => {

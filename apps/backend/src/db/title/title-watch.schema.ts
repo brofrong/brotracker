@@ -1,9 +1,4 @@
-import {
-	bigint,
-	pgTable,
-	text,
-	timestamp,
-} from "drizzle-orm/pg-core";
+import { bigint, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export type TitleWatchState = "tracking" | "paused" | "completed" | "off";
 export type TitleWatchSource = "auto-qb" | "manual";

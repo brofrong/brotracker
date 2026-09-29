@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
-	createCoverFetchQueue,
 	type CoverPipelineDeps,
+	createCoverFetchQueue,
 } from "./cover-pipeline";
 
 function memoryDeps(

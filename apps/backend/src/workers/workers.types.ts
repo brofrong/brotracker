@@ -42,10 +42,7 @@ export type WorkerRunStore = {
 		},
 	): Promise<WorkerRunRecord>;
 	findRunning(workerId: string): Promise<WorkerRunRecord | null>;
-	failAllRunning(input: {
-		finishedAt: Date;
-		error: string;
-	}): Promise<void>;
+	failAllRunning(input: { finishedAt: Date; error: string }): Promise<void>;
 	listByWorker(workerId: string, limit: number): Promise<WorkerRunRecord[]>;
 	get(id: string): Promise<WorkerRunRecord | null>;
 	pruneOlderThan(workerId: string, keep: number): Promise<void>;

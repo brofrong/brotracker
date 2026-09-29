@@ -1,8 +1,8 @@
 import {
 	cookiesToHeader,
-	fileStoreSchema,
 	type FileStore,
 	type FileStoreData,
+	fileStoreSchema,
 	type StoredCookie,
 } from "@brotracker/rutracker-ts/tracker/storage/file-store";
 import { eq } from "drizzle-orm";
@@ -44,9 +44,7 @@ export function createKinozalDbStore(): FileStore {
 			}
 			const parsed = fileStoreSchema.safeParse(row.data);
 			if (!parsed.success) {
-				return err(
-					new Error(`Invalid kinozal store: ${parsed.error.message}`),
-				);
+				return err(new Error(`Invalid kinozal store: ${parsed.error.message}`));
 			}
 			return ok(parsed.data);
 		} catch (error) {

@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import {
 	applyActiveSpeedSample,
 	buildSpeedHistoryDays,
-	dayStatsToApi,
 	type DailySpeedStatsRow,
+	dayStatsToApi,
 } from "./daily-speed-stats";
 
 describe("applyActiveSpeedSample", () => {

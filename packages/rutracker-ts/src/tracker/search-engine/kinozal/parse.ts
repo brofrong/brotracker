@@ -11,7 +11,6 @@ export function parseResponse(
 	baseUrl?: string,
 ) {
 	const mirror = resolveKinozalMirror(baseUrl);
-	const siteBase = `${mirror.url}/`;
 	const root = parse(html);
 	const rows = root.querySelectorAll("table.t_peer tr");
 	const results: SearchResult[] = [];

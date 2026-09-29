@@ -3,7 +3,7 @@ import { appRouter } from "../appRouter";
 
 describe("protectedProcedure", () => {
 	test("hello returns UNAUTHORIZED without session", async () => {
-		const caller = appRouter.createCaller({ session: null });
+		const caller = appRouter.createCaller({ session: null, locale: "ru" });
 
 		await expect(caller.hello()).rejects.toMatchObject({
 			code: "UNAUTHORIZED",

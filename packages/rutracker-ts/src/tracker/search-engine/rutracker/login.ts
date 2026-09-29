@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { type AxiosResponse } from "axios";
 import { err, ok, type Result } from "neverthrow";
 import type { ProxyAgent } from "./http";
 import {
@@ -118,17 +118,23 @@ async function authorizeOnce(
 		login: "Вход",
 	};
 
-	const response = await axios.post(`${RUTRACKER_URL}/forum/login.php`, body, {
-		headers: {
-			"Content-Type": "application/x-www-form-urlencoded",
-			"User-Agent": userAgent,
-			...(cookieHeader.value ? { Cookie: cookieHeader.value } : {}),
-		},
-		maxRedirects: 0,
-		timeout: 30 * 1000,
-		validateStatus: () => true,
-		...axiosAgentConfig(proxyAgent),
-	});
+	let response: AxiosResponse;
+	try {
+		response = await axios.post(`${RUTRACKER_URL}/forum/login.php`, body, {
+			headers: {
+				"Content-Type": "application/x-www-form-urlencoded",
+				"User-Agent": userAgent,
+				...(cookieHeader.value ? { Cookie: cookieHeader.value } : {}),
+			},
+			maxRedirects: 0,
+			timeout: 30 * 1000,
+			validateStatus: () => true,
+			...axiosAgentConfig(proxyAgent),
+		});
+	} catch (error) {
+		const detail = error instanceof Error ? error.message : String(error);
+		return err(new Error(`Login request failed: ${detail}`));
+	}
 
 	if (isCloudflareChallenge(response)) {
 		return err(new Error("CF_CHALLENGE"));
@@ -137,9 +143,7 @@ async function authorizeOnce(
 	const setCookies = response.headers["set-cookie"];
 	if (!setCookies?.length) {
 		return err(
-			new Error(
-				`Login failed: no session cookies (HTTP ${response.status})`,
-			),
+			new Error(`Login failed: no session cookies (HTTP ${response.status})`),
 		);
 	}
 
@@ -176,7 +180,8 @@ export async function rutrackerGetCookies(
 
 	// Reuse valid session if present
 	const existingHeader = cookiesToHeader([
-		...(stored.value.cfClearance && hasValidCfClearance(stored.value.cfClearance)
+		...(stored.value.cfClearance &&
+		hasValidCfClearance(stored.value.cfClearance)
 			? [stored.value.cfClearance]
 			: []),
 		...stored.value.sessionCookies,

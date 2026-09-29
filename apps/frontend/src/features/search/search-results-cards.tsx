@@ -126,7 +126,7 @@ function SearchCard({
 						<Button
 							href={item.topicUrl}
 							icon={<Icon icon="externalLink" size="sm" />}
-							isExternalLink
+							rel="noopener noreferrer"
 							label={t("onForum")}
 							size="sm"
 							target="_blank"

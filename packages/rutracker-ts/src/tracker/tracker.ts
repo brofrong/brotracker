@@ -8,9 +8,9 @@ const trackers: Record<Tracker, CreateTracker> = {
 };
 
 export const createTracker: CreateTracker = (tracker, options) => {
-  const trackerConstructor = trackers[tracker];
-  if (!trackerConstructor) {
-    throw new Error(`Tracker ${tracker} not supported`);
-  }
-  return trackerConstructor(tracker, options);
+	const trackerConstructor = trackers[tracker];
+	if (!trackerConstructor) {
+		throw new Error(`Tracker ${tracker} not supported`);
+	}
+	return trackerConstructor(tracker, options);
 };

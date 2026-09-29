@@ -43,9 +43,7 @@ export function createReplaceTorrentInQb(deps: ReplaceTorrentInQbDeps) {
 	}): Promise<void> {
 		const seriesPath = await deps.getSeriesPath();
 		if (!seriesPath) {
-			throw new ReplaceTorrentError(
-				"Путь для сериалов не задан в настройках",
-			);
+			throw new ReplaceTorrentError("Путь для сериалов не задан в настройках");
 		}
 
 		const torrents = await deps.listTorrents();

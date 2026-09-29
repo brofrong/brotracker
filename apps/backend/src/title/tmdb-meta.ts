@@ -1,3 +1,4 @@
+import { yearFromDate } from "../tmdb/dates";
 import type {
 	TitleCastMember,
 	TitleCrewMember,
@@ -5,7 +6,6 @@ import type {
 	TitleSimilarItem,
 	TmdbMeta,
 } from "./title.types";
-import { yearFromDate } from "../tmdb/dates";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
 const BACKDROP_BASE = "https://image.tmdb.org/t/p/w1280";
@@ -77,7 +77,9 @@ type TmdbCredits = {
 	crew?: TmdbCrewMember[];
 };
 
-export function posterUrl(posterPath: string | null | undefined): string | null {
+export function posterUrl(
+	posterPath: string | null | undefined,
+): string | null {
 	if (!posterPath) {
 		return null;
 	}
@@ -102,7 +104,9 @@ export function profileUrl(
 	return `${PROFILE_BASE}${profilePath}`;
 }
 
-export function parseCast(cast: TmdbCastMember[] | undefined): TitleCastMember[] {
+export function parseCast(
+	cast: TmdbCastMember[] | undefined,
+): TitleCastMember[] {
 	if (!cast) {
 		return [];
 	}
@@ -242,4 +246,9 @@ export function parseTvDetails(
 	};
 }
 
-export type { TmdbMovieDetails, TmdbTvDetails, TmdbCredits, TmdbSimilarResponse };
+export type {
+	TmdbCredits,
+	TmdbMovieDetails,
+	TmdbSimilarResponse,
+	TmdbTvDetails,
+};

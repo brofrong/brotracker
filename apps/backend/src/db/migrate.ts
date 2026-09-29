@@ -1,6 +1,6 @@
+import path from "node:path";
 import { drizzle } from "drizzle-orm/bun-sql";
 import { migrate } from "drizzle-orm/bun-sql/migrator";
-import path from "node:path";
 import { logger } from "../utils/logger";
 
 const DEFAULT_DATABASE_URL =

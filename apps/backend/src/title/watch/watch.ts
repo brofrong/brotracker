@@ -1,6 +1,6 @@
 import {
-	checkTopicNow,
 	type CheckResult,
+	checkTopicNow,
 	type RecordWatchEventInput,
 } from "./check-topic-now";
 import { enqueueNightlyWatchTasks } from "./enqueue-nightly-tasks";

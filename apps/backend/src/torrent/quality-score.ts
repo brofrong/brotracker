@@ -53,8 +53,7 @@ export function compareTorrentQuality(
 	a: QualityInput & { similarity?: number },
 	b: QualityInput & { similarity?: number },
 ): number {
-	const qualityDiff =
-		scoreTorrentQuality(b) - scoreTorrentQuality(a);
+	const qualityDiff = scoreTorrentQuality(b) - scoreTorrentQuality(a);
 	if (qualityDiff !== 0) return qualityDiff;
 	return (b.similarity ?? 0) - (a.similarity ?? 0);
 }

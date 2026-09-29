@@ -34,9 +34,7 @@ describe("isAllowedRutrackerTorrentUrl", () => {
 describe("isAllowedTrackerTorrentUrl", () => {
 	test("accepts kinozal download URL on every official mirror", () => {
 		expect(
-			isAllowedTrackerTorrentUrl(
-				"https://dl.kinozal.me/download.php?id=12345",
-			),
+			isAllowedTrackerTorrentUrl("https://dl.kinozal.me/download.php?id=12345"),
 		).toBe(true);
 		expect(
 			isAllowedTrackerTorrentUrl(
@@ -44,9 +42,7 @@ describe("isAllowedTrackerTorrentUrl", () => {
 			),
 		).toBe(true);
 		expect(
-			isAllowedTrackerTorrentUrl(
-				"https://dl.kinozal.tv/download.php?id=1",
-			),
+			isAllowedTrackerTorrentUrl("https://dl.kinozal.tv/download.php?id=1"),
 		).toBe(true);
 	});
 
@@ -55,9 +51,7 @@ describe("isAllowedTrackerTorrentUrl", () => {
 			isAllowedTrackerTorrentUrl("https://evil.example/download.php?id=1"),
 		).toBe(false);
 		expect(
-			isAllowedTrackerTorrentUrl(
-				"http://dl.kinozal.me/download.php?id=1",
-			),
+			isAllowedTrackerTorrentUrl("http://dl.kinozal.me/download.php?id=1"),
 		).toBe(false);
 	});
 });
@@ -98,10 +92,7 @@ describe("addFromTracker", () => {
 			},
 		});
 
-		await addFromTracker(
-			"https://rutracker.org/forum/dl.php?t=99",
-			"films",
-		);
+		await addFromTracker("https://rutracker.org/forum/dl.php?t=99", "films");
 
 		expect(calls).toEqual([
 			"fetch:https://rutracker.org/forum/dl.php?t=99",
@@ -126,10 +117,7 @@ describe("addFromTracker", () => {
 			},
 		});
 
-		await addFromTracker(
-			"https://dl.kinozal.me/download.php?id=77",
-			"tv",
-		);
+		await addFromTracker("https://dl.kinozal.me/download.php?id=77", "tv");
 
 		expect(calls).toEqual([
 			"fetch:https://dl.kinozal.me/download.php?id=77",

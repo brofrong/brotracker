@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-	formatTorrentId,
-	parseTorrentId,
-} from "../../src/tracker/torrent-id";
+import { formatTorrentId, parseTorrentId } from "../../src/tracker/torrent-id";
 
 describe("formatTorrentId", () => {
 	test("namespaces raw id", () => {

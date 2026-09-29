@@ -16,8 +16,9 @@ export function resolveKinozalMirror(baseUrl?: string | null): KinozalMirror {
 	}
 	const normalized = normalizeBaseUrl(baseUrl);
 	return (
-		KINOZAL_MIRRORS.find((mirror) => normalizeBaseUrl(mirror.url) === normalized) ??
-		DEFAULT_KINOZAL_MIRROR
+		KINOZAL_MIRRORS.find(
+			(mirror) => normalizeBaseUrl(mirror.url) === normalized,
+		) ?? DEFAULT_KINOZAL_MIRROR
 	);
 }
 

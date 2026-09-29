@@ -29,6 +29,4 @@ export const rutrackerConfigSchema = z.object({
 	enabled: z.boolean().optional().default(true),
 });
 
-export {
-	loadRutrackerConfig,
-} from "./provider-config.live";
+export { loadRutrackerConfig } from "./provider-config.live";

@@ -11,7 +11,9 @@ const PROGRESS_PATTERN = /(\d+)(?:\s*-\s*(\d+))?\s*из\s*(\d+)/iu;
  * ru-tracker torrent/topic name. Unknown or malformed names return null;
  * this must never throw so callers can treat parsing as best-effort.
  */
-export function parseEpisodeProgress(torrentName: string): EpisodeProgress | null {
+export function parseEpisodeProgress(
+	torrentName: string,
+): EpisodeProgress | null {
 	const match = PROGRESS_PATTERN.exec(torrentName);
 	if (!match) {
 		return null;
@@ -21,7 +23,12 @@ export function parseEpisodeProgress(torrentName: string): EpisodeProgress | nul
 	const have = Number(rangeEnd ?? first);
 	const total = Number(totalRaw);
 
-	if (!Number.isFinite(have) || !Number.isFinite(total) || total <= 0 || have < 0) {
+	if (
+		!Number.isFinite(have) ||
+		!Number.isFinite(total) ||
+		total <= 0 ||
+		have < 0
+	) {
 		return null;
 	}
 

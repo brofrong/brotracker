@@ -105,4 +105,4 @@ export function parsePersonCredits(
 	return deduped;
 }
 
-export type { TmdbPersonDetails, TmdbCombinedCredits };
+export type { TmdbCombinedCredits, TmdbPersonDetails };

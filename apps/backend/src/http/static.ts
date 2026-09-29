@@ -102,7 +102,8 @@ export function tryServeStatic(
 		return true;
 	}
 
-	const hasExtension = path.extname(path.basename(urlPath.split("?")[0] ?? "")) !== "";
+	const hasExtension =
+		path.extname(path.basename(urlPath.split("?")[0] ?? "")) !== "";
 	if (hasExtension) {
 		return false;
 	}

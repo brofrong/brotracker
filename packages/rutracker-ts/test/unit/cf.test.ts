@@ -60,7 +60,9 @@ describe("extractCfClearance", () => {
 
 	test("returns null when missing", () => {
 		expect(extractCfClearance([{ name: "other", value: "1" }])).toBeNull();
-		expect(extractCfClearance([{ name: "cf_clearance", value: "" }])).toBeNull();
+		expect(
+			extractCfClearance([{ name: "cf_clearance", value: "" }]),
+		).toBeNull();
 	});
 
 	test("prefers rutracker.org over cloudflare.com clearance", () => {

@@ -95,7 +95,14 @@ export function createNightlyWorker(deps: NightlyWorkerDeps) {
 		return () => clearInterval(interval);
 	}
 
-	return { tick, runNow, start, drainPendingTasks, shouldRun, noteScheduledStart };
+	return {
+		tick,
+		runNow,
+		start,
+		drainPendingTasks,
+		shouldRun,
+		noteScheduledStart,
+	};
 }
 
 export type NightlyWorker = ReturnType<typeof createNightlyWorker>;

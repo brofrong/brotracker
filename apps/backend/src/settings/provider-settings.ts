@@ -1,9 +1,9 @@
+import { resetKinozalMirrorProbe } from "../torrent/kinozal-mirror";
 import {
 	clearKinozalSession,
 	clearRutrackerSession,
 	invalidateTracker,
 } from "../torrent/torrent.tracker";
-import { resetKinozalMirrorProbe } from "../torrent/kinozal-mirror";
 import {
 	loadKinozalConfig,
 	loadQbittorrentConfig,

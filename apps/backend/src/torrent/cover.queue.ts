@@ -5,8 +5,8 @@ import { optimizeCover } from "../storage/cover-image";
 import { putCover } from "../storage/s3";
 import { logger } from "../utils/logger";
 import {
-	createCoverFetchQueue,
 	type CoverPipelineDeps,
+	createCoverFetchQueue,
 } from "./cover-pipeline";
 import { getTrackerForTorrentId } from "./torrent.tracker";
 

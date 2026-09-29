@@ -16,9 +16,7 @@ export type WatchStore = {
 	loadByTopicUrl: (topicUrl: string) => Promise<TitleWatchRecord | null>;
 	loadByTitleId: (titleId: string) => Promise<TitleWatchRecord | null>;
 	save: (record: TitleWatchRecord) => Promise<void>;
-	listTracking: () => Promise<
-		{ topicUrl: string; titleId: string | null }[]
-	>;
+	listTracking: () => Promise<{ topicUrl: string; titleId: string | null }[]>;
 	appendEvent: (event: TitleWatchEvent) => Promise<void>;
 	listRecentEvents: (limit: number) => Promise<TitleWatchEvent[]>;
 	createTask: (input: {

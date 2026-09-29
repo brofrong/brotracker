@@ -1,9 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-	createTmdbBrowse,
-	mapBrowseItem,
-	type TmdbBrowseItem,
-} from "./browse";
+import { createTmdbBrowse, mapBrowseItem, type TmdbBrowseItem } from "./browse";
 
 describe("mapBrowseItem", () => {
 	test("maps movie row to films title card", () => {

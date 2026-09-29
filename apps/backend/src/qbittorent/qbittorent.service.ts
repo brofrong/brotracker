@@ -1,3 +1,4 @@
+import type { TrackerInterface } from "@brotracker/rutracker-ts/tracker/tracker-interface";
 import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
 import { extractTopicId } from "../title/topic-tag";
 import {
@@ -21,7 +22,7 @@ export {
 
 async function fetchTorrentFile(torrentFileUrl: string): Promise<Uint8Array> {
 	const topicId = extractTopicId(torrentFileUrl);
-	let tracker;
+	let tracker: TrackerInterface;
 	try {
 		tracker = topicId
 			? await getTrackerForTorrentId(topicId)

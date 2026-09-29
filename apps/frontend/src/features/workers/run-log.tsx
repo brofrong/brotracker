@@ -44,6 +44,7 @@ export function RunLog({ lines }: RunLogProps) {
 				const levelLabel = t(`log.levels.${line.level}`);
 				return (
 					<ListItem
+						// biome-ignore lint/suspicious/noArrayIndexKey: append-only log; lines can share a timestamp and never reorder
 						key={`${line.ts}-${index}`}
 						description={<Text type="supporting">{line.message}</Text>}
 						endContent={

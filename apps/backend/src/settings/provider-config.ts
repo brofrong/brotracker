@@ -5,12 +5,9 @@ import type {
 	RutrackerProviderConfig,
 	TmdbProviderConfig,
 } from "../db/settings/provider-settings.schema";
-import {
-	proxyUrlSchema,
-	rutrackerConfigSchema,
-} from "./rutracker-config";
 import { kinozalConfigSchema } from "./kinozal-config";
 import { qbittorrentConfigSchema } from "./qbittorrent-config";
+import { proxyUrlSchema, rutrackerConfigSchema } from "./rutracker-config";
 
 export const RUTRACKER_PROVIDER = "rutracker";
 export const KINOZAL_PROVIDER = "kinozal";
@@ -264,8 +261,7 @@ export function createProviderConfig(store: ProviderStore) {
 		getQbittorrent: async (): Promise<QbittorrentPublic> =>
 			toQbittorrentPublic(await loadQbittorrent()),
 
-		getTmdb: async (): Promise<TmdbPublic> =>
-			toTmdbPublic(await loadTmdb()),
+		getTmdb: async (): Promise<TmdbPublic> => toTmdbPublic(await loadTmdb()),
 
 		saveRutracker: async (input: {
 			login: string;
@@ -279,9 +275,7 @@ export function createProviderConfig(store: ProviderStore) {
 		}> => {
 			const existing = await loadRutracker();
 			const password =
-				input.password.length > 0
-					? input.password
-					: (existing?.password ?? "");
+				input.password.length > 0 ? input.password : (existing?.password ?? "");
 
 			if (!password) {
 				throw new MissingSecretError("Password is required");
@@ -326,9 +320,7 @@ export function createProviderConfig(store: ProviderStore) {
 		}> => {
 			const existing = await loadKinozal();
 			const password =
-				input.password.length > 0
-					? input.password
-					: (existing?.password ?? "");
+				input.password.length > 0 ? input.password : (existing?.password ?? "");
 
 			if (!password) {
 				throw new MissingSecretError("Password is required");
@@ -387,9 +379,7 @@ export function createProviderConfig(store: ProviderStore) {
 		}> => {
 			const existing = await loadQbittorrent();
 			const apiKey =
-				input.apiKey.length > 0
-					? input.apiKey
-					: (existing?.apiKey ?? "");
+				input.apiKey.length > 0 ? input.apiKey : (existing?.apiKey ?? "");
 
 			if (!apiKey) {
 				throw new MissingSecretError("API key is required");
@@ -427,9 +417,7 @@ export function createProviderConfig(store: ProviderStore) {
 		}> => {
 			const existing = await loadTmdb();
 			const apiKey =
-				input.apiKey.length > 0
-					? input.apiKey
-					: (existing?.apiKey ?? "");
+				input.apiKey.length > 0 ? input.apiKey : (existing?.apiKey ?? "");
 
 			if (!apiKey) {
 				throw new MissingSecretError("API key is required");

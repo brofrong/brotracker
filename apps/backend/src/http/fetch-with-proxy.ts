@@ -1,6 +1,6 @@
+import type { IncomingMessage } from "node:http";
 import http from "node:http";
 import https from "node:https";
-import type { IncomingMessage } from "node:http";
 import { createProxyAgent } from "./proxy-agent";
 
 type FetchWithProxyOptions = {
@@ -69,9 +69,7 @@ function fetchViaSocksProxy(
 						if (value == null) {
 							continue;
 						}
-						headerInit[key] = Array.isArray(value)
-							? value.join(", ")
-							: value;
+						headerInit[key] = Array.isArray(value) ? value.join(", ") : value;
 					}
 					resolve(
 						new Response(Buffer.concat(chunks), {

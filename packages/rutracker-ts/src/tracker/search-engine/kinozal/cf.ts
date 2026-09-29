@@ -55,7 +55,9 @@ function isKinozalCookieDomain(domain: string | undefined): boolean {
 export function extractKinozalCfClearance(
 	cookies: z.infer<typeof solverCookieSchema>[],
 ): StoredCookie | null {
-	const candidates = cookies.filter((c) => c.name === "cf_clearance" && c.value);
+	const candidates = cookies.filter(
+		(c) => c.name === "cf_clearance" && c.value,
+	);
 	const forSite =
 		candidates.find((c) => isKinozalCookieDomain(c.domain)) ??
 		candidates.find((c) => !c.domain?.toLowerCase().includes("cloudflare"));
@@ -78,9 +80,7 @@ export async function acquireKinozalCfClearance(
 	const maxTimeoutSec = Math.max(1, Math.ceil(timeoutMs / 1000));
 
 	try {
-		console.log(
-			`[kinozal] Acquiring cf_clearance via solver ${solverUrl}…`,
-		);
+		console.log(`[kinozal] Acquiring cf_clearance via solver ${solverUrl}…`);
 
 		const response = await axios.post(
 			solverUrl,

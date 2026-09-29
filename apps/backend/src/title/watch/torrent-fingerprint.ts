@@ -13,9 +13,7 @@ export function fingerprintsEqual(
 		return left.contentHash === right.contentHash;
 	}
 
-	return (
-		left.size === right.size && left.registeredAt === right.registeredAt
-	);
+	return left.size === right.size && left.registeredAt === right.registeredAt;
 }
 
 /** SHA-256 hex digest of raw .torrent bytes. */

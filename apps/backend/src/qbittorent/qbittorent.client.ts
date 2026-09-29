@@ -6,9 +6,7 @@ const TORRENT_URL_PATTERN = /^(magnet:|https?:|bc:\/\/bt\/)/i;
 
 export class QbittorrentNotConfiguredError extends Error {
 	constructor() {
-		super(
-			"qBittorrent is not configured. Set URL and API key in Settings.",
-		);
+		super("qBittorrent is not configured. Set URL and API key in Settings.");
 		this.name = "QbittorrentNotConfiguredError";
 	}
 }
@@ -154,11 +152,7 @@ export async function addTorrent(
 		const blob = new Blob([bytes], {
 			type: "application/x-bittorrent",
 		});
-		formData.append(
-			"torrents",
-			blob,
-			options.filename ?? "download.torrent",
-		);
+		formData.append("torrents", blob, options.filename ?? "download.torrent");
 	} else if (isTorrentUrl(torrentFileOrMagnetLinkOrBytes)) {
 		formData.append("urls", torrentFileOrMagnetLinkOrBytes);
 	} else {
@@ -182,7 +176,10 @@ export async function addTorrent(
 	});
 }
 
-function torrentHashesBody(hash: string, extra?: Record<string, string>): string {
+function torrentHashesBody(
+	hash: string,
+	extra?: Record<string, string>,
+): string {
 	const params = new URLSearchParams({ hashes: hash, ...extra });
 	return params.toString();
 }

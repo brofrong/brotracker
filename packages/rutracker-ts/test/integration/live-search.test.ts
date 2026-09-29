@@ -1,7 +1,10 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
+import { HttpsProxyAgent } from "https-proxy-agent";
+import { parseTorrentId } from "../../src/tracker/torrent-id";
 import { createTracker } from "../../src/tracker/tracker";
 import { createFileStore } from "../../src/tracker/storage/file-store";
+import type { ProxyAgent } from "../../src/tracker/search-engine/rutracker/http";
 import type {
 	SearchOptions,
 	SearchPage,
@@ -47,6 +50,14 @@ function requireCredentials(): { login: string; password: string } {
 	return { login: username, password };
 }
 
+function createTestProxyAgent(): ProxyAgent {
+	const url = process.env.RUTRACKER_PROXY?.trim();
+	if (!url) {
+		return null;
+	}
+	return new HttpsProxyAgent(url) as ProxyAgent;
+}
+
 async function createLiveTracker(): Promise<TrackerInterface> {
 	const auth = requireCredentials();
 	return createTracker("Rutracker", {
@@ -54,7 +65,7 @@ async function createLiveTracker(): Promise<TrackerInterface> {
 		fileStore: createFileStore(
 			join(import.meta.dir, "../../.data/rutracker-store.json"),
 		),
-		proxyAgent: null,
+		proxyAgent: createTestProxyAgent(),
 		cfSolverUrl: process.env.BYPARR_URL ?? "http://localhost:8191/v1",
 	});
 }
@@ -109,7 +120,7 @@ function expectHitsForQuery(page: SearchPage, query: string) {
 		if (!first) {
 			throw new Error(`No parsed rows for "${query}"`);
 		}
-		const rawId = first.torrentId.split(":")[1];
+		const { rawId } = parseTorrentId(first.torrentId);
 		expect(first.torrentFileUrl).toContain(rawId);
 		expect(first.topicUrl).toContain(rawId);
 	},

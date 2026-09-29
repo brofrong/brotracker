@@ -22,5 +22,7 @@ if (results.isErr()) {
 	console.error(results.error.message);
 	throw results.error;
 }
-console.log(`found ${results.value.results.length} / total ${results.value.totalResults}`);
+console.log(
+	`found ${results.value.results.length} / total ${results.value.totalResults}`,
+);
 console.log(results.value.results[0]);

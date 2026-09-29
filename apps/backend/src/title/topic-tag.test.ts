@@ -63,30 +63,30 @@ describe("extractTopicId", () => {
 	});
 
 	test("reads t= from dl.php URL", () => {
-		expect(
-			extractTopicId("https://rutracker.org/forum/dl.php?t=42"),
-		).toBe("rutracker:42");
+		expect(extractTopicId("https://rutracker.org/forum/dl.php?t=42")).toBe(
+			"rutracker:42",
+		);
 	});
 
 	test("reads id= from kinozal details URL", () => {
-		expect(
-			extractTopicId("https://kinozal.me/details.php?id=555"),
-		).toBe("kinozal:555");
+		expect(extractTopicId("https://kinozal.me/details.php?id=555")).toBe(
+			"kinozal:555",
+		);
 	});
 
 	test("reads id= from kinozal download URL", () => {
-		expect(
-			extractTopicId("https://dl.kinozal.me/download.php?id=888"),
-		).toBe("kinozal:888");
+		expect(extractTopicId("https://dl.kinozal.me/download.php?id=888")).toBe(
+			"kinozal:888",
+		);
 	});
 
 	test("reads id= from kinozal mirror URLs", () => {
-		expect(
-			extractTopicId("https://kinozal.guru/details.php?id=777"),
-		).toBe("kinozal:777");
-		expect(
-			extractTopicId("https://dl.kinozal.tv/download.php?id=999"),
-		).toBe("kinozal:999");
+		expect(extractTopicId("https://kinozal.guru/details.php?id=777")).toBe(
+			"kinozal:777",
+		);
+		expect(extractTopicId("https://dl.kinozal.tv/download.php?id=999")).toBe(
+			"kinozal:999",
+		);
 	});
 
 	test("returns null for non-topic URL", () => {
@@ -102,7 +102,9 @@ describe("extractTopicIdFromTags", () => {
 	});
 
 	test("reads legacy bare-digit tag as rutracker", () => {
-		expect(extractTopicIdFromTags("brotracker:topic:456")).toBe("rutracker:456");
+		expect(extractTopicIdFromTags("brotracker:topic:456")).toBe(
+			"rutracker:456",
+		);
 	});
 
 	test("reads kinozal tag", () => {

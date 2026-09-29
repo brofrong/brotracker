@@ -1,14 +1,17 @@
 import {
-	formatTorrentId,
-	parseTorrentId,
-	type TrackerSource,
-} from "@brotracker/rutracker-ts/tracker/torrent-id";
-import { KINOZAL_URL, KINOZAL_DL_URL } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/constants";
+	KINOZAL_DL_URL,
+	KINOZAL_URL,
+} from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/constants";
 import {
 	isKinozalDlHostname,
 	isKinozalSiteHostname,
 } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/hosts";
 import { RUTRACKER_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/constants";
+import {
+	formatTorrentId,
+	parseTorrentId,
+	type TrackerSource,
+} from "@brotracker/rutracker-ts/tracker/torrent-id";
 
 export const TOPIC_TAG_PREFIX = "brotracker:topic:";
 
@@ -47,10 +50,7 @@ export function torrentFileUrlFromId(topicId: string): string {
 }
 
 function extractKinozalTopicId(url: URL): string | null {
-	if (
-		url.pathname === "/download.php" &&
-		isKinozalDlHostname(url.hostname)
-	) {
+	if (url.pathname === "/download.php" && isKinozalDlHostname(url.hostname)) {
 		const id = url.searchParams.get("id");
 		if (id && /^\d+$/.test(id)) {
 			return formatTorrentId("kinozal", id);
@@ -58,10 +58,7 @@ function extractKinozalTopicId(url: URL): string | null {
 		return null;
 	}
 
-	if (
-		url.pathname === "/details.php" &&
-		isKinozalSiteHostname(url.hostname)
-	) {
+	if (url.pathname === "/details.php" && isKinozalSiteHostname(url.hostname)) {
 		const id = url.searchParams.get("id");
 		if (id && /^\d+$/.test(id)) {
 			return formatTorrentId("kinozal", id);
@@ -75,7 +72,10 @@ function extractRutrackerTopicId(url: URL): string | null {
 	if (url.hostname !== rutrackerHost) {
 		return null;
 	}
-	if (url.pathname !== "/forum/viewtopic.php" && url.pathname !== "/forum/dl.php") {
+	if (
+		url.pathname !== "/forum/viewtopic.php" &&
+		url.pathname !== "/forum/dl.php"
+	) {
 		return null;
 	}
 	const topicId = url.searchParams.get("t");
@@ -107,9 +107,7 @@ export function extractTopicIdFromTags(tags: string): string | null {
 		try {
 			parseTorrentId(suffix);
 			return suffix;
-		} catch {
-			continue;
-		}
+		} catch {}
 	}
 	return null;
 }

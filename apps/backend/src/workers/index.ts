@@ -54,10 +54,7 @@ export function startWorkers(
 		try {
 			await workers.failInterruptedRuns(INTERRUPTED_ERROR);
 		} catch (err) {
-			logger.warn(
-				{ err },
-				"Failed to clear interrupted WorkerRuns on startup",
-			);
+			logger.warn({ err }, "Failed to clear interrupted WorkerRuns on startup");
 		}
 		stopInterval = startScheduledNightlyWorker({
 			intervalMs,
@@ -86,10 +83,13 @@ export function startWorkers(
 	return () => stopInterval?.();
 }
 
-export { runScheduledNightlyOnce, startScheduledNightlyWorker } from "./scheduled-nightly";
-export { createWorkers } from "./workers";
+export {
+	runScheduledNightlyOnce,
+	startScheduledNightlyWorker,
+} from "./scheduled-nightly";
 export { createWorkerRunStore } from "./worker-run.repository";
 export type { WorkersDeps } from "./workers";
+export { createWorkers } from "./workers";
 export type {
 	WorkerDefinition,
 	WorkerDetail,

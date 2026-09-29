@@ -3,7 +3,9 @@ import { HttpsProxyAgent } from "https-proxy-agent";
 import { SocksProxyAgent } from "socks-proxy-agent";
 
 /** Build an axios-compatible agent from a proxy URL, or null if unset. */
-export function createProxyAgent(proxyUrl: string | null | undefined): ProxyAgent {
+export function createProxyAgent(
+	proxyUrl: string | null | undefined,
+): ProxyAgent {
 	const trimmed = proxyUrl?.trim();
 	if (!trimmed) {
 		return null;

@@ -1,24 +1,28 @@
 import { createTracker } from "@brotracker/rutracker-ts/index";
-import type { Tracker } from "@brotracker/rutracker-ts/tracker/tracker-interface";
-import type { TrackerInterface } from "@brotracker/rutracker-ts/tracker/tracker-interface";
 import {
 	parseTorrentId,
 	type TrackerSource,
 } from "@brotracker/rutracker-ts/tracker/torrent-id";
+import type {
+	Tracker,
+	TrackerInterface,
+} from "@brotracker/rutracker-ts/tracker/tracker-interface";
 import { eq } from "drizzle-orm";
 import { db } from "../db/db";
 import { kinozalStore } from "../db/kinozal-store/kinozal-store.schema";
 import { rutrackerStore } from "../db/rutracker-store/rutracker-store.schema";
+import type {
+	KinozalProviderConfig,
+	RutrackerProviderConfig,
+} from "../db/settings/provider-settings.schema";
+import { createProxyAgent } from "../http/proxy-agent";
 import {
 	loadKinozalConfig,
 	loadRutrackerConfig,
 } from "../settings/provider-config.live";
 import { env } from "../utils/env";
-import type { KinozalProviderConfig } from "../db/settings/provider-settings.schema";
-import type { RutrackerProviderConfig } from "../db/settings/provider-settings.schema";
-import { createProxyAgent } from "../http/proxy-agent";
-import { probeFastestKinozalMirror } from "./kinozal-mirror";
 import { createKinozalDbStore } from "./kinozal-db-store";
+import { probeFastestKinozalMirror } from "./kinozal-mirror";
 import { createRutrackerDbStore } from "./rutracker-db-store";
 
 const STORE_ID = "default";
@@ -137,7 +141,9 @@ export function invalidateTracker(source?: TrackerSource): void {
 }
 
 /** Clear CF/session cookies after credential or proxy change. */
-export async function clearTrackerSession(source: TrackerSource): Promise<void> {
+export async function clearTrackerSession(
+	source: TrackerSource,
+): Promise<void> {
 	const table = source === "rutracker" ? rutrackerStore : kinozalStore;
 	await db.delete(table).where(eq(table.id, STORE_ID));
 }

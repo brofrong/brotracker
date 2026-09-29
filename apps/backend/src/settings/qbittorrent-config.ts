@@ -23,6 +23,4 @@ export const qbittorrentConfigSchema = z.object({
 	seriesPath: pathSchema,
 });
 
-export {
-	loadQbittorrentConfig,
-} from "./provider-config.live";
+export { loadQbittorrentConfig } from "./provider-config.live";

@@ -32,14 +32,30 @@ describe("fingerprintsEqual", () => {
 	test("falls back to size + registeredAt when hash missing", () => {
 		expect(
 			fingerprintsEqual(
-				{ size: 42, registeredAt: "2024-06-01T12:00:00.000Z", contentHash: null },
-				{ size: 42, registeredAt: "2024-06-01T12:00:00.000Z", contentHash: null },
+				{
+					size: 42,
+					registeredAt: "2024-06-01T12:00:00.000Z",
+					contentHash: null,
+				},
+				{
+					size: 42,
+					registeredAt: "2024-06-01T12:00:00.000Z",
+					contentHash: null,
+				},
 			),
 		).toBe(true);
 		expect(
 			fingerprintsEqual(
-				{ size: 42, registeredAt: "2024-06-01T12:00:00.000Z", contentHash: null },
-				{ size: 43, registeredAt: "2024-06-01T12:00:00.000Z", contentHash: null },
+				{
+					size: 42,
+					registeredAt: "2024-06-01T12:00:00.000Z",
+					contentHash: null,
+				},
+				{
+					size: 43,
+					registeredAt: "2024-06-01T12:00:00.000Z",
+					contentHash: null,
+				},
 			),
 		).toBe(false);
 	});

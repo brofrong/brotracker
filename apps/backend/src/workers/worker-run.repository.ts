@@ -1,8 +1,8 @@
 import { and, desc, eq, notInArray, sql } from "drizzle-orm";
 import { db } from "../db/db";
 import {
-	workerRuns,
 	type WorkerLogLine,
+	workerRuns,
 } from "../db/workers/worker-run.schema";
 import type { WorkerRunRecord, WorkerRunStore } from "./workers.types";
 
@@ -20,9 +20,7 @@ function fromRow(row: typeof workerRuns.$inferSelect): WorkerRunRecord {
 	};
 }
 
-export function createWorkerRunStore(
-	database: typeof db = db,
-): WorkerRunStore {
+export function createWorkerRunStore(database: typeof db = db): WorkerRunStore {
 	async function findRunning(
 		workerId: string,
 	): Promise<WorkerRunRecord | null> {

@@ -39,9 +39,7 @@ describe("isKinozalDownloadUrl", () => {
 			isKinozalDownloadUrl("https://dl.kinozal.me/download.php?id=2021740"),
 		).toBe(true);
 		expect(
-			isKinozalDownloadUrl(
-				"https://dl.kinozal.guru/download.php?id=2021740",
-			),
+			isKinozalDownloadUrl("https://dl.kinozal.guru/download.php?id=2021740"),
 		).toBe(true);
 		expect(
 			isKinozalDownloadUrl("https://dl.kinozal.tv/download.php?id=2021740"),
@@ -52,9 +50,9 @@ describe("isKinozalDownloadUrl", () => {
 		expect(
 			isKinozalDownloadUrl("https://kinozal.guru/details.php?id=2021740"),
 		).toBe(false);
-		expect(
-			isKinozalDownloadUrl("https://evil.example/download.php?id=1"),
-		).toBe(false);
+		expect(isKinozalDownloadUrl("https://evil.example/download.php?id=1")).toBe(
+			false,
+		);
 		expect(
 			isKinozalDownloadUrl("http://dl.kinozal.guru/download.php?id=1"),
 		).toBe(false);

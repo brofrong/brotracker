@@ -153,9 +153,7 @@ async function authorizeOnce(
 	const setCookies = response.headers["set-cookie"];
 	if (!setCookies?.length) {
 		return err(
-			new Error(
-				`Login failed: no session cookies (HTTP ${response.status})`,
-			),
+			new Error(`Login failed: no session cookies (HTTP ${response.status})`),
 		);
 	}
 
@@ -195,7 +193,8 @@ export async function kinozalGetCookies(
 	}
 
 	const existingHeader = cookiesToHeader([
-		...(stored.value.cfClearance && hasValidCfClearance(stored.value.cfClearance)
+		...(stored.value.cfClearance &&
+		hasValidCfClearance(stored.value.cfClearance)
 			? [stored.value.cfClearance]
 			: []),
 		...stored.value.sessionCookies,

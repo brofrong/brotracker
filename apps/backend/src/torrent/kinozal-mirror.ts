@@ -17,10 +17,10 @@ export type MirrorProbe = {
 export function pickFastestMirror(
 	probes: Array<MirrorProbe | null>,
 ): MirrorProbe | null {
-	const okProbes = probes.filter((probe): probe is MirrorProbe => probe !== null);
-	return (
-		okProbes.sort((a, b) => a.latencyMs - b.latencyMs)[0] ?? null
+	const okProbes = probes.filter(
+		(probe): probe is MirrorProbe => probe !== null,
 	);
+	return okProbes.sort((a, b) => a.latencyMs - b.latencyMs)[0] ?? null;
 }
 
 let cached: { url: string; probedAt: number } | null = null;

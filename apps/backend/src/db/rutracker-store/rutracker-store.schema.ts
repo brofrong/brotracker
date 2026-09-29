@@ -1,5 +1,5 @@
-import { jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import type { FileStoreData } from "@brotracker/rutracker-ts/tracker/storage/file-store";
+import { jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 /** Single-row JSON blob for RuTracker CF/session cookies (FileStore shape). */
 export const rutrackerStore = pgTable("rutracker_store", {

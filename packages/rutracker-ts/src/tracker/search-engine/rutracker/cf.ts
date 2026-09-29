@@ -38,7 +38,7 @@ export type CfClearanceOptions = {
 	 * Byparr / FlareSolverr-compatible endpoint (must end with `/v1` or include it).
 	 * Default: http://localhost:8191/v1
 	 */
-	solverUrl?: string;
+	solverUrl?: string | undefined;
 	timeoutMs?: number;
 	/** Page opened to trigger CF. Default: Rutracker login. */
 	challengeUrl?: string;
@@ -79,7 +79,9 @@ function isRutrackerCookieDomain(domain: string | undefined): boolean {
 export function extractCfClearance(
 	cookies: z.infer<typeof solverCookieSchema>[],
 ): StoredCookie | null {
-	const candidates = cookies.filter((c) => c.name === "cf_clearance" && c.value);
+	const candidates = cookies.filter(
+		(c) => c.name === "cf_clearance" && c.value,
+	);
 	const forSite =
 		candidates.find((c) => isRutrackerCookieDomain(c.domain)) ??
 		candidates.find((c) => !c.domain?.toLowerCase().includes("cloudflare"));
@@ -103,9 +105,7 @@ export async function acquireCfClearance(
 	const maxTimeoutSec = Math.max(1, Math.ceil(timeoutMs / 1000));
 
 	try {
-		console.log(
-			`[rutracker] Acquiring cf_clearance via solver ${solverUrl}…`,
-		);
+		console.log(`[rutracker] Acquiring cf_clearance via solver ${solverUrl}…`);
 
 		const response = await axios.post(
 			solverUrl,

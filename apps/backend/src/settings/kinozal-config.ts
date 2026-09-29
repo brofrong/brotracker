@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { KINOZAL_MIRRORS } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/constants";
+import { z } from "zod";
 import { proxyUrlSchema } from "./rutracker-config";
 
 export const trackerProviderConfigSchema = z.object({
@@ -19,6 +19,4 @@ export const kinozalConfigSchema = trackerProviderConfigSchema.extend({
 	host: z.enum(kinozalMirrorUrls).nullable().optional(),
 });
 
-export {
-	loadKinozalConfig,
-} from "./provider-config.live";
+export { loadKinozalConfig } from "./provider-config.live";

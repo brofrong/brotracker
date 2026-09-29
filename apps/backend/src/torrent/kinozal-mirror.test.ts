@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-	pickFastestMirror,
-	type MirrorProbe,
-} from "./kinozal-mirror";
+import { type MirrorProbe, pickFastestMirror } from "./kinozal-mirror";
 
 describe("pickFastestMirror", () => {
 	test("picks the lowest latency probe", () => {

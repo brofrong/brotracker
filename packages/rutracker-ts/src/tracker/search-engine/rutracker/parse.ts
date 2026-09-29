@@ -1,4 +1,4 @@
-import { ok } from "neverthrow";
+import { ok, type Result } from "neverthrow";
 import parse, { type HTMLElement } from "node-html-parser";
 import type { SearchPage, SearchResult } from "../../tracker-interface";
 import { formatTorrentId } from "../../torrent-id";
@@ -7,7 +7,7 @@ import { RUTRACKER_URL } from "./constants";
 
 const FORUM_BASE = `${RUTRACKER_URL}/forum/`;
 
-export function parseResponse(html: string) {
+export function parseResponse(html: string): Result<SearchPage, Error> {
 	const root = parse(html);
 	const rows = root.querySelectorAll(
 		"#search-results #tor-tbl tbody tr[data-topic_id]",
@@ -52,7 +52,10 @@ function hrefParam(href: string, key: string): string {
 	}
 }
 
-function attrNumber(el: HTMLElement | null, attr = "data-ts_text"): number | null {
+function attrNumber(
+	el: HTMLElement | null,
+	attr = "data-ts_text",
+): number | null {
 	const raw = el?.getAttribute(attr);
 	if (!raw) return null;
 	const value = Number.parseInt(raw, 10);
@@ -106,7 +109,9 @@ function parseRow(row: HTMLElement): SearchResult | null {
 	const sizeCell =
 		findCell(cells, (td) => td.classList.contains("tor-size")) ??
 		row.querySelector("td.tor-size");
-	const seedsCell = findCell(cells, (td) => Boolean(td.querySelector(".seedmed")));
+	const seedsCell = findCell(cells, (td) =>
+		Boolean(td.querySelector(".seedmed")),
+	);
 	const leechesCell =
 		findCell(cells, (td) => td.classList.contains("leechmed")) ??
 		findCell(cells, (td) => td.getAttribute("title") === "Личи");
@@ -119,8 +124,12 @@ function parseRow(row: HTMLElement): SearchResult | null {
 			if (!td.getAttribute("data-ts_text")) return false;
 			if (td.classList.contains("tor-size")) return false;
 			if (td.querySelector(".seedmed")) return false;
-			return Boolean(td.querySelector("p")) || cells.indexOf(td) === cells.length - 1;
-		}) ?? cells.at(-1) ?? null;
+			return (
+				Boolean(td.querySelector("p")) || cells.indexOf(td) === cells.length - 1
+			);
+		}) ??
+		cells.at(-1) ??
+		null;
 
 	const forumHref = forumLink?.getAttribute("href") ?? "";
 	const authorHref = authorLink?.getAttribute("href") ?? "";

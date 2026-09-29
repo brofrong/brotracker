@@ -18,8 +18,6 @@ describe("kinozal parseImageUrl", () => {
 		expect(result.isOk()).toBe(true);
 		if (!result.isOk()) return;
 
-		expect(result.value).toBe(
-			"https://kinozal.me/i/poster/6/7/1717867.jpg",
-		);
+		expect(result.value).toBe("https://kinozal.me/i/poster/6/7/1717867.jpg");
 	});
 });

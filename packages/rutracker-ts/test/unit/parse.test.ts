@@ -67,9 +67,7 @@ test("parse У Марго проблемы с деньгами fixture", async (
 	expectValidResult(first);
 	expect(first.torrentId).toBe("rutracker:6847857");
 	expect(first.forumId).toBe("1803");
-	expect(first.category).toBe(
-		"Новинки и сериалы в стадии показа (HD Video)",
-	);
+	expect(first.category).toBe("Новинки и сериалы в стадии показа (HD Video)");
 	expect(first.title).toBe(
 		"У Марго проблемы с деньгами / Margo's Got Money Troubles / Сезон: 1 / Серии: 1-8 из 8 (Дирбла Уолш, Кейт Херрон, Элис Сибрайт) [2026, США, Драма, комедия, экранизация, WEB-DL 1080p] Dub (Whiskey Sound) + 4 х MVO + DVO + Original (Eng) + Sub (Rus, Eng)",
 	);
