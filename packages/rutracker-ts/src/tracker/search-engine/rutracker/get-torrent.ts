@@ -1,4 +1,5 @@
 import axios from "axios";
+import iconv from "iconv-lite";
 import { err, ok, type Result } from "neverthrow";
 import type { RutrackerOptions } from "../../tracker-interface";
 import { acquireCfClearance } from "./cf";
@@ -7,7 +8,11 @@ import {
 	cloudflareBypassFailedError,
 	isCloudflareChallenge,
 } from "./http";
-import { rutrackerGetCookies } from "./login";
+import {
+	isRutrackerLoggedOutPage,
+	rutrackerGetCookies,
+	rutrackerRelogin,
+} from "./login";
 
 export function isTorrentPayload(buf: Uint8Array): boolean {
 	return buf.length > 0 && buf[0] === 0x64;
@@ -93,7 +98,23 @@ export async function rutrackerGetTorrent(
 			return err(new Error(`getTorrent failed with HTTP ${response.status}`));
 		}
 
-		const payload = toUint8Array(response.data);
+		let payload = toUint8Array(response.data);
+		if (
+			!isTorrentPayload(payload) &&
+			isRutrackerLoggedOutPage(iconv.decode(response.data, "windows-1251"))
+		) {
+			const relogged = await rutrackerRelogin(options);
+			if (relogged.isErr()) {
+				return err(relogged.error);
+			}
+			response = await doGetTorrentRequest(
+				torrentFileUrl,
+				options,
+				relogged.value.cookies,
+				relogged.value.userAgent,
+			);
+			payload = toUint8Array(response.data);
+		}
 		if (!isTorrentPayload(payload)) {
 			return err(new Error("Response does not look like a torrent file"));
 		}

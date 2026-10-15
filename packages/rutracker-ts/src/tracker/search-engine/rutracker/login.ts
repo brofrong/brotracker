@@ -1,5 +1,6 @@
 import axios, { type AxiosResponse } from "axios";
 import { err, ok, type Result } from "neverthrow";
+import type { RutrackerOptions } from "../../tracker-interface";
 import type { ProxyAgent } from "./http";
 import {
 	axiosAgentConfig,
@@ -148,6 +149,13 @@ async function authorizeOnce(
 	}
 
 	const sessionCookies = parseSetCookieHeaders(setCookies);
+	if (!sessionCookies.some((c) => c.name === "bb_session")) {
+		return err(
+			new Error(
+				`Login failed: RuTracker did not return bb_session (HTTP ${response.status}). Check login/password or solve the captcha in a browser.`,
+			),
+		);
+	}
 	const updated = await fileStore.update({ sessionCookies, userAgent });
 	if (updated.isErr()) {
 		return err(updated.error);
@@ -159,6 +167,28 @@ async function authorizeOnce(
 	}
 
 	return ok({ cookies: header.value, userAgent });
+}
+
+/** RuTracker serves its login form instead of the page when the session is rejected. */
+export function isRutrackerLoggedOutPage(html: string): boolean {
+	return /name=["']?login_username/i.test(html) && !/logout/i.test(html);
+}
+
+/** Drop the stored session (keeping cf_clearance) and log in again. */
+export async function rutrackerRelogin(
+	options: RutrackerOptions,
+): Promise<LoginResult> {
+	const cleared = await options.fileStore.update({ sessionCookies: [] });
+	if (cleared.isErr()) {
+		return err(cleared.error);
+	}
+	return rutrackerGetCookies(
+		options.auth.login,
+		options.auth.password,
+		options.fileStore,
+		options.proxyAgent,
+		options.cfSolverUrl,
+	);
 }
 
 /**

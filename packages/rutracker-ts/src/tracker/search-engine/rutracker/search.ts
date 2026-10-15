@@ -13,7 +13,11 @@ import {
 	isCloudflareChallenge,
 } from "./http";
 import { RUTRACKER_URL } from "./constants";
-import { rutrackerGetCookies } from "./login";
+import {
+	isRutrackerLoggedOutPage,
+	rutrackerGetCookies,
+	rutrackerRelogin,
+} from "./login";
 import { parseResponse } from "./parse";
 import { createSearchOptions } from "./search-options";
 import { toWindows1251Query } from "../../windows-1251-query";
@@ -104,7 +108,27 @@ export async function makeSearchRequest(
 			);
 		}
 
-		const html = iconv.decode(response.data, "windows-1251");
+		let html = iconv.decode(response.data, "windows-1251");
+		if (isRutrackerLoggedOutPage(html)) {
+			const relogged = await rutrackerRelogin(options);
+			if (relogged.isErr()) {
+				return err(relogged.error);
+			}
+			response = await doSearchRequest(
+				query,
+				queryOptions,
+				options,
+				relogged.value.cookies,
+				relogged.value.userAgent,
+			);
+			html = iconv.decode(response.data, "windows-1251");
+			if (isRutrackerLoggedOutPage(html)) {
+				return err(
+					new Error("Login failed: RuTracker rejected a fresh session"),
+				);
+			}
+		}
+
 		return ok(html);
 	} catch (error) {
 		const detail = error instanceof Error ? error.message : String(error);

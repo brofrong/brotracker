@@ -11,7 +11,11 @@ import {
 	cloudflareBypassFailedError,
 	isCloudflareChallenge,
 } from "./http";
-import { rutrackerGetCookies } from "./login";
+import {
+	isRutrackerLoggedOutPage,
+	rutrackerGetCookies,
+	rutrackerRelogin,
+} from "./login";
 
 async function doGetImageRequest(
 	rawTorrentId: string,
@@ -100,6 +104,19 @@ export async function rutrackerGetImage(
 
 		if (response.status >= 400) {
 			return err(new Error(`getImage failed with HTTP ${response.status}`));
+		}
+
+		if (isRutrackerLoggedOutPage(iconv.decode(response.data, "windows-1251"))) {
+			const relogged = await rutrackerRelogin(options);
+			if (relogged.isErr()) {
+				return err(relogged.error);
+			}
+			response = await doGetImageRequest(
+				rawTorrentId,
+				options,
+				relogged.value.cookies,
+				relogged.value.userAgent,
+			);
 		}
 
 		const results = parseResponse(response);
