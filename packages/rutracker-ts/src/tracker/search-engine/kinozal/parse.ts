@@ -114,7 +114,7 @@ function parseRow(
 		leeches: textNumber(leechesCell),
 		downloads: 0,
 		date: formatDate(dateCell?.textContent?.trim() ?? "", now),
-		torrentFileUrl: `${mirror.dlUrl}/download.php?id=${rawTorrentId}`,
+		torrentFileUrl: `${mirror.url}/download.php?id=${rawTorrentId}`,
 		topicUrl: absoluteUrl(
 			topicHref || `/details.php?id=${rawTorrentId}`,
 			siteBase,

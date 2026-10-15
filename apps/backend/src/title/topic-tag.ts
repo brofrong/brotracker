@@ -1,9 +1,6 @@
+import { KINOZAL_URL } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/constants";
 import {
-	KINOZAL_DL_URL,
-	KINOZAL_URL,
-} from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/constants";
-import {
-	isKinozalDlHostname,
+	isKinozalDownloadUrl,
 	isKinozalSiteHostname,
 } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/hosts";
 import { RUTRACKER_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/constants";
@@ -44,13 +41,13 @@ export function topicUrlFromId(topicId: string): string {
 export function torrentFileUrlFromId(topicId: string): string {
 	const { source, rawId } = parseTorrentId(topicId);
 	if (source === "kinozal") {
-		return `${KINOZAL_DL_URL}/download.php?id=${rawId}`;
+		return `${KINOZAL_URL}/download.php?id=${rawId}`;
 	}
 	return `${RUTRACKER_URL}/forum/dl.php?t=${rawId}`;
 }
 
 function extractKinozalTopicId(url: URL): string | null {
-	if (url.pathname === "/download.php" && isKinozalDlHostname(url.hostname)) {
+	if (url.pathname === "/download.php" && isKinozalDownloadUrl(url.href)) {
 		const id = url.searchParams.get("id");
 		if (id && /^\d+$/.test(id)) {
 			return formatTorrentId("kinozal", id);

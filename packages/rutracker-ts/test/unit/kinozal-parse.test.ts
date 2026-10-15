@@ -23,7 +23,7 @@ function expectValidResult(result: SearchResult) {
 	expect(result.authorId).toMatch(/^\d+$/);
 	expect(result.size).toBeGreaterThan(0);
 	expect(result.torrentFileUrl).toMatch(
-		/^https:\/\/dl\.kinozal\.me\/download\.php\?id=\d+$/,
+		/^https:\/\/kinozal\.me\/download\.php\?id=\d+$/,
 	);
 	expect(result.topicUrl).toMatch(
 		/^https:\/\/kinozal\.me\/details\.php\?id=\d+$/,
@@ -82,7 +82,7 @@ describe("kinozal parseResponse", () => {
 		expect(first.seeds).toBe(3);
 		expect(first.leeches).toBe(0);
 		expect(first.torrentFileUrl).toBe(
-			"https://dl.kinozal.me/download.php?id=2095995",
+			"https://kinozal.me/download.php?id=2095995",
 		);
 		expect(first.topicUrl).toBe("https://kinozal.me/details.php?id=2095995");
 		expect(first.resolution).toBe("1080p");

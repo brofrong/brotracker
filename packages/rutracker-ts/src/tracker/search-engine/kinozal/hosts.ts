@@ -42,21 +42,49 @@ export function isKinozalDlHostname(hostname: string): boolean {
 	);
 }
 
-/**
- * Allowlist for Kinozal torrent-file URLs across all mirrors:
- * https://dl.<mirror>/download.php?id=<digits>
- */
-export function isKinozalDownloadUrl(torrentFileUrl: string): boolean {
+function isKinozalBaseHostname(hostname: string): boolean {
+	return baseHostnames().includes(hostname.toLowerCase());
+}
+
+function kinozalDownloadId(torrentFileUrl: string): string | null {
 	try {
 		const url = new URL(torrentFileUrl);
-		if (url.protocol !== "https:") return false;
-		if (!isKinozalDlHostname(url.hostname)) return false;
-		if (url.pathname !== "/download.php") return false;
+		if (url.protocol !== "https:") return null;
+		if (
+			!isKinozalBaseHostname(url.hostname) &&
+			!isKinozalDlHostname(url.hostname)
+		) {
+			return null;
+		}
+		if (url.pathname !== "/download.php") return null;
 		const id = url.searchParams.get("id");
-		return Boolean(id && /^\d+$/.test(id));
+		return id && /^\d+$/.test(id) ? id : null;
 	} catch {
-		return false;
+		return null;
 	}
+}
+
+/**
+ * Allowlist for Kinozal torrent-file URLs across all mirrors:
+ * https://<mirror>/download.php?id=<digits>, plus legacy
+ * https://dl.<mirror>/download.php?id=<digits> stored before the dl hosts broke.
+ */
+export function isKinozalDownloadUrl(torrentFileUrl: string): boolean {
+	return kinozalDownloadId(torrentFileUrl) !== null;
+}
+
+/**
+ * URL to actually fetch a torrent from: the configured mirror's site host.
+ * dl.<mirror> answers Cloudflare 520, and the site links `/download.php` itself.
+ * Returns null when the URL is not allowlisted.
+ */
+export function kinozalDownloadRequestUrl(
+	torrentFileUrl: string,
+	baseUrl?: string | null,
+): string | null {
+	const id = kinozalDownloadId(torrentFileUrl);
+	if (!id) return null;
+	return `${resolveKinozalMirror(baseUrl).url}/download.php?id=${id}`;
 }
 
 export { KINOZAL_DL_URL };

@@ -50,7 +50,7 @@ describe("torrentFileUrlFromId", () => {
 
 	test("builds Kinozal download URL", () => {
 		expect(torrentFileUrlFromId("kinozal:7")).toBe(
-			"https://dl.kinozal.me/download.php?id=7",
+			"https://kinozal.me/download.php?id=7",
 		);
 	});
 });
@@ -86,6 +86,9 @@ describe("extractTopicId", () => {
 		);
 		expect(extractTopicId("https://dl.kinozal.tv/download.php?id=999")).toBe(
 			"kinozal:999",
+		);
+		expect(extractTopicId("https://kinozal.guru/download.php?id=998")).toBe(
+			"kinozal:998",
 		);
 	});
 

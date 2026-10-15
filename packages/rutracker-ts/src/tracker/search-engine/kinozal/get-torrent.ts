@@ -8,7 +8,7 @@ import {
 	cloudflareBypassFailedError,
 	isCloudflareChallenge,
 } from "./http";
-import { isKinozalDownloadUrl } from "./hosts";
+import { kinozalDownloadRequestUrl } from "./hosts";
 import { kinozalGetCookies } from "./login";
 
 export { isTorrentPayload };
@@ -18,12 +18,12 @@ function toUint8Array(data: ArrayBuffer | Buffer): Uint8Array {
 }
 
 async function doGetTorrentRequest(
-	torrentFileUrl: string,
+	requestUrl: string,
 	options: KinozalOptions,
 	cookies: string,
 	userAgent: string,
 ) {
-	return axios.get(torrentFileUrl, {
+	return axios.get(requestUrl, {
 		responseType: "arraybuffer",
 		headers: {
 			Cookie: cookies,
@@ -38,7 +38,8 @@ export async function kinozalGetTorrent(
 	torrentFileUrl: string,
 	options: KinozalOptions,
 ): Promise<Result<Uint8Array, Error>> {
-	if (!isKinozalDownloadUrl(torrentFileUrl)) {
+	const requestUrl = kinozalDownloadRequestUrl(torrentFileUrl, options.baseUrl);
+	if (!requestUrl) {
 		return err(new Error(`Torrent URL not allowlisted: ${torrentFileUrl}`));
 	}
 
@@ -48,6 +49,7 @@ export async function kinozalGetTorrent(
 		options.fileStore,
 		options.proxyAgent,
 		options.cfSolverUrl,
+		options.baseUrl,
 	);
 	if (!cookies.isOk()) {
 		return err(cookies.error);
@@ -55,7 +57,7 @@ export async function kinozalGetTorrent(
 
 	try {
 		let response = await doGetTorrentRequest(
-			torrentFileUrl,
+			requestUrl,
 			options,
 			cookies.value.cookies,
 			cookies.value.userAgent,
@@ -84,7 +86,7 @@ export async function kinozalGetTorrent(
 			}
 
 			response = await doGetTorrentRequest(
-				torrentFileUrl,
+				requestUrl,
 				options,
 				again.value.cookies,
 				again.value.userAgent,
