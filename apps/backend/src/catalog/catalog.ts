@@ -1,3 +1,7 @@
+import {
+	parseTorrentId,
+	type TrackerSource,
+} from "@brotracker/rutracker-ts/tracker/torrent-id";
 import type {
 	SearchOptions,
 	SearchResult,
@@ -20,6 +24,16 @@ export type CatalogSearchResponse = {
 export type CatalogRefreshResponse = CatalogSearchResponse & {
 	/** Trackers that failed during this refresh (others may still have answered). */
 	trackerFailures: TrackerFailure[];
+	/**
+	 * Trackers still searching after the deadline; their cached local hits are
+	 * included meanwhile. Repeat the refresh to pick up their answer.
+	 */
+	pendingSources: TrackerSource[];
+};
+
+export type TrackerSearchControl = {
+	/** Stop waiting for slow trackers after this long and report them as pending. */
+	deadlineMs?: number;
 };
 
 export type TrackerSearchOutcome =
@@ -28,6 +42,7 @@ export type TrackerSearchOutcome =
 			results: SearchResult[];
 			totalResults: number | null;
 			failures: TrackerFailure[];
+			pending?: TrackerSource[];
 	  }
 	| { status: "unavailable" }
 	| { status: "error"; error: Error; failures: TrackerFailure[] };
@@ -50,6 +65,7 @@ export type CatalogDeps = {
 	searchTracker: (
 		query: string,
 		options: Partial<SearchOptions>,
+		control?: TrackerSearchControl,
 	) => Promise<TrackerSearchOutcome>;
 	upsertFromTracker: (results: SearchResult[]) => Promise<void>;
 	loadImageKeys: (torrentIds: string[]) => Promise<Map<string, string | null>>;
@@ -85,11 +101,33 @@ export function createCatalog(deps: CatalogDeps) {
 		};
 	};
 
+	/** Local hits of trackers that have not answered yet, minus fresh results. */
+	const pendingLocalHits = async (
+		query: string,
+		pending: TrackerSource[],
+		fresh: SearchResult[],
+	): Promise<CatalogSearchResult[]> => {
+		if (pending.length === 0) {
+			return [];
+		}
+		const sources = new Set(pending);
+		const freshIds = new Set(fresh.map((r) => r.torrentId));
+		const local = await deps.searchLocal(deps.normalizeTitle(query));
+		return mapLocal(
+			local.filter(
+				(hit) =>
+					!freshIds.has(hit.torrentId) &&
+					sources.has(parseTorrentId(hit.torrentId).source),
+			),
+		);
+	};
+
 	const searchRefresh = async (
 		query: string,
 		options: Partial<SearchOptions>,
+		control?: TrackerSearchControl,
 	): Promise<CatalogRefreshResponse> => {
-		const outcome = await deps.searchTracker(query, options);
+		const outcome = await deps.searchTracker(query, options, control);
 		if (outcome.status === "unavailable") {
 			throw new Error("Tracker unavailable");
 		}
@@ -102,15 +140,17 @@ export function createCatalog(deps: CatalogDeps) {
 		const ids = outcome.results.map((r) => r.torrentId);
 		const imageKeyById = await deps.loadImageKeys(ids);
 
-		const results: CatalogSearchResult[] = outcome.results
-			.map((r) => {
+		const pending = outcome.pending ?? [];
+		const results: CatalogSearchResult[] = [
+			...outcome.results.map((r) => {
 				const key = imageKeyById.get(r.torrentId) ?? null;
 				return {
 					...r,
 					imageUrl: key ? deps.publicUrl(key) : null,
 				};
-			})
-			.sort(compareTorrentQuality);
+			}),
+			...(await pendingLocalHits(query, pending, outcome.results)),
+		].sort(compareTorrentQuality);
 
 		const missingCoverIds = ids.filter((id) => !imageKeyById.get(id));
 		deps.enqueueCoverFetch(missingCoverIds);
@@ -119,6 +159,7 @@ export function createCatalog(deps: CatalogDeps) {
 			results,
 			totalResults: outcome.totalResults,
 			trackerFailures: outcome.failures,
+			pendingSources: pending,
 		};
 	};
 
@@ -142,15 +183,20 @@ export function createCatalog(deps: CatalogDeps) {
 		searchRefreshOrLocal: async (
 			query: string,
 			options: Partial<SearchOptions>,
+			control?: TrackerSearchControl,
 		): Promise<CatalogRefreshResponse> => {
 			try {
-				return await searchRefresh(query, options);
+				return await searchRefresh(query, options, control);
 			} catch (error) {
 				if (!(error instanceof TrackerSearchError)) {
 					throw error;
 				}
 				const local = await search(query);
-				return { ...local, trackerFailures: error.failures };
+				return {
+					...local,
+					trackerFailures: error.failures,
+					pendingSources: [],
+				};
 			}
 		},
 	};

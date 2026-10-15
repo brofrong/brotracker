@@ -1,8 +1,10 @@
 import axios from "axios";
 import { err, ok, type Result } from "neverthrow";
 import { z } from "zod";
+import { sharedResult } from "../../single-flight";
 import type { FileStore, StoredCookie } from "../../storage/file-store";
 import {
+	CF_REUSE_MS,
 	DEFAULT_CF_SOLVER_URL,
 	normalizeSolverUrl,
 	toStoredCookie,
@@ -68,7 +70,18 @@ export function extractKinozalCfClearance(
  * Asks Byparr to open Kinozal and solve Cloudflare when a challenge is present.
  * Call only after detecting a CF challenge — Kinozal often works without one.
  */
-export async function acquireKinozalCfClearance(
+export function acquireKinozalCfClearance(
+	options: KinozalCfClearanceOptions,
+): Promise<Result<{ cfClearance: StoredCookie; userAgent: string }, Error>> {
+	return sharedResult(
+		options.fileStore,
+		"cf-clearance",
+		() => solveKinozalCfClearance(options),
+		CF_REUSE_MS,
+	);
+}
+
+async function solveKinozalCfClearance(
 	options: KinozalCfClearanceOptions,
 ): Promise<Result<{ cfClearance: StoredCookie; userAgent: string }, Error>> {
 	const solverUrl = normalizeSolverUrl(

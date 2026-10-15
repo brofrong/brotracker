@@ -4,6 +4,7 @@ import {
 	clearRutrackerSession,
 	invalidateTracker,
 } from "../torrent/torrent.tracker";
+import { warmUpTracker } from "../torrent/tracker-warmup";
 import {
 	loadKinozalConfig,
 	loadQbittorrentConfig,
@@ -34,6 +35,9 @@ export async function saveRutrackerSettings(input: {
 	if (result.effects.invalidateTracker) {
 		invalidateTracker("rutracker");
 	}
+	if (result.config.enabled) {
+		void warmUpTracker("rutracker");
+	}
 	return result.public;
 }
 
@@ -52,6 +56,9 @@ export async function saveKinozalSettings(input: {
 	if (result.effects.invalidateTracker) {
 		invalidateTracker("kinozal");
 		resetKinozalMirrorProbe();
+	}
+	if (result.config.enabled) {
+		void warmUpTracker("kinozal");
 	}
 	return result.public;
 }

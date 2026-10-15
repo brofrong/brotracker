@@ -8,6 +8,7 @@ import {
 } from "./http";
 import { acquireKinozalCfClearance } from "./cf";
 import { resolveKinozalMirror } from "./hosts";
+import { sharedResult } from "../../single-flight";
 import {
 	cookiesToHeader,
 	type FileStore,
@@ -179,11 +180,24 @@ async function authorizeOnce(
  * Ensures Kinozal session cookies (`uid` + `pass`).
  * Cloudflare is optional: try login first; call Byparr only on CF challenge.
  */
-export async function kinozalGetCookies(
+export function kinozalGetCookies(
 	login: string,
 	password: string,
 	fileStore: FileStore,
 	proxyAgent: ProxyAgent = null,
+	cfSolverUrl?: string,
+	baseUrl?: string,
+): Promise<LoginResult> {
+	return sharedResult(fileStore, "login", () =>
+		getCookies(login, password, fileStore, proxyAgent, cfSolverUrl, baseUrl),
+	);
+}
+
+async function getCookies(
+	login: string,
+	password: string,
+	fileStore: FileStore,
+	proxyAgent: ProxyAgent,
 	cfSolverUrl?: string,
 	baseUrl?: string,
 ): Promise<LoginResult> {

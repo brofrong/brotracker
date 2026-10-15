@@ -35,6 +35,7 @@ async function doSearchRequest(
 			Cookie: cookies,
 			"User-Agent": userAgent,
 		},
+		timeout: 30_000,
 		validateStatus: () => true,
 		...axiosAgentConfig(options.proxyAgent),
 	});

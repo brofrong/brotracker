@@ -151,3 +151,40 @@ describe("rutrackerGetTorrent with a rejected session", () => {
 		expect(result.isOk()).toBe(true);
 	});
 });
+
+describe("concurrent requests with a rejected session", () => {
+	test("log in only once", async () => {
+		const resultsPage = await Bun.file(
+			join(htmlDir, "Джентльмены.html"),
+		).text();
+		spyOn(axios, "get").mockImplementation((async (
+			_url: string,
+			config?: { headers?: Record<string, string> },
+		) =>
+			htmlResponse(
+				config?.headers?.Cookie?.includes("bb_session=0-1-fresh")
+					? resultsPage
+					: LOGGED_OUT_PAGE,
+			)) as never);
+		const post = spyOn(axios, "post").mockImplementation((async () => {
+			await Bun.sleep(5);
+			return {
+				status: 200,
+				headers: {
+					"set-cookie": ["bb_session=0-1-fresh; path=/; domain=.rutracker.org"],
+				},
+				data: "",
+			};
+		}) as never);
+
+		const options = await optionsWithStaleSession();
+		const results = await Promise.all([
+			rutrackerSearch("Джентльмены", {}, options),
+			rutrackerSearch("Джентльмены", {}, options),
+			rutrackerSearch("Джентльмены", {}, options),
+		]);
+
+		expect(results.every((r) => r.isOk())).toBe(true);
+		expect(post).toHaveBeenCalledTimes(1);
+	});
+});

@@ -14,6 +14,7 @@ import { tryServeMedia } from "./http/media-proxy";
 import { tryServeStatic } from "./http/static";
 import { ensureBetterAuthSecret } from "./settings/app-settings";
 import { ensureBucket } from "./storage/s3";
+import { startTrackerWarmup } from "./torrent/tracker-warmup";
 import { createContext } from "./trpc/context";
 import { env } from "./utils/env";
 import { logger } from "./utils/logger";
@@ -23,6 +24,7 @@ await runMigrations();
 
 startTransferSnapshotScheduler();
 startWorkers();
+startTrackerWarmup();
 
 const betterAuthSecret = await ensureBetterAuthSecret();
 initAuth(betterAuthSecret);

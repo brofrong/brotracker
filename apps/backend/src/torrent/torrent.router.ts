@@ -18,6 +18,12 @@ const searchOptionsSchema = z
 	})
 	.default({});
 
+/**
+ * A tracker solving a Cloudflare challenge or logging in can take 5-10s; answer
+ * with the trackers that are done and let the UI poll for the rest.
+ */
+const SEARCH_DEADLINE_MS = 8_000;
+
 export const torrentRouter = router({
 	search: protectedProcedure
 		.input(
@@ -55,8 +61,15 @@ export const torrentRouter = router({
 		.query(async ({ input }) => {
 			const searchText = input.search?.trim();
 			if (!searchText) {
-				return { results: [], totalResults: null, trackerFailures: [] };
+				return {
+					results: [],
+					totalResults: null,
+					trackerFailures: [],
+					pendingSources: [],
+				};
 			}
-			return catalog.searchRefreshOrLocal(searchText, input.options);
+			return catalog.searchRefreshOrLocal(searchText, input.options, {
+				deadlineMs: SEARCH_DEADLINE_MS,
+			});
 		}),
 });

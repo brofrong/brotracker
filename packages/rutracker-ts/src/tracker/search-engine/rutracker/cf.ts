@@ -1,6 +1,7 @@
 import axios from "axios";
 import { err, ok, type Result } from "neverthrow";
 import { z } from "zod";
+import { sharedResult } from "../../single-flight";
 import type { FileStore, StoredCookie } from "../../storage/file-store";
 import { RUTRACKER_URL } from "./constants";
 
@@ -8,6 +9,8 @@ import { RUTRACKER_URL } from "./constants";
 export const DEFAULT_CF_SOLVER_URL = "http://localhost:8191/v1";
 
 const CHALLENGE_TIMEOUT_MS = 120_000;
+/** A fresh solve is reused by requests that hit the old challenge meanwhile. */
+export const CF_REUSE_MS = 30_000;
 
 const solverCookieSchema = z.object({
 	name: z.string(),
@@ -92,7 +95,18 @@ export function extractCfClearance(
  * Asks Byparr (or FlareSolverr) to open Rutracker, solve Cloudflare, and
  * persist cf_clearance + User-Agent for later HTTP replay.
  */
-export async function acquireCfClearance(
+export function acquireCfClearance(
+	options: CfClearanceOptions,
+): Promise<Result<{ cfClearance: StoredCookie; userAgent: string }, Error>> {
+	return sharedResult(
+		options.fileStore,
+		"cf-clearance",
+		() => solveCfClearance(options),
+		CF_REUSE_MS,
+	);
+}
+
+async function solveCfClearance(
 	options: CfClearanceOptions,
 ): Promise<Result<{ cfClearance: StoredCookie; userAgent: string }, Error>> {
 	const solverUrl = normalizeSolverUrl(

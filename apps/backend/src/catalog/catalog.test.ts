@@ -154,6 +154,7 @@ describe("catalog.searchRefresh", () => {
 		expect(response).toEqual({
 			totalResults: 2,
 			trackerFailures: [],
+			pendingSources: [],
 			results: [
 				{
 					...hit({ torrentId: "10" }),
@@ -413,5 +414,46 @@ describe("catalog.searchRefreshOrLocal", () => {
 		await expect(catalog.searchRefreshOrLocal("film", {})).rejects.toThrow(
 			/tracker/i,
 		);
+	});
+});
+
+describe("catalog.searchRefresh with trackers past the deadline", () => {
+	test("keeps cached hits of pending trackers and reports them", async () => {
+		let control: unknown;
+		const catalog = createCatalog({
+			normalizeTitle: (q) => q,
+			searchLocal: async () => [
+				{ ...hit({ torrentId: "kinozal:5", seeds: 1 }), imageKey: null },
+				{ ...hit({ torrentId: "rutracker:old" }), imageKey: null },
+			],
+			listRecent: async () => [],
+			searchTracker: async (_query, _options, c) => {
+				control = c;
+				return {
+					status: "ok",
+					results: [hit({ torrentId: "rutracker:1", seeds: 50 })],
+					totalResults: 1,
+					failures: [],
+					pending: ["kinozal"],
+				};
+			},
+			upsertFromTracker: async () => {},
+			loadImageKeys: async () => new Map(),
+			publicUrl: (key) => key,
+			enqueueCoverFetch: () => {},
+		});
+
+		const response = await catalog.searchRefresh(
+			"film",
+			{},
+			{ deadlineMs: 8000 },
+		);
+
+		expect(control).toEqual({ deadlineMs: 8000 });
+		expect(response.pendingSources).toEqual(["kinozal"]);
+		expect(response.results.map((r) => r.torrentId)).toEqual([
+			"rutracker:1",
+			"kinozal:5",
+		]);
 	});
 });

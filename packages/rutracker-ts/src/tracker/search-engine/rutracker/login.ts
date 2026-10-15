@@ -9,6 +9,7 @@ import {
 } from "./http";
 import { acquireCfClearance } from "./cf";
 import { RUTRACKER_URL } from "./constants";
+import { sharedResult } from "../../single-flight";
 import {
 	cookiesToHeader,
 	type FileStore,
@@ -19,6 +20,9 @@ const DEFAULT_UA =
 	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
 type LoginResult = Result<{ cookies: string; userAgent: string }, Error>;
+
+/** A fresh login is reused by requests that were rejected with the old session meanwhile. */
+const RELOGIN_REUSE_MS = 15_000;
 
 function hasValidCfClearance(cookie: StoredCookie | null | undefined): boolean {
 	if (!cookie?.value) return false;
@@ -175,9 +179,18 @@ export function isRutrackerLoggedOutPage(html: string): boolean {
 }
 
 /** Drop the stored session (keeping cf_clearance) and log in again. */
-export async function rutrackerRelogin(
+export function rutrackerRelogin(
 	options: RutrackerOptions,
 ): Promise<LoginResult> {
+	return sharedResult(
+		options.fileStore,
+		"relogin",
+		() => relogin(options),
+		RELOGIN_REUSE_MS,
+	);
+}
+
+async function relogin(options: RutrackerOptions): Promise<LoginResult> {
 	const cleared = await options.fileStore.update({ sessionCookies: [] });
 	if (cleared.isErr()) {
 		return err(cleared.error);
@@ -196,11 +209,23 @@ export async function rutrackerRelogin(
  * - no cf_clearance → acquire via Byparr / CF solver
  * - has cf_clearance → try login; on CF fail → refresh clearance and retry once
  */
-export async function rutrackerGetCookies(
+export function rutrackerGetCookies(
 	login: string,
 	password: string,
 	fileStore: FileStore,
 	proxyAgent: ProxyAgent = null,
+	cfSolverUrl?: string,
+): Promise<LoginResult> {
+	return sharedResult(fileStore, "login", () =>
+		getCookies(login, password, fileStore, proxyAgent, cfSolverUrl),
+	);
+}
+
+async function getCookies(
+	login: string,
+	password: string,
+	fileStore: FileStore,
+	proxyAgent: ProxyAgent,
 	cfSolverUrl?: string,
 ): Promise<LoginResult> {
 	const stored = await fileStore.read();
