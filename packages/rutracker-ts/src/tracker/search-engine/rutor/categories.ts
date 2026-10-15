@@ -6,20 +6,20 @@ export const RUTOR_CATEGORIES = {
 	russianFilms: 5,
 	foreignSeries: 4,
 	russianSeries: 16,
-	tv: 6,
-	cartoons: 7,
 } as const;
 
+/**
+ * Kept to four in total: each is a separate request and RuTor bans bursts
+ * (see pacing.ts).
+ */
 export const filmsCategories: number[] = [
 	RUTOR_CATEGORIES.foreignFilms,
 	RUTOR_CATEGORIES.russianFilms,
-	RUTOR_CATEGORIES.cartoons,
 ];
 
 export const tvCategories: number[] = [
 	RUTOR_CATEGORIES.foreignSeries,
 	RUTOR_CATEGORIES.russianSeries,
-	RUTOR_CATEGORIES.tv,
 ];
 
 /**

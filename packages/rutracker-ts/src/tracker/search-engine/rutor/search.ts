@@ -8,6 +8,7 @@ import type {
 import { axiosAgentConfig } from "../rutracker/http";
 import { categoriesFor } from "./categories";
 import type { RutorOptions } from "./options";
+import { paced } from "./pacing";
 import { parseResponse } from "./parse";
 import { rutorSearchUrl } from "./search-url";
 
@@ -16,12 +17,14 @@ async function fetchSearchPage(
 	options: RutorOptions,
 ): Promise<Result<string, Error>> {
 	try {
-		const response = await axios.get<string>(url, {
-			responseType: "text",
-			timeout: 30_000,
-			validateStatus: () => true,
-			...axiosAgentConfig(options.proxyAgent),
-		});
+		const response = await paced(() =>
+			axios.get<string>(url, {
+				responseType: "text",
+				timeout: 30_000,
+				validateStatus: () => true,
+				...axiosAgentConfig(options.proxyAgent),
+			}),
+		);
 		if (response.status >= 400) {
 			return err(
 				new Error(`Search request failed with HTTP ${response.status}`),

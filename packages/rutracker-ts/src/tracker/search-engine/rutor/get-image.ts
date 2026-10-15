@@ -5,6 +5,7 @@ import { parseTorrentId } from "../../torrent-id";
 import { axiosAgentConfig } from "../rutracker/http";
 import { isRutorSiteHostname, rutorTopicUrl } from "./hosts";
 import type { RutorOptions } from "./options";
+import { paced } from "./pacing";
 
 /** Rating badges and site chrome that sit next to the poster. */
 const NOT_A_POSTER = /kinopoisk\.ru|imdb|cdnbunny\.org|\/thumb\//i;
@@ -44,12 +45,14 @@ export async function rutorGetImage(
 	}
 
 	try {
-		const response = await axios.get<string>(rutorTopicUrl(rawId), {
-			responseType: "text",
-			timeout: 30_000,
-			validateStatus: () => true,
-			...axiosAgentConfig(options.proxyAgent),
-		});
+		const response = await paced(() =>
+			axios.get<string>(rutorTopicUrl(rawId), {
+				responseType: "text",
+				timeout: 30_000,
+				validateStatus: () => true,
+				...axiosAgentConfig(options.proxyAgent),
+			}),
+		);
 		if (response.status >= 400) {
 			return err(new Error(`getImage failed with HTTP ${response.status}`));
 		}

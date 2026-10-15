@@ -122,7 +122,7 @@ describe("rutorSearch", () => {
 			await rutorSearch("Джентльмены", { category: "tv" }, { proxyAgent: null })
 		)._unsafeUnwrap();
 
-		expect(urls.map((url) => url.split("/")[5])).toEqual(["4", "16", "6"]);
+		expect(urls.map((url) => url.split("/")[5])).toEqual(["4", "16"]);
 		expect(page.results.length).toBe(100);
 		expect(page.results[0]?.forumId).toBe("4");
 	});

@@ -4,6 +4,7 @@ import { isTorrentPayload } from "../rutracker/get-torrent";
 import { axiosAgentConfig } from "../rutracker/http";
 import { rutorDownloadId, rutorDownloadUrl } from "./hosts";
 import type { RutorOptions } from "./options";
+import { paced } from "./pacing";
 
 export async function rutorGetTorrent(
 	torrentFileUrl: string,
@@ -15,12 +16,14 @@ export async function rutorGetTorrent(
 	}
 
 	try {
-		const response = await axios.get(rutorDownloadUrl(rawId), {
-			responseType: "arraybuffer",
-			timeout: 30_000,
-			validateStatus: () => true,
-			...axiosAgentConfig(options.proxyAgent),
-		});
+		const response = await paced(() =>
+			axios.get(rutorDownloadUrl(rawId), {
+				responseType: "arraybuffer",
+				timeout: 30_000,
+				validateStatus: () => true,
+				...axiosAgentConfig(options.proxyAgent),
+			}),
+		);
 		if (response.status >= 400) {
 			return err(new Error(`getTorrent failed with HTTP ${response.status}`));
 		}
