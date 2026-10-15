@@ -1,3 +1,4 @@
+import type { TrackerSource } from "@brotracker/rutracker-ts/tracker/torrent-id";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { fetchWithProxy } from "../http/fetch-with-proxy";
@@ -14,6 +15,7 @@ import {
 	resolveTmdbCredentials,
 	saveKinozalSettings,
 	saveQbittorrentSettings,
+	saveRutorSettings,
 	saveRutrackerSettings,
 	saveTmdbSettings,
 } from "./provider-settings";
@@ -29,6 +31,11 @@ const trackerSetInputSchema = z.object({
 const kinozalSetInputSchema = trackerSetInputSchema.extend({
 	autoHost: z.boolean().optional(),
 	host: kinozalConfigSchema.shape.host,
+});
+
+const rutorSetInputSchema = z.object({
+	proxyUrl: proxyUrlSchema,
+	enabled: z.boolean().optional(),
 });
 
 const qbittorrentSetInputSchema = z.object({
@@ -94,7 +101,7 @@ async function testTmdbConnection(): Promise<{ ok: true }> {
 }
 
 async function testTrackerConnection(
-	source: "rutracker" | "kinozal",
+	source: TrackerSource,
 ): Promise<TrackerDiagnosticsResult> {
 	try {
 		return await trackerDiagnostics.diagnose(source);
@@ -144,6 +151,18 @@ export const settingsRouter = router({
 
 			test: protectedProcedure.mutation(async () =>
 				testTrackerConnection("kinozal"),
+			),
+		}),
+
+		rutor: router({
+			get: protectedProcedure.query(async () => providerConfig.getRutor()),
+
+			set: protectedProcedure
+				.input(rutorSetInputSchema)
+				.mutation(async ({ input }) => saveRutorSettings(input)),
+
+			test: protectedProcedure.mutation(async () =>
+				testTrackerConnection("rutor"),
 			),
 		}),
 

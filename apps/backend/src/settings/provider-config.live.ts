@@ -39,6 +39,10 @@ export async function loadKinozalConfig() {
 	return providerConfig.loadKinozal();
 }
 
+export async function loadRutorConfig() {
+	return providerConfig.loadRutor();
+}
+
 export async function loadQbittorrentConfig() {
 	return providerConfig.loadQbittorrent();
 }

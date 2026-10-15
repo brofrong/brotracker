@@ -55,7 +55,7 @@ export type TrackerInterface = {
 	getImage(torrentId: string): Promise<Result<string, Error>>;
 };
 
-const trackers = ["Rutracker", "Kinozal"] as const;
+const trackers = ["Rutracker", "Kinozal", "Rutor"] as const;
 
 export type Tracker = (typeof trackers)[number];
 

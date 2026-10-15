@@ -26,7 +26,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { useToast } from "@astryxdesign/core/Toast";
 import { MediaTheme } from "@astryxdesign/core/theme";
-import { detectMediaType } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/media-type";
+import { detectTorrentMediaType } from "@brotracker/rutracker-ts/tracker/media-type";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ImageOff, Star } from "lucide-react";
@@ -256,7 +256,7 @@ function TitleTorrentsList({
 	};
 
 	const onAdd = (item: TitleTorrentItem) => {
-		const kind = facet ?? detectMediaType(item.forumId);
+		const kind = facet ?? detectTorrentMediaType(item.torrentId, item.forumId);
 		if (!kind) {
 			toast({
 				type: "error",

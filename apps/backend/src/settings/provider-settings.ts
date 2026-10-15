@@ -8,6 +8,7 @@ import { warmUpTracker } from "../torrent/tracker-warmup";
 import {
 	loadKinozalConfig,
 	loadQbittorrentConfig,
+	loadRutorConfig,
 	loadRutrackerConfig,
 	loadTmdbConfig,
 	providerConfig,
@@ -16,6 +17,7 @@ import {
 export {
 	loadKinozalConfig,
 	loadQbittorrentConfig,
+	loadRutorConfig,
 	loadRutrackerConfig,
 	loadTmdbConfig,
 	providerConfig,
@@ -59,6 +61,20 @@ export async function saveKinozalSettings(input: {
 	}
 	if (result.config.enabled) {
 		void warmUpTracker("kinozal");
+	}
+	return result.public;
+}
+
+export async function saveRutorSettings(input: {
+	proxyUrl: string | null | undefined;
+	enabled?: boolean;
+}) {
+	const result = await providerConfig.saveRutor(input);
+	if (result.effects.invalidateTracker) {
+		invalidateTracker("rutor");
+	}
+	if (result.config.enabled) {
+		void warmUpTracker("rutor");
 	}
 	return result.public;
 }

@@ -2,10 +2,12 @@ import {
 	DEFAULT_KINOZAL_MIRROR,
 	KINOZAL_MIRRORS,
 } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/constants";
+import { RUTOR_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutor/constants";
 import { RUTRACKER_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/constants";
 import { fetchWithProxy } from "../http/fetch-with-proxy";
 import {
 	loadKinozalConfig,
+	loadRutorConfig,
 	loadRutrackerConfig,
 } from "../settings/provider-config.live";
 import { getTracker, TrackerNotConfiguredError } from "./torrent.tracker";
@@ -67,6 +69,17 @@ export const trackerDiagnostics = createTrackerDiagnostics({
 				hosts: [
 					{ url: `${RUTRACKER_URL}/forum/index.php`, label: "rutracker.org" },
 				],
+			};
+		}
+
+		if (source === "rutor") {
+			const config = await loadRutorConfig();
+			if (!config) {
+				throw new TrackerNotConfiguredError(source);
+			}
+			return {
+				proxyUrl: config.proxyUrl,
+				hosts: [{ url: `${RUTOR_URL}/`, label: "rutor.info" }],
 			};
 		}
 

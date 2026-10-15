@@ -7,8 +7,14 @@ import {
 } from "@brotracker/rutracker-ts/tracker/torrent-id";
 import { useTranslation } from "react-i18next";
 
-function sourceVariant(source: TrackerSource): "teal" | "green" {
-	return source === "kinozal" ? "green" : "teal";
+const SOURCE_VARIANTS: Record<TrackerSource, "teal" | "green" | "orange"> = {
+	rutracker: "teal",
+	kinozal: "green",
+	rutor: "orange",
+};
+
+function sourceVariant(source: TrackerSource): "teal" | "green" | "orange" {
+	return SOURCE_VARIANTS[source];
 }
 
 export function TrackerSourceBadge({ torrentId }: { torrentId: string }) {

@@ -31,7 +31,8 @@
 		"apiKey": "API key",
 		"trackerSource": {
 			"rutracker": "RuTracker",
-			"kinozal": "Kinozal"
+			"kinozal": "Kinozal",
+			"rutor": "RuTor"
 		},
 		"tmdb": {
 			"linkLabel": "The Movie Database (TMDB)",
@@ -167,6 +168,12 @@
 			"hostDisabled": "Выключите автовыбор, чтобы выбрать зеркало вручную",
 			"loadFailed": "Не удалось загрузить настройки Kinozal"
 		},
+		"rutor": {
+			"title": "RuTor",
+			"description": "Открытый трекер без регистрации: нужен только доступ, при блокировке — через прокси",
+			"enabledDescription": "Учитывать RuTor в поиске и списках торрентов",
+			"loadFailed": "Не удалось загрузить настройки RuTor"
+		},
 		"qbittorrent": {
 			"title": "qBittorrent",
 			"description": "WebUI, API key и пути сохранения для фильмов и сериалов",
@@ -205,6 +212,24 @@
 				"skipped": "Пропущено"
 			},
 			"latency": "{{ms}} мс"
+		},
+		"trackers": {
+			"title": "Трекеры",
+			"description": "Откуда искать раздачи. Включите нужные трекеры и укажите доступ к ним.",
+			"status": {
+				"enabled": "Включён",
+				"disabled": "Выключен",
+				"notConfigured": "Не настроен"
+			},
+			"notFoundTitle": "Трекер не найден",
+			"notFoundDescription": "Такого трекера нет в списке.",
+			"back": "Все трекеры"
+		},
+		"sections": {
+			"profile": "Профиль",
+			"trackers": "Трекеры",
+			"downloads": "Загрузки",
+			"metadata": "Метаданные"
 		}
 	},
 	"home": {
@@ -290,7 +315,8 @@
 			"added": "Торрент добавлен в qBittorrent",
 			"addFailed": "Не удалось добавить торрент"
 		},
-		"trackerFailed": "{{tracker}} не ответил"
+		"trackerFailed": "{{tracker}} не ответил",
+		"trackersPending": "Ещё ищем на: {{trackers}}"
 	},
 	"title": {
 		"browse": {

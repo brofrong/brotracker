@@ -2,6 +2,7 @@ import { z } from "zod";
 import type {
 	KinozalProviderConfig,
 	QbittorrentProviderConfig,
+	RutorProviderConfig,
 	RutrackerProviderConfig,
 	TmdbProviderConfig,
 } from "../db/settings/provider-settings.schema";
@@ -11,6 +12,7 @@ import { proxyUrlSchema, rutrackerConfigSchema } from "./rutracker-config";
 
 export const RUTRACKER_PROVIDER = "rutracker";
 export const KINOZAL_PROVIDER = "kinozal";
+export const RUTOR_PROVIDER = "rutor";
 export const QBITTORRENT_PROVIDER = "qbittorrent";
 export const TMDB_PROVIDER = "tmdb";
 
@@ -40,6 +42,11 @@ export type KinozalPublic = {
 	enabled: boolean;
 	autoHost: boolean;
 	host: string | null;
+};
+
+export type RutorPublic = {
+	proxyUrl: string | null;
+	enabled: boolean;
 };
 
 export type QbittorrentPublic = {
@@ -78,6 +85,16 @@ const kinozalStoredSchema = z.object({
 	enabled: z.boolean().optional(),
 	autoHost: z.boolean().optional(),
 	host: z.string().nullable().optional(),
+});
+
+const rutorStoredSchema = z.object({
+	proxyUrl: z.string().nullable().optional(),
+	enabled: z.boolean().optional(),
+});
+
+const rutorConfigSchema = z.object({
+	proxyUrl: proxyUrlSchema,
+	enabled: z.boolean(),
 });
 
 const qbittorrentStoredSchema = z.object({
@@ -134,6 +151,10 @@ function toKinozalPublic(config: KinozalProviderConfig | null): KinozalPublic {
 		autoHost: config.autoHost,
 		host: config.host,
 	};
+}
+
+function toRutorPublic(config: RutorProviderConfig | null): RutorPublic {
+	return config ?? { proxyUrl: null, enabled: false };
 }
 
 function toQbittorrentPublic(
@@ -202,6 +223,17 @@ function parseKinozal(raw: unknown): KinozalProviderConfig | null {
 	};
 }
 
+function parseRutor(raw: unknown): RutorProviderConfig | null {
+	const parsed = rutorStoredSchema.safeParse(raw);
+	if (!parsed.success) {
+		return null;
+	}
+	return {
+		proxyUrl: parsed.data.proxyUrl ?? null,
+		enabled: parsed.data.enabled ?? false,
+	};
+}
+
 function parseQbittorrent(raw: unknown): QbittorrentProviderConfig | null {
 	const parsed = qbittorrentStoredSchema.safeParse(raw);
 	if (!parsed.success) {
@@ -242,6 +274,10 @@ export function createProviderConfig(store: ProviderStore) {
 		return parseKinozal(await store.load(KINOZAL_PROVIDER));
 	}
 
+	async function loadRutor(): Promise<RutorProviderConfig | null> {
+		return parseRutor(await store.load(RUTOR_PROVIDER));
+	}
+
 	async function loadTmdb(): Promise<TmdbProviderConfig | null> {
 		return parseTmdb(await store.load(TMDB_PROVIDER));
 	}
@@ -249,6 +285,7 @@ export function createProviderConfig(store: ProviderStore) {
 	return {
 		loadRutracker,
 		loadKinozal,
+		loadRutor,
 		loadQbittorrent,
 		loadTmdb,
 
@@ -257,6 +294,9 @@ export function createProviderConfig(store: ProviderStore) {
 
 		getKinozal: async (): Promise<KinozalPublic> =>
 			toKinozalPublic(await loadKinozal()),
+
+		getRutor: async (): Promise<RutorPublic> =>
+			toRutorPublic(await loadRutor()),
 
 		getQbittorrent: async (): Promise<QbittorrentPublic> =>
 			toQbittorrentPublic(await loadQbittorrent()),
@@ -364,6 +404,31 @@ export function createProviderConfig(store: ProviderStore) {
 					clearSession: credentialsChanged || hostChanged,
 					invalidateTracker: credentialsChanged || hostChanged,
 				},
+			};
+		},
+
+		saveRutor: async (input: {
+			proxyUrl: string | null | undefined;
+			enabled?: boolean;
+		}): Promise<{
+			config: RutorProviderConfig;
+			public: RutorPublic;
+			effects: TrackerProviderEffects;
+		}> => {
+			const existing = await loadRutor();
+			const config: RutorProviderConfig = rutorConfigSchema.parse({
+				proxyUrl: input.proxyUrl,
+				enabled: input.enabled ?? existing?.enabled ?? false,
+			});
+			const proxyChanged =
+				(existing?.proxyUrl ?? null) !== (config.proxyUrl ?? null);
+
+			await store.save(RUTOR_PROVIDER, config);
+
+			return {
+				config,
+				public: toRutorPublic(config),
+				effects: { clearSession: false, invalidateTracker: proxyChanged },
 			};
 		},
 

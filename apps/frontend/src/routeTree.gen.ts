@@ -17,9 +17,16 @@ import { Route as StatsRouteImport } from './routes/stats'
 import { Route as TorrentsRouteImport } from './routes/torrents'
 import { Route as WorkersRouteImport } from './routes/workers'
 import { Route as PersonIdRouteImport } from './routes/person.$id'
+import { Route as SettingsIndexRouteImport } from './routes/settings.index'
+import { Route as SettingsDownloadsRouteImport } from './routes/settings.downloads'
+import { Route as SettingsMetadataRouteImport } from './routes/settings.metadata'
+import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
+import { Route as SettingsTrackersRouteImport } from './routes/settings.trackers'
 import { Route as TitleIndexRouteImport } from './routes/title.index'
 import { Route as TitleIdRouteImport } from './routes/title.$id'
 import { Route as WorkersIdRouteImport } from './routes/workers.$id'
+import { Route as SettingsTrackersIndexRouteImport } from './routes/settings.trackers.index'
+import { Route as SettingsTrackersTrackerRouteImport } from './routes/settings.trackers.$tracker'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -61,6 +68,31 @@ const PersonIdRoute = PersonIdRouteImport.update({
   path: '/person/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsDownloadsRoute = SettingsDownloadsRouteImport.update({
+  id: '/downloads',
+  path: '/downloads',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsMetadataRoute = SettingsMetadataRouteImport.update({
+  id: '/metadata',
+  path: '/metadata',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsProfileRoute = SettingsProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsTrackersRoute = SettingsTrackersRouteImport.update({
+  id: '/trackers',
+  path: '/trackers',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const TitleIndexRoute = TitleIndexRouteImport.update({
   id: '/title/',
   path: '/title/',
@@ -76,46 +108,75 @@ const WorkersIdRoute = WorkersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => WorkersRoute,
 } as any)
+const SettingsTrackersIndexRoute = SettingsTrackersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SettingsTrackersRoute,
+} as any)
+const SettingsTrackersTrackerRoute = SettingsTrackersTrackerRouteImport.update({
+  id: '/$tracker',
+  path: '/$tracker',
+  getParentRoute: () => SettingsTrackersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/search': typeof SearchRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/stats': typeof StatsRoute
   '/torrents': typeof TorrentsRoute
   '/workers': typeof WorkersRouteWithChildren
   '/person/$id': typeof PersonIdRoute
+  '/settings/downloads': typeof SettingsDownloadsRoute
+  '/settings/metadata': typeof SettingsMetadataRoute
+  '/settings/profile': typeof SettingsProfileRoute
+  '/settings/trackers': typeof SettingsTrackersRouteWithChildren
   '/title/$id': typeof TitleIdRoute
   '/workers/$id': typeof WorkersIdRoute
+  '/settings/': typeof SettingsIndexRoute
   '/title/': typeof TitleIndexRoute
+  '/settings/trackers/$tracker': typeof SettingsTrackersTrackerRoute
+  '/settings/trackers/': typeof SettingsTrackersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/search': typeof SearchRoute
-  '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
   '/torrents': typeof TorrentsRoute
   '/workers': typeof WorkersRouteWithChildren
   '/person/$id': typeof PersonIdRoute
+  '/settings/downloads': typeof SettingsDownloadsRoute
+  '/settings/metadata': typeof SettingsMetadataRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/title/$id': typeof TitleIdRoute
   '/workers/$id': typeof WorkersIdRoute
+  '/settings': typeof SettingsIndexRoute
   '/title': typeof TitleIndexRoute
+  '/settings/trackers/$tracker': typeof SettingsTrackersTrackerRoute
+  '/settings/trackers': typeof SettingsTrackersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/search': typeof SearchRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/stats': typeof StatsRoute
   '/torrents': typeof TorrentsRoute
   '/workers': typeof WorkersRouteWithChildren
   '/person/$id': typeof PersonIdRoute
+  '/settings/downloads': typeof SettingsDownloadsRoute
+  '/settings/metadata': typeof SettingsMetadataRoute
+  '/settings/profile': typeof SettingsProfileRoute
+  '/settings/trackers': typeof SettingsTrackersRouteWithChildren
   '/title/$id': typeof TitleIdRoute
   '/workers/$id': typeof WorkersIdRoute
+  '/settings/': typeof SettingsIndexRoute
   '/title/': typeof TitleIndexRoute
+  '/settings/trackers/$tracker': typeof SettingsTrackersTrackerRoute
+  '/settings/trackers/': typeof SettingsTrackersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -128,22 +189,34 @@ export interface FileRouteTypes {
     | '/torrents'
     | '/workers'
     | '/person/$id'
+    | '/settings/downloads'
+    | '/settings/metadata'
+    | '/settings/profile'
+    | '/settings/trackers'
     | '/title/$id'
     | '/workers/$id'
+    | '/settings/'
     | '/title/'
+    | '/settings/trackers/$tracker'
+    | '/settings/trackers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/search'
-    | '/settings'
     | '/stats'
     | '/torrents'
     | '/workers'
     | '/person/$id'
+    | '/settings/downloads'
+    | '/settings/metadata'
+    | '/settings/profile'
     | '/title/$id'
     | '/workers/$id'
+    | '/settings'
     | '/title'
+    | '/settings/trackers/$tracker'
+    | '/settings/trackers'
   id:
     | '__root__'
     | '/'
@@ -154,16 +227,23 @@ export interface FileRouteTypes {
     | '/torrents'
     | '/workers'
     | '/person/$id'
+    | '/settings/downloads'
+    | '/settings/metadata'
+    | '/settings/profile'
+    | '/settings/trackers'
     | '/title/$id'
     | '/workers/$id'
+    | '/settings/'
     | '/title/'
+    | '/settings/trackers/$tracker'
+    | '/settings/trackers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   SearchRoute: typeof SearchRoute
-  SettingsRoute: typeof SettingsRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
   StatsRoute: typeof StatsRoute
   TorrentsRoute: typeof TorrentsRoute
   WorkersRoute: typeof WorkersRouteWithChildren
@@ -230,6 +310,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PersonIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/': {
+      id: '/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/downloads': {
+      id: '/settings/downloads'
+      path: '/downloads'
+      fullPath: '/settings/downloads'
+      preLoaderRoute: typeof SettingsDownloadsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/metadata': {
+      id: '/settings/metadata'
+      path: '/metadata'
+      fullPath: '/settings/metadata'
+      preLoaderRoute: typeof SettingsMetadataRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/profile': {
+      id: '/settings/profile'
+      path: '/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/trackers': {
+      id: '/settings/trackers'
+      path: '/trackers'
+      fullPath: '/settings/trackers'
+      preLoaderRoute: typeof SettingsTrackersRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/title/': {
       id: '/title/'
       path: '/title'
@@ -251,8 +366,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkersIdRouteImport
       parentRoute: typeof WorkersRoute
     }
+    '/settings/trackers/': {
+      id: '/settings/trackers/'
+      path: '/'
+      fullPath: '/settings/trackers/'
+      preLoaderRoute: typeof SettingsTrackersIndexRouteImport
+      parentRoute: typeof SettingsTrackersRoute
+    }
+    '/settings/trackers/$tracker': {
+      id: '/settings/trackers/$tracker'
+      path: '/$tracker'
+      fullPath: '/settings/trackers/$tracker'
+      preLoaderRoute: typeof SettingsTrackersTrackerRouteImport
+      parentRoute: typeof SettingsTrackersRoute
+    }
   }
 }
+
+interface SettingsTrackersRouteChildren {
+  SettingsTrackersTrackerRoute: typeof SettingsTrackersTrackerRoute
+  SettingsTrackersIndexRoute: typeof SettingsTrackersIndexRoute
+}
+
+const SettingsTrackersRouteChildren: SettingsTrackersRouteChildren = {
+  SettingsTrackersTrackerRoute: SettingsTrackersTrackerRoute,
+  SettingsTrackersIndexRoute: SettingsTrackersIndexRoute,
+}
+
+const SettingsTrackersRouteWithChildren =
+  SettingsTrackersRoute._addFileChildren(SettingsTrackersRouteChildren)
+
+interface SettingsRouteChildren {
+  SettingsDownloadsRoute: typeof SettingsDownloadsRoute
+  SettingsMetadataRoute: typeof SettingsMetadataRoute
+  SettingsProfileRoute: typeof SettingsProfileRoute
+  SettingsTrackersRoute: typeof SettingsTrackersRouteWithChildren
+  SettingsIndexRoute: typeof SettingsIndexRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsDownloadsRoute: SettingsDownloadsRoute,
+  SettingsMetadataRoute: SettingsMetadataRoute,
+  SettingsProfileRoute: SettingsProfileRoute,
+  SettingsTrackersRoute: SettingsTrackersRouteWithChildren,
+  SettingsIndexRoute: SettingsIndexRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
 
 interface WorkersRouteChildren {
   WorkersIdRoute: typeof WorkersIdRoute
@@ -269,7 +431,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   SearchRoute: SearchRoute,
-  SettingsRoute: SettingsRoute,
+  SettingsRoute: SettingsRouteWithChildren,
   StatsRoute: StatsRoute,
   TorrentsRoute: TorrentsRoute,
   WorkersRoute: WorkersRouteWithChildren,

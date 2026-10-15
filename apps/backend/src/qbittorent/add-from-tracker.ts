@@ -1,4 +1,5 @@
 import { isKinozalDownloadUrl } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/hosts";
+import { isRutorDownloadUrl } from "@brotracker/rutracker-ts/tracker/search-engine/rutor/hosts";
 import { RUTRACKER_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/constants";
 
 export class AddFromTrackerPreconditionError extends Error {
@@ -30,11 +31,12 @@ export function isAllowedRutrackerTorrentUrl(torrentFileUrl: string): boolean {
 	}
 }
 
-/** Allow RuTracker and Kinozal torrent download endpoints only. */
+/** Allow RuTracker, Kinozal and RuTor torrent download endpoints only. */
 export function isAllowedTrackerTorrentUrl(torrentFileUrl: string): boolean {
 	return (
 		isAllowedRutrackerTorrentUrl(torrentFileUrl) ||
-		isKinozalDownloadUrl(torrentFileUrl)
+		isKinozalDownloadUrl(torrentFileUrl) ||
+		isRutorDownloadUrl(torrentFileUrl)
 	);
 }
 

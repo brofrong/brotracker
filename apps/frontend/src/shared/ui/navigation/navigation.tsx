@@ -116,7 +116,9 @@ export function NavItems() {
 				label={t("settings")}
 				href="/settings"
 				icon={Settings}
-				isSelected={pathname === "/settings"}
+				isSelected={
+					pathname === "/settings" || pathname.startsWith("/settings/")
+				}
 			/>
 		</SideNavSection>
 	);

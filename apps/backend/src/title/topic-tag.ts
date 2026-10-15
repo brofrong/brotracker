@@ -3,6 +3,12 @@ import {
 	isKinozalDownloadUrl,
 	isKinozalSiteHostname,
 } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/hosts";
+import {
+	rutorDownloadId,
+	rutorDownloadUrl,
+	rutorTopicId,
+	rutorTopicUrl,
+} from "@brotracker/rutracker-ts/tracker/search-engine/rutor/hosts";
 import { RUTRACKER_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/constants";
 import {
 	formatTorrentId,
@@ -35,6 +41,9 @@ export function topicUrlFromId(topicId: string): string {
 	if (source === "kinozal") {
 		return `${KINOZAL_URL}/details.php?id=${rawId}`;
 	}
+	if (source === "rutor") {
+		return rutorTopicUrl(rawId);
+	}
 	return `${RUTRACKER_URL}/forum/viewtopic.php?t=${rawId}`;
 }
 
@@ -42,6 +51,9 @@ export function torrentFileUrlFromId(topicId: string): string {
 	const { source, rawId } = parseTorrentId(topicId);
 	if (source === "kinozal") {
 		return `${KINOZAL_URL}/download.php?id=${rawId}`;
+	}
+	if (source === "rutor") {
+		return rutorDownloadUrl(rawId);
 	}
 	return `${RUTRACKER_URL}/forum/dl.php?t=${rawId}`;
 }
@@ -62,6 +74,11 @@ function extractKinozalTopicId(url: URL): string | null {
 		}
 	}
 	return null;
+}
+
+function extractRutorTopicId(url: URL): string | null {
+	const id = rutorDownloadId(url.href) ?? rutorTopicId(url.href);
+	return id ? formatTorrentId("rutor", id) : null;
 }
 
 function extractRutrackerTopicId(url: URL): string | null {
@@ -85,7 +102,11 @@ function extractRutrackerTopicId(url: URL): string | null {
 export function extractTopicId(url: string): string | null {
 	try {
 		const parsed = new URL(url);
-		return extractKinozalTopicId(parsed) ?? extractRutrackerTopicId(parsed);
+		return (
+			extractKinozalTopicId(parsed) ??
+			extractRutorTopicId(parsed) ??
+			extractRutrackerTopicId(parsed)
+		);
 	} catch {
 		return null;
 	}

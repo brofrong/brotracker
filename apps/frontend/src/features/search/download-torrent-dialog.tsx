@@ -11,9 +11,9 @@ import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { useToast } from "@astryxdesign/core/Toast";
 import {
-	detectMediaType,
+	detectTorrentMediaType,
 	type MediaType,
-} from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/media-type";
+} from "@brotracker/rutracker-ts/tracker/media-type";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,6 +28,7 @@ export type DownloadTorrentItem = {
 	resolution: "4K" | "1080p" | "720p" | "SD" | null;
 	hdr: "HDR" | "SDR" | null;
 	torrentFileUrl: string;
+	torrentId: string;
 	forumId: string;
 };
 
@@ -51,7 +52,7 @@ export function DownloadTorrentDialog({ item, isOpen, onOpenChange }: Props) {
 			setMediaType("");
 			return;
 		}
-		setMediaType(detectMediaType(item.forumId) ?? "");
+		setMediaType(detectTorrentMediaType(item.torrentId, item.forumId) ?? "");
 	}, [item]);
 
 	const handleDownload = async () => {

@@ -1,8 +1,8 @@
 "use client";
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import z from "zod";
-import { SettingsPage } from "#/features/settings/settings-page";
+import { SettingsLayout } from "#/features/settings/settings-layout";
 
 const settingsSearchSchema = z.object({
 	section: z
@@ -11,6 +11,7 @@ const settingsSearchSchema = z.object({
 			"appearance",
 			"rutracker",
 			"kinozal",
+			"rutor",
 			"qbittorrent",
 			"tmdb",
 		])
@@ -18,11 +19,33 @@ const settingsSearchSchema = z.object({
 });
 
 export const Route = createFileRoute("/settings")({
-	component: SettingsRoute,
 	validateSearch: settingsSearchSchema,
+	// Old single-page links (`/settings?section=kinozal`) open the matching module.
+	beforeLoad: ({ search: { section } }) => {
+		if (!section) {
+			return;
+		}
+		if (section === "account" || section === "appearance") {
+			throw redirect({ to: "/settings/profile" });
+		}
+		if (section === "qbittorrent") {
+			throw redirect({ to: "/settings/downloads" });
+		}
+		if (section === "tmdb") {
+			throw redirect({ to: "/settings/metadata" });
+		}
+		throw redirect({
+			to: "/settings/trackers/$tracker",
+			params: { tracker: section },
+		});
+	},
+	component: SettingsLayoutRoute,
 });
 
-function SettingsRoute() {
-	const { section } = Route.useSearch();
-	return <SettingsPage section={section} />;
+function SettingsLayoutRoute() {
+	return (
+		<SettingsLayout>
+			<Outlet />
+		</SettingsLayout>
+	);
 }

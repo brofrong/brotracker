@@ -120,6 +120,9 @@ function toSearchRows(
 	}));
 }
 
+/** How often to re-ask while some trackers are still searching. */
+const PENDING_POLL_MS = 2_000;
+
 export function SearchPage({ search }: { search?: string }) {
 	const navigate = useNavigate({ from: "/search" });
 	const { t } = useTranslation("search");
@@ -143,6 +146,7 @@ export function SearchPage({ search }: { search?: string }) {
 			resolution: row.resolution,
 			hdr: row.hdr,
 			torrentFileUrl: row.torrentFileUrl,
+			torrentId: row.torrentId,
 			forumId: row.forumId,
 		});
 		setIsDownloadOpen(true);
@@ -252,6 +256,9 @@ export function SearchPage({ search }: { search?: string }) {
 		enabled: hasActiveSearch,
 		refetchOnWindowFocus: false,
 		retry: false,
+		// Slow trackers answer later; ask again until every tracker is in.
+		refetchInterval: (query) =>
+			query.state.data?.pendingSources.length ? PENDING_POLL_MS : false,
 	});
 
 	const recentQuery = useQuery({
@@ -288,8 +295,14 @@ export function SearchPage({ search }: { search?: string }) {
 	const showInitialSpinner = hasActiveSearch
 		? localQuery.isLoading && !localQuery.data && !refreshQuery.isSuccess
 		: recentQuery.isLoading && !recentQuery.data;
+	const pendingSources =
+		hasActiveSearch && refreshQuery.isSuccess
+			? refreshQuery.data.pendingSources
+			: [];
 	const showTrackerIndicator =
-		hasActiveSearch && refreshQuery.isFetching && !showInitialSpinner;
+		hasActiveSearch &&
+		(refreshQuery.isFetching || pendingSources.length > 0) &&
+		!showInitialSpinner;
 	const showLocalError = hasActiveSearch
 		? localQuery.isError && !refreshQuery.isSuccess && !refreshQuery.isFetching
 		: recentQuery.isError;
@@ -336,7 +349,15 @@ export function SearchPage({ search }: { search?: string }) {
 			{showTrackerIndicator ? (
 				<HStack gap={2} paddingInline={4} vAlign="center">
 					<Spinner aria-label={t("searchingTrackerAria")} size="sm" />
-					<Text type="supporting">{t("searchingTracker")}</Text>
+					<Text type="supporting">
+						{pendingSources.length > 0
+							? t("trackersPending", {
+									trackers: pendingSources
+										.map((source) => tCommon(`trackerSource.${source}`))
+										.join(", "),
+								})
+							: t("searchingTracker")}
+					</Text>
 				</HStack>
 			) : null}
 			{trackerFailures.map((failure) => (
@@ -349,8 +370,8 @@ export function SearchPage({ search }: { search?: string }) {
 							label={tCommon("openSettings")}
 							onClick={() =>
 								void navigate({
-									to: "/settings",
-									search: { section: failure.source },
+									to: "/settings/trackers/$tracker",
+									params: { tracker: failure.source },
 								})
 							}
 							variant="secondary"

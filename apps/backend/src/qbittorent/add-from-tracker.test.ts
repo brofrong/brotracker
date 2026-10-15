@@ -144,3 +144,17 @@ describe("addFromTracker", () => {
 		).rejects.toBeInstanceOf(AddFromTrackerGatewayError);
 	});
 });
+
+describe("isAllowedTrackerTorrentUrl rutor", () => {
+	test("allows RuTor downloads only from its download host", () => {
+		expect(isAllowedTrackerTorrentUrl("https://d.rutor.info/download/1")).toBe(
+			true,
+		);
+		expect(isAllowedTrackerTorrentUrl("https://rutor.info/download/1")).toBe(
+			false,
+		);
+		expect(isAllowedTrackerTorrentUrl("https://evil.test/download/1")).toBe(
+			false,
+		);
+	});
+});

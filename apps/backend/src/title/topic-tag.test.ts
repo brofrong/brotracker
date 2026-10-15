@@ -173,3 +173,20 @@ describe("findTransferForTopic", () => {
 		).toBeNull();
 	});
 });
+
+describe("rutor topic ids", () => {
+	test("round-trip between ids and urls", () => {
+		expect(topicUrlFromId("rutor:987011")).toBe(
+			"https://rutor.info/torrent/987011",
+		);
+		expect(torrentFileUrlFromId("rutor:987011")).toBe(
+			"https://d.rutor.info/download/987011",
+		);
+		expect(extractTopicId("https://d.rutor.info/download/987011")).toBe(
+			"rutor:987011",
+		);
+		expect(extractTopicId("https://rutor.info/torrent/987011/slug")).toBe(
+			"rutor:987011",
+		);
+	});
+});

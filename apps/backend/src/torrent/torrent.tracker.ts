@@ -1,4 +1,5 @@
 import { createTracker } from "@brotracker/rutracker-ts/index";
+import { createRutor } from "@brotracker/rutracker-ts/tracker/search-engine/rutor/index";
 import {
 	parseTorrentId,
 	type TrackerSource,
@@ -18,6 +19,7 @@ import type {
 import { createProxyAgent } from "../http/proxy-agent";
 import {
 	loadKinozalConfig,
+	loadRutorConfig,
 	loadRutrackerConfig,
 } from "../settings/provider-config.live";
 import { env } from "../utils/env";
@@ -46,11 +48,17 @@ export class RutrackerNotConfiguredError extends TrackerNotConfiguredError {
 	}
 }
 
+const SOURCE_LABELS: Record<TrackerSource, string> = {
+	rutracker: "RuTracker",
+	kinozal: "Kinozal",
+	rutor: "RuTor",
+};
+
 function sourceLabel(source: TrackerSource): string {
-	return source === "rutracker" ? "RuTracker" : "Kinozal";
+	return SOURCE_LABELS[source];
 }
 
-function sourceToTracker(source: TrackerSource): Tracker {
+function sourceToTracker(source: "rutracker" | "kinozal"): Tracker {
 	return source === "rutracker" ? "Rutracker" : "Kinozal";
 }
 
@@ -58,13 +66,15 @@ type LoadedConfig =
 	| { kind: "rutracker"; config: RutrackerProviderConfig | null }
 	| { kind: "kinozal"; config: KinozalProviderConfig | null };
 
-async function loadConfig(source: TrackerSource): Promise<LoadedConfig> {
+async function loadConfig(
+	source: "rutracker" | "kinozal",
+): Promise<LoadedConfig> {
 	return source === "rutracker"
 		? { kind: "rutracker", config: await loadRutrackerConfig() }
 		: { kind: "kinozal", config: await loadKinozalConfig() };
 }
 
-function createDbStore(source: TrackerSource) {
+function createDbStore(source: "rutracker" | "kinozal") {
 	return source === "rutracker"
 		? createRutrackerDbStore()
 		: createKinozalDbStore();
@@ -73,6 +83,14 @@ function createDbStore(source: TrackerSource) {
 async function createTrackerForSource(
 	source: TrackerSource,
 ): Promise<TrackerInterface> {
+	if (source === "rutor") {
+		const config = await loadRutorConfig();
+		if (!config) {
+			throw new TrackerNotConfiguredError(source);
+		}
+		return createRutor({ proxyAgent: createProxyAgent(config.proxyUrl) });
+	}
+
 	const loaded = await loadConfig(source);
 	if (!loaded.config) {
 		throw new TrackerNotConfiguredError(source);
@@ -117,7 +135,7 @@ export function getTrackerForTorrentId(
 	return getTracker(source);
 }
 
-/** Enabled providers with login + password configured. */
+/** Enabled providers (login + password configured where the tracker needs them). */
 export async function listEnabledTrackers(): Promise<TrackerSource[]> {
 	const sources: TrackerSource[] = [];
 	const rutracker = await loadRutrackerConfig();
@@ -127,6 +145,10 @@ export async function listEnabledTrackers(): Promise<TrackerSource[]> {
 	const kinozal = await loadKinozalConfig();
 	if (kinozal?.enabled) {
 		sources.push("kinozal");
+	}
+	const rutor = await loadRutorConfig();
+	if (rutor?.enabled) {
+		sources.push("rutor");
 	}
 	return sources;
 }
@@ -144,6 +166,9 @@ export function invalidateTracker(source?: TrackerSource): void {
 export async function clearTrackerSession(
 	source: TrackerSource,
 ): Promise<void> {
+	if (source === "rutor") {
+		return;
+	}
 	const table = source === "rutracker" ? rutrackerStore : kinozalStore;
 	await db.delete(table).where(eq(table.id, STORE_ID));
 }

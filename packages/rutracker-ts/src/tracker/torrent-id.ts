@@ -1,4 +1,4 @@
-export const TRACKER_SOURCES = ["rutracker", "kinozal"] as const;
+export const TRACKER_SOURCES = ["rutracker", "kinozal", "rutor"] as const;
 
 export type TrackerSource = (typeof TRACKER_SOURCES)[number];
 

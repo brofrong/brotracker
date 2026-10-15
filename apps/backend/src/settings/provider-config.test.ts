@@ -369,3 +369,42 @@ describe("provider-config tmdb", () => {
 		).rejects.toBeInstanceOf(MissingSecretError);
 	});
 });
+
+describe("provider-config rutor", () => {
+	test("is off until enabled and needs no credentials", async () => {
+		const store = memoryStore();
+		const providers = createProviderConfig(store);
+
+		expect(await providers.getRutor()).toEqual({
+			proxyUrl: null,
+			enabled: false,
+		});
+
+		const saved = await providers.saveRutor({
+			proxyUrl: " socks5://proxy:1080 ",
+			enabled: true,
+		});
+		expect(saved.public).toEqual({
+			proxyUrl: "socks5://proxy:1080",
+			enabled: true,
+		});
+		expect(saved.effects.invalidateTracker).toBe(true);
+		expect(await providers.loadRutor()).toEqual({
+			proxyUrl: "socks5://proxy:1080",
+			enabled: true,
+		});
+
+		const toggled = await providers.saveRutor({
+			proxyUrl: "socks5://proxy:1080",
+			enabled: false,
+		});
+		expect(toggled.effects.invalidateTracker).toBe(false);
+	});
+
+	test("rejects a malformed proxy", async () => {
+		const providers = createProviderConfig(memoryStore());
+		await expect(
+			providers.saveRutor({ proxyUrl: "ftp://x", enabled: true }),
+		).rejects.toThrow();
+	});
+});

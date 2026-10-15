@@ -31,7 +31,8 @@
 		"apiKey": "API key",
 		"trackerSource": {
 			"rutracker": "RuTracker",
-			"kinozal": "Kinozal"
+			"kinozal": "Kinozal",
+			"rutor": "RuTor"
 		},
 		"tmdb": {
 			"linkLabel": "The Movie Database (TMDB)",
@@ -167,6 +168,12 @@
 			"hostDisabled": "Turn off auto-select to choose a mirror manually",
 			"loadFailed": "Failed to load Kinozal settings"
 		},
+		"rutor": {
+			"title": "RuTor",
+			"description": "Public tracker, no account needed: only access, through a proxy if it is blocked",
+			"enabledDescription": "Include RuTor in search and torrent lists",
+			"loadFailed": "Failed to load RuTor settings"
+		},
 		"qbittorrent": {
 			"title": "qBittorrent",
 			"description": "WebUI, API key, and save paths for movies and TV series",
@@ -205,6 +212,24 @@
 				"skipped": "Skipped"
 			},
 			"latency": "{{ms}} ms"
+		},
+		"trackers": {
+			"title": "Trackers",
+			"description": "Where releases are searched. Enable the trackers you want and set up access to them.",
+			"status": {
+				"enabled": "Enabled",
+				"disabled": "Disabled",
+				"notConfigured": "Not configured"
+			},
+			"notFoundTitle": "Tracker not found",
+			"notFoundDescription": "There is no such tracker.",
+			"back": "All trackers"
+		},
+		"sections": {
+			"profile": "Profile",
+			"trackers": "Trackers",
+			"downloads": "Downloads",
+			"metadata": "Metadata"
 		}
 	},
 	"home": {
@@ -290,7 +315,8 @@
 			"added": "Torrent added to qBittorrent",
 			"addFailed": "Failed to add torrent"
 		},
-		"trackerFailed": "{{tracker}} did not respond"
+		"trackerFailed": "{{tracker}} did not respond",
+		"trackersPending": "Still searching: {{trackers}}"
 	},
 	"title": {
 		"browse": {

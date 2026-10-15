@@ -18,6 +18,12 @@ export type KinozalProviderConfig = {
 	host: string | null;
 };
 
+/** RuTor is public: no credentials, only an on/off switch and a way out. */
+export type RutorProviderConfig = {
+	proxyUrl: string | null;
+	enabled: boolean;
+};
+
 export type QbittorrentProviderConfig = {
 	url: string;
 	apiKey: string;
