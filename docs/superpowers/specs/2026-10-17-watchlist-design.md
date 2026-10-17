@@ -307,3 +307,9 @@ for **90 days**. The home feed keeps working.
 - Completion detection mechanism for films.
 - Web Push library and service-worker setup.
 - How the worker interval setting is stored and applied without a restart.
+
+## Carry-overs from part 1 (for the part 2 plan)
+
+- `hasRussianVoice` currently counts RuTor `| P1` / `| P2` (one-/two-voice) and amateur multi-voice; the user's rule is dub or professional multi-voice only. Tighten before auto-download uses the flag, against a fixture file of real tracker titles.
+- `[1920×1080, …]` (Unicode `×`) can be read as year 1920. Cover in the same fixtures.
+- The title-page query includes the year; the waiting worker should also query without the year (or ±1) so a premiere-year mismatch doesn't hide releases the ±1 matcher would accept.
