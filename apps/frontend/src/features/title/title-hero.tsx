@@ -471,6 +471,7 @@ export function TitleHero({
 							{meta.overview}
 						</Text>
 						<Button
+							aria-expanded={isOverviewExpanded}
 							label={
 								isOverviewExpanded ? t("detail.showLess") : t("detail.showMore")
 							}

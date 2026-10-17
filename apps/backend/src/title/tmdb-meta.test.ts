@@ -62,6 +62,30 @@ describe("parseMovieDetails names", () => {
 		expect(result.originalName).toBeNull();
 		expect(result.alternativeNames).toEqual([]);
 	});
+
+	test("drops RU alternative titles and translation names that are blank", () => {
+		const result = parseMovieDetails(
+			{
+				title: "The Odyssey",
+				original_title: "The Odyssey",
+				alternative_titles: {
+					titles: [
+						{ iso_3166_1: "RU", title: "" },
+						{ iso_3166_1: "RU", title: "   " },
+						{ iso_3166_1: "RU", title: " Одиссей " },
+					],
+				},
+				translations: {
+					translations: [
+						{ iso_639_1: "ru", iso_3166_1: "RU", data: { title: "  " } },
+					],
+				},
+			},
+			credits(),
+		);
+
+		expect(result.alternativeNames).toEqual(["Одиссей"]);
+	});
 });
 
 describe("parseTvDetails names", () => {

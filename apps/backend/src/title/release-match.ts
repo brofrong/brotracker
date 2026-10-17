@@ -45,5 +45,6 @@ export function releaseMatchesTitle(
 		return Math.abs(release.year - target.year) <= 1;
 	}
 
+	// Series: release year >= first-air year - 1, no upper bound, because a season release carries that season's year.
 	return release.year >= target.year - 1;
 }

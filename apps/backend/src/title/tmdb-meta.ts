@@ -209,8 +209,8 @@ export function parseSimilar(
 
 /**
  * Russian alternative names: the RU translation title (if any), then RU
- * alternative titles in TMDB order, deduped by normalized form and excluding
- * the main and original names.
+ * alternative titles in TMDB order, trimmed, deduped by normalized form, and
+ * excluding blanks and the main and original names.
  */
 export function russianAlternativeNames(input: {
 	mainName: string;
@@ -236,9 +236,10 @@ export function russianAlternativeNames(input: {
 
 	const seen = new Set<string>();
 	const result: string[] = [];
-	for (const name of candidates) {
+	for (const candidate of candidates) {
+		const name = candidate.trim();
 		const normalized = normalizeTitleName(name);
-		if (excluded.has(normalized) || seen.has(normalized)) {
+		if (name === "" || excluded.has(normalized) || seen.has(normalized)) {
 			continue;
 		}
 		seen.add(normalized);
