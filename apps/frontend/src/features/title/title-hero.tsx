@@ -23,6 +23,8 @@ import { useTranslation } from "react-i18next";
 import type { AppLocale } from "#/shared/i18n/locale";
 import { useLocale } from "#/shared/i18n/locale-provider";
 import { trpc } from "#/shared/lib/trpc";
+import { WaitButton } from "./wait-button";
+import type { TitleWatchState } from "./wait-state";
 
 const MOBILE_POSTER_WIDTH = 96;
 const DESKTOP_POSTER_WIDTH = 208;
@@ -90,13 +92,7 @@ type TitleWatchView = {
 	id: string;
 	topicUrl: string | null;
 	kind: "films" | "tv" | null;
-	watch:
-		| "waiting"
-		| "downloading"
-		| "tracking"
-		| "paused"
-		| "completed"
-		| "off";
+	watch: TitleWatchState;
 	source: "auto-qb" | "manual";
 	season: number | null;
 	waitingOutcome:
@@ -291,6 +287,8 @@ export type TitleHeroProps = {
 	}>;
 	hasRatings: boolean;
 	watch: TitleWatchView | null;
+	/** «Жду» is offered only for TMDB titles with full metadata (see canWaitFor). */
+	canWait: boolean;
 	onOpenPoster: () => void;
 };
 
@@ -303,6 +301,7 @@ export function TitleHero({
 	ratings,
 	hasRatings,
 	watch,
+	canWait,
 	onOpenPoster,
 }: TitleHeroProps) {
 	const { t } = useTranslation("title");
@@ -462,6 +461,10 @@ export function TitleHero({
 	const watchBlock =
 		facet === "tv" ? <TitleWatchPanel titleId={titleId} watch={watch} /> : null;
 
+	const waitBlock = canWait ? (
+		<WaitButton isFullWidth={isMobile} titleId={titleId} watch={watch} />
+	) : null;
+
 	if (isMobile) {
 		return (
 			<VStack gap={3} width="100%">
@@ -477,6 +480,8 @@ export function TitleHero({
 				</HStack>
 
 				{namesBlock}
+
+				{waitBlock}
 
 				{ratingsBlock}
 
@@ -519,6 +524,8 @@ export function TitleHero({
 						{namesBlock}
 						{genresText}
 					</VStack>
+
+					{waitBlock}
 
 					{meta.overview ? <Text type="body">{meta.overview}</Text> : null}
 

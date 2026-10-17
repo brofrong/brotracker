@@ -432,6 +432,16 @@
 			"updatedApplied": "Раздача обновлена и подменена в qBittorrent",
 			"updated": "Раздача обновилась",
 			"checkFailed": "Не удалось проверить обновление"
+		},
+		"wait": {
+			"add": "Жду",
+			"active": "Жду",
+			"hint": "Проверка раз в {{hours}} ч · {{rules}}",
+			"rules": {
+				"minResolution": "{{value}}+",
+				"hdr": "HDR",
+				"voice": "с озвучкой"
+			}
 		}
 	},
 	"person": {
@@ -672,6 +682,14 @@
 				"warn": "Предупреждение",
 				"error": "Ошибка"
 			}
+		}
+	},
+	"watchlist": {
+		"stage": {
+			"waiting": "Жду",
+			"downloading": "Качается",
+			"tracking": "Слежу",
+			"completed": "Готово"
 		}
 	}
 }

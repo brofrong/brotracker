@@ -15,6 +15,7 @@ export const namespaces = [
 	"transfers",
 	"stats",
 	"workers",
+	"watchlist",
 	"auth",
 ] as const;
 

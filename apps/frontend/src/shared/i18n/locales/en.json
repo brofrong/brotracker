@@ -432,6 +432,16 @@
 			"updatedApplied": "Torrent updated and replaced in qBittorrent",
 			"updated": "Torrent updated",
 			"checkFailed": "Failed to check for update"
+		},
+		"wait": {
+			"add": "Wait for it",
+			"active": "Waiting",
+			"hint": "Checked every {{hours}} h · {{rules}}",
+			"rules": {
+				"minResolution": "{{value}}+",
+				"hdr": "HDR",
+				"voice": "Russian voice"
+			}
 		}
 	},
 	"person": {
@@ -666,6 +676,14 @@
 				"warn": "Warning",
 				"error": "Error"
 			}
+		}
+	},
+	"watchlist": {
+		"stage": {
+			"waiting": "Waiting",
+			"downloading": "Downloading",
+			"tracking": "Following",
+			"completed": "Done"
 		}
 	}
 }

@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TitleHero } from "#/features/title/title-hero";
 import { TitleTorrentsList } from "#/features/title/title-torrents";
+import { canWaitFor } from "#/features/title/wait-state";
 import { trpc } from "#/shared/lib/trpc";
 import { TitleCard } from "#/shared/ui/title-card";
 import { TmdbAttribution } from "#/shared/ui/tmdb-attribution";
@@ -178,6 +179,7 @@ export function TitlePage({ id }: { id: string }) {
 					titleId={id}
 					titleName={titleName}
 					watch={watch}
+					canWait={canWaitFor({ titleId: id, facet, metaStatus })}
 				/>
 
 				{meta.poster ? (
