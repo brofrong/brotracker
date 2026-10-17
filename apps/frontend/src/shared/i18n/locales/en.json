@@ -229,7 +229,17 @@
 			"profile": "Profile",
 			"trackers": "Trackers",
 			"downloads": "Downloads",
+			"watchlist": "Watchlist",
 			"metadata": "Metadata"
+		},
+		"watchlist": {
+			"interval": "Check every",
+			"minResolution": "Minimum resolution",
+			"hdrOnly": "HDR only",
+			"requireVoice": "Require Russian voice-over",
+			"camripNote": "Screen recordings (CAMRip, TS, TC) are always skipped",
+			"hours": "{{count}} h",
+			"loadFailed": "Failed to load watchlist settings"
 		}
 	},
 	"home": {

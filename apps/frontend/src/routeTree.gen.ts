@@ -22,6 +22,7 @@ import { Route as SettingsDownloadsRouteImport } from './routes/settings.downloa
 import { Route as SettingsMetadataRouteImport } from './routes/settings.metadata'
 import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
 import { Route as SettingsTrackersRouteImport } from './routes/settings.trackers'
+import { Route as SettingsWatchlistRouteImport } from './routes/settings.watchlist'
 import { Route as TitleIndexRouteImport } from './routes/title.index'
 import { Route as TitleIdRouteImport } from './routes/title.$id'
 import { Route as WorkersIdRouteImport } from './routes/workers.$id'
@@ -93,6 +94,11 @@ const SettingsTrackersRoute = SettingsTrackersRouteImport.update({
   path: '/trackers',
   getParentRoute: () => SettingsRoute,
 } as any)
+const SettingsWatchlistRoute = SettingsWatchlistRouteImport.update({
+  id: '/watchlist',
+  path: '/watchlist',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const TitleIndexRoute = TitleIndexRouteImport.update({
   id: '/title/',
   path: '/title/',
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/settings/metadata': typeof SettingsMetadataRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/trackers': typeof SettingsTrackersRouteWithChildren
+  '/settings/watchlist': typeof SettingsWatchlistRoute
   '/title/$id': typeof TitleIdRoute
   '/workers/$id': typeof WorkersIdRoute
   '/settings/': typeof SettingsIndexRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/settings/downloads': typeof SettingsDownloadsRoute
   '/settings/metadata': typeof SettingsMetadataRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/watchlist': typeof SettingsWatchlistRoute
   '/title/$id': typeof TitleIdRoute
   '/workers/$id': typeof WorkersIdRoute
   '/settings': typeof SettingsIndexRoute
@@ -171,6 +179,7 @@ export interface FileRoutesById {
   '/settings/metadata': typeof SettingsMetadataRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/trackers': typeof SettingsTrackersRouteWithChildren
+  '/settings/watchlist': typeof SettingsWatchlistRoute
   '/title/$id': typeof TitleIdRoute
   '/workers/$id': typeof WorkersIdRoute
   '/settings/': typeof SettingsIndexRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
     | '/settings/metadata'
     | '/settings/profile'
     | '/settings/trackers'
+    | '/settings/watchlist'
     | '/title/$id'
     | '/workers/$id'
     | '/settings/'
@@ -211,6 +221,7 @@ export interface FileRouteTypes {
     | '/settings/downloads'
     | '/settings/metadata'
     | '/settings/profile'
+    | '/settings/watchlist'
     | '/title/$id'
     | '/workers/$id'
     | '/settings'
@@ -231,6 +242,7 @@ export interface FileRouteTypes {
     | '/settings/metadata'
     | '/settings/profile'
     | '/settings/trackers'
+    | '/settings/watchlist'
     | '/title/$id'
     | '/workers/$id'
     | '/settings/'
@@ -345,6 +357,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsTrackersRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/settings/watchlist': {
+      id: '/settings/watchlist'
+      path: '/watchlist'
+      fullPath: '/settings/watchlist'
+      preLoaderRoute: typeof SettingsWatchlistRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/title/': {
       id: '/title/'
       path: '/title'
@@ -401,6 +420,7 @@ interface SettingsRouteChildren {
   SettingsMetadataRoute: typeof SettingsMetadataRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsTrackersRoute: typeof SettingsTrackersRouteWithChildren
+  SettingsWatchlistRoute: typeof SettingsWatchlistRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
 }
 
@@ -409,6 +429,7 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsMetadataRoute: SettingsMetadataRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   SettingsTrackersRoute: SettingsTrackersRouteWithChildren,
+  SettingsWatchlistRoute: SettingsWatchlistRoute,
   SettingsIndexRoute: SettingsIndexRoute,
 }
 

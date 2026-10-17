@@ -229,7 +229,17 @@
 			"profile": "Профиль",
 			"trackers": "Трекеры",
 			"downloads": "Загрузки",
+			"watchlist": "Жду",
 			"metadata": "Метаданные"
+		},
+		"watchlist": {
+			"interval": "Проверять каждые",
+			"minResolution": "Минимальное разрешение",
+			"hdrOnly": "Только HDR",
+			"requireVoice": "Нужна русская озвучка",
+			"camripNote": "Экранки (CAMRip, TS, TC) отсекаются всегда",
+			"hours": "{{count}} ч",
+			"loadFailed": "Не удалось загрузить настройки «Жду»"
 		}
 	},
 	"home": {

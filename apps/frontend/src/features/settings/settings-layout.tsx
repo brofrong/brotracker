@@ -13,6 +13,7 @@ const SECTIONS = [
 	{ id: "profile", to: "/settings/profile" },
 	{ id: "trackers", to: "/settings/trackers" },
 	{ id: "downloads", to: "/settings/downloads" },
+	{ id: "watchlist", to: "/settings/watchlist" },
 	{ id: "metadata", to: "/settings/metadata" },
 ] as const;
 
