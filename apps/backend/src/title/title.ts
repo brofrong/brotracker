@@ -1,4 +1,6 @@
+import { parseReleaseTitle } from "@brotracker/rutracker-ts/tracker/release-title";
 import { scoreTorrentQuality } from "../torrent/quality-score";
+import { type MatchTarget, releaseMatchesTitle } from "./release-match";
 import type {
 	Title,
 	TitleDeps,
@@ -139,6 +141,7 @@ function toTitleTorrent(
 	candidate: TitleTorrentCandidate,
 	source: "local" | "tracker",
 	transfer: TitleTorrent["transfer"],
+	matches: boolean,
 ): TitleTorrent {
 	return {
 		torrentId: candidate.torrentId,
@@ -158,6 +161,23 @@ function toTitleTorrent(
 		torrentFileUrl: candidate.torrentFileUrl,
 		forumId: candidate.forumId,
 		transfer,
+		matches,
+	};
+}
+
+function matchTargetFromTitle(title: Title): MatchTarget | null {
+	const names = [
+		title.meta.name,
+		title.meta.originalName,
+		...title.meta.alternativeNames,
+	].filter((name): name is string => Boolean(name?.trim()));
+	if (names.length === 0) {
+		return null;
+	}
+	return {
+		kind: title.facet ?? "films",
+		year: title.meta.year,
+		names,
 	};
 }
 
@@ -417,12 +437,17 @@ export function createTitleModule(deps: TitleDeps) {
 				return { status: "empty", items: [] };
 			}
 
+			const target = matchTargetFromTitle(title);
+
 			const items = candidates
 				.map((candidate) => {
 					const topicId =
 						extractTopicId(candidate.topicUrl) ?? candidate.torrentId;
 					const transfer = findTransferForTopic(topicId, live);
-					return toTitleTorrent(candidate, source, transfer);
+					const matches =
+						target === null ||
+						releaseMatchesTitle(parseReleaseTitle(candidate.title), target);
+					return toTitleTorrent(candidate, source, transfer, matches);
 				})
 				.sort((a, b) => b.qualityScore - a.qualityScore);
 

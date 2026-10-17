@@ -180,6 +180,8 @@ export type TitleTorrent = {
 	torrentFileUrl: string;
 	forumId: string;
 	transfer: TitleTorrentTransfer | null;
+	/** Whether this release's parsed name/year fit the Title; always true when the Title has no metadata. */
+	matches: boolean;
 };
 
 export type TitleTorrentsResult = {

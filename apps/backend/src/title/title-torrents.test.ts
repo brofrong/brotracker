@@ -219,6 +219,153 @@ describe("title.torrents", () => {
 		expect(result.items).toHaveLength(1);
 		expect(result.items[0]?.torrentId).toBe("42");
 	});
+
+	test("Inception 2010 1080p matches Inception/2010 title", async () => {
+		const title = createTitleModule(
+			deps({
+				searchTorrents: async () => ({
+					status: "ok",
+					local: [],
+					tracker: [candidate({ title: "Inception 2010 1080p" })],
+				}),
+			}),
+		);
+
+		const result = await title.torrents({ id: "tmdb:films:27205" });
+
+		expect(result.items).toHaveLength(1);
+		expect(result.items[0]?.matches).toBe(true);
+	});
+
+	test("marks releases of other titles as not matching", async () => {
+		const title = createTitleModule(
+			deps({
+				fetchTmdbMeta: async () => ({
+					status: "ok",
+					meta: {
+						kind: "films",
+						poster: null,
+						backdrop: null,
+						name: "Одиссея",
+						year: 2026,
+						overview: null,
+						genres: [],
+						cast: [],
+						crew: [],
+						similar: [],
+						runtimeMinutes: null,
+						status: null,
+						seasons: null,
+						originalName: "The Odyssey",
+						alternativeNames: [],
+						voteAverage: null,
+						voteCount: null,
+					},
+				}),
+				searchTorrents: async () => ({
+					status: "ok",
+					local: [],
+					tracker: [
+						candidate({
+							torrentId: "1",
+							title: "Одиссея / The Odyssey [2026, WEB-DL 1080p]",
+						}),
+						candidate({
+							torrentId: "2",
+							title:
+								"Космическая одиссея / 2001: A Space Odyssey [1968, BDRip 1080p]",
+						}),
+					],
+				}),
+			}),
+		);
+
+		const result = await title.torrents({ id: "tmdb:films:1" });
+
+		expect(result.items).toHaveLength(2);
+		const match = result.items.find((item) => item.torrentId === "1");
+		const mismatch = result.items.find((item) => item.torrentId === "2");
+		expect(match?.matches).toBe(true);
+		expect(mismatch?.matches).toBe(false);
+	});
+
+	test("release without a parseable year is kept but not matching", async () => {
+		const title = createTitleModule(
+			deps({
+				fetchTmdbMeta: async () => ({
+					status: "ok",
+					meta: {
+						kind: "films",
+						poster: null,
+						backdrop: null,
+						name: "Одиссея",
+						year: 2026,
+						overview: null,
+						genres: [],
+						cast: [],
+						crew: [],
+						similar: [],
+						runtimeMinutes: null,
+						status: null,
+						seasons: null,
+						originalName: "The Odyssey",
+						alternativeNames: [],
+						voteAverage: null,
+						voteCount: null,
+					},
+				}),
+				searchTorrents: async () => ({
+					status: "ok",
+					local: [],
+					tracker: [
+						candidate({
+							torrentId: "1",
+							title: "Одиссея WEB-DL 1080p",
+						}),
+					],
+				}),
+			}),
+		);
+
+		const result = await title.torrents({ id: "tmdb:films:1" });
+
+		expect(result.items).toHaveLength(1);
+		expect(result.items[0]?.matches).toBe(false);
+	});
+
+	test("everything matches when the title has no metadata", async () => {
+		const title = createTitleModule(
+			deps({
+				fetchTmdbMeta: async () => ({ status: "error" }),
+				searchTorrents: async (query) => {
+					expect(query).toBe("Одиссея");
+					return {
+						status: "ok",
+						local: [],
+						tracker: [
+							candidate({
+								torrentId: "1",
+								title: "Одиссея / The Odyssey [2026, WEB-DL 1080p]",
+							}),
+							candidate({
+								torrentId: "2",
+								title:
+									"Космическая одиссея / 2001: A Space Odyssey [1968, BDRip 1080p]",
+							}),
+						],
+					};
+				},
+			}),
+		);
+
+		const result = await title.torrents({
+			id: "qb:abc",
+			query: "Одиссея",
+		});
+
+		expect(result.items).toHaveLength(2);
+		expect(result.items.every((item) => item.matches)).toBe(true);
+	});
 });
 
 describe("title.add", () => {
