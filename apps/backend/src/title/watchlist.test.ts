@@ -465,6 +465,115 @@ describe("watchlist.list", () => {
 	});
 });
 
+describe("watchlist.list backfills legacy rows", () => {
+	const legacy = (id: string, titleId = "tmdb:tv:2") =>
+		watchRecord({
+			id,
+			titleId,
+			kind: "tv",
+			watch: "tracking",
+			topicUrl: `https://rutracker.org/forum/viewtopic.php?t=${id}`,
+			titleName: null,
+			poster: null,
+			year: null,
+		});
+
+	test("fills name, poster and year from TMDB and lists them", async () => {
+		const fake = makeFake({
+			rows: [legacy("1")],
+			titles: { "tmdb:tv:2": title("tv") },
+		});
+
+		const [item] = await createWatchlist(fake.deps).list();
+
+		expect(item).toMatchObject({
+			name: "Одни из нас",
+			poster: "tv.jpg",
+			year: 2023,
+		});
+		expect(fake.rows.get("1")).toMatchObject({
+			titleName: "Одни из нас",
+			poster: "tv.jpg",
+			year: 2023,
+			watch: "tracking",
+		});
+	});
+
+	test("at most 5 rows per call; non-TMDB titles are skipped", async () => {
+		const rows = [
+			...["1", "2", "3", "4", "5", "6", "7"].map((id) => legacy(id)),
+			legacy("8", "topic:8"),
+		];
+		const fake = makeFake({ rows, titles: { "tmdb:tv:2": title("tv") } });
+		const asked: string[] = [];
+		const getTitle = fake.deps.getTitle;
+		fake.deps.getTitle = async (titleId) => {
+			asked.push(titleId);
+			return getTitle(titleId);
+		};
+
+		const items = await createWatchlist(fake.deps).list();
+
+		expect(asked).toHaveLength(5);
+		expect(asked.every((id) => id === "tmdb:tv:2")).toBe(true);
+		expect(items.filter((item) => item.name !== null)).toHaveLength(5);
+		expect(items).toHaveLength(8);
+	});
+
+	test("TMDB errors or degraded meta never fail the list", async () => {
+		const fake = makeFake({
+			rows: [legacy("1"), legacy("2", "tmdb:tv:3")],
+			titles: {
+				"tmdb:tv:3": { ...title("tv"), metaStatus: "degraded" },
+			},
+		});
+
+		const items = await createWatchlist(fake.deps).list();
+
+		expect(items).toHaveLength(2);
+		expect(items.every((item) => item.name === null)).toBe(true);
+		expect(fake.rows.get("2")?.titleName).toBeNull();
+	});
+
+	test("a row filled while TMDB was asked is listed with that name and not saved again", async () => {
+		const fake = makeFake({
+			rows: [legacy("1")],
+			titles: { "tmdb:tv:2": title("tv") },
+		});
+		const getTitle = fake.deps.getTitle;
+		fake.deps.getTitle = async (titleId) => {
+			const row = fake.rows.get("1");
+			if (row) fake.rows.set("1", { ...row, titleName: "Уже есть" });
+			return getTitle(titleId);
+		};
+		let saves = 0;
+		const save = fake.deps.saveWatch;
+		fake.deps.saveWatch = async (record) => {
+			saves += 1;
+			await save(record);
+		};
+
+		const [item] = await createWatchlist(fake.deps).list();
+
+		expect(item?.name).toBe("Уже есть");
+		expect(saves).toBe(0);
+	});
+
+	test("a save failure never fails the list", async () => {
+		const fake = makeFake({
+			rows: [legacy("1")],
+			titles: { "tmdb:tv:2": title("tv") },
+		});
+		fake.deps.saveWatch = async () => {
+			throw new Error("db down");
+		};
+
+		const items = await createWatchlist(fake.deps).list();
+
+		expect(items).toHaveLength(1);
+	});
+});
+
 describe("watchlist.checkNow", () => {
 	test("a waiting row goes through the waiting search", async () => {
 		const fake = makeFake({

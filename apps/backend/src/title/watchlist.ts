@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger";
 import { listQbTorrentsSafe, toWatchView } from "./title";
 import type {
 	TaggedQbTorrent,
@@ -42,6 +43,9 @@ export class WatchlistError extends Error {
 }
 
 type QbSnapshot = { tagged: TaggedQbTorrent[]; torrents: SyncQbTorrent[] };
+
+/** Legacy rows (made before «Жду») backfilled with TMDB name/poster/year per `list()` call. */
+const BACKFILL_PER_LIST = 5;
 
 function toItem(
 	record: TitleWatchRecord & { titleId: string },
@@ -154,6 +158,63 @@ export function createWatchlist(deps: WatchlistDeps) {
 		};
 	}
 
+	/**
+	 * Best-effort: the first few nameless TMDB rows get their name/poster/year
+	 * from TMDB (`ru-RU`). Any failure leaves the row as it was.
+	 */
+	async function backfillNames<
+		T extends TitleWatchRecord & { titleId: string },
+	>(records: T[]): Promise<T[]> {
+		const nameless = records
+			.filter(
+				(record) =>
+					record.titleName === null && record.titleId.startsWith("tmdb:"),
+			)
+			.slice(0, BACKFILL_PER_LIST);
+		if (nameless.length === 0) return records;
+
+		const filled = new Map<string, T>();
+		await Promise.all(
+			nameless.map(async (record) => {
+				try {
+					const title = await deps.getTitle(record.titleId);
+					const name = title.meta.name?.trim();
+					if (title.metaStatus !== "ok" || !name) return;
+					// Patch the current row, not the listed snapshot, so a state
+					// change made meanwhile (e.g. by the waiting search) is kept.
+					const current = await deps.loadWatchById(record.id);
+					if (!current) return;
+					// `getTitle` may already have filled it (title.get backfills the Title's row).
+					const info =
+						current.titleName !== null
+							? {
+									titleName: current.titleName,
+									poster: current.poster,
+									year: current.year,
+								}
+							: {
+									titleName: name,
+									poster: current.poster ?? title.meta.poster,
+									year: current.year ?? title.meta.year,
+								};
+					if (current.titleName === null) {
+						await deps.saveWatch({ ...current, ...info });
+					}
+					filled.set(record.id, { ...record, ...info });
+				} catch (error) {
+					logger.warn(
+						{
+							err: error instanceof Error ? error.message : String(error),
+							titleId: record.titleId,
+						},
+						"watchlist: failed to backfill title name",
+					);
+				}
+			}),
+		);
+		return records.map((record) => filled.get(record.id) ?? record);
+	}
+
 	return {
 		/**
 		 * A Title that already has a watch keeps it (no second row); a
@@ -201,7 +262,8 @@ export function createWatchlist(deps: WatchlistDeps) {
 				deps.listWatchlistRecords(),
 				loadQb(),
 			]);
-			return records.filter(isListed).map((record) => toItem(record, qb));
+			const listed = await backfillNames(records.filter(isListed));
+			return listed.map((record) => toItem(record, qb));
 		},
 
 		/** Pause/resume this row (not "the Title's watch": a Title may have several rows). */
