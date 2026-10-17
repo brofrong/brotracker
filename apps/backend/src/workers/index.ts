@@ -7,18 +7,25 @@
  * tRPC surface: `workers.router.ts` (mounted on appRouter as `workers`).
  */
 
-import { nightlyWorker } from "../title/watch";
+import { loadWatchlistSettings } from "../settings/watchlist-settings";
+import { nightlyWorker, waitingSearch } from "../title";
 import { logger } from "../utils/logger";
 import {
 	runScheduledNightlyOnce,
 	startScheduledNightlyWorker,
 } from "./scheduled-nightly";
+import {
+	isWatchlistSearchDue,
+	startWatchlistScheduler,
+	WATCHLIST_SEARCH_ID,
+} from "./watchlist-schedule";
 import { createWorkerRunStore } from "./worker-run.repository";
 import { createWorkers } from "./workers";
 
 export const NIGHTLY_TORRENT_CHECK_ID = "nightly-torrent-check";
 
 const DEFAULT_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+const WATCHLIST_SEARCH_TICK_MS = 5 * 60 * 1000;
 const RETAIN_RUNS = 50;
 const INTERRUPTED_ERROR = "Interrupted by process restart";
 
@@ -39,6 +46,19 @@ export const workers = createWorkers({
 				};
 			},
 		},
+		{
+			id: WATCHLIST_SEARCH_ID,
+			name: "Поиск ожидаемых",
+			description: "Ищет раздачи для фильмов и сериалов из «Жду»",
+			execute: async ({ log }) => {
+				const result = await waitingSearch.runAll((line) => {
+					void log("info", line);
+				});
+				return {
+					summary: `проверено ${result.checked} · начато ${result.started} · ошибок ${result.failed}`,
+				};
+			},
+		},
 	],
 	now: () => new Date(),
 	id: () => crypto.randomUUID(),
@@ -48,7 +68,8 @@ export const workers = createWorkers({
 export function startWorkers(
 	intervalMs: number = DEFAULT_CHECK_INTERVAL_MS,
 ): () => void {
-	let stopInterval: (() => void) | undefined;
+	let stopNightly: (() => void) | undefined;
+	let stopWatchlist: (() => void) | undefined;
 
 	void (async () => {
 		try {
@@ -56,7 +77,7 @@ export function startWorkers(
 		} catch (err) {
 			logger.warn({ err }, "Failed to clear interrupted WorkerRuns on startup");
 		}
-		stopInterval = startScheduledNightlyWorker({
+		stopNightly = startScheduledNightlyWorker({
 			intervalMs,
 			tick: async () => {
 				const outcome = await runScheduledNightlyOnce({
@@ -78,15 +99,42 @@ export function startWorkers(
 				}
 			},
 		});
+		stopWatchlist = startWatchlistScheduler({
+			tickMs: WATCHLIST_SEARCH_TICK_MS,
+			tick: async () => {
+				await waitingSearch.syncDownloads();
+				const detail = await workers.get(WATCHLIST_SEARCH_ID);
+				if (detail?.status === "running") {
+					return;
+				}
+				const settings = await loadWatchlistSettings();
+				const due = isWatchlistSearchDue({
+					lastStartedAt: detail?.lastRun?.startedAt.toISOString() ?? null,
+					intervalHours: settings.checkIntervalHours,
+					now: new Date(),
+				});
+				if (due) {
+					await workers.run(WATCHLIST_SEARCH_ID, { trigger: "scheduled" });
+				}
+			},
+		});
 	})();
 
-	return () => stopInterval?.();
+	return () => {
+		stopNightly?.();
+		stopWatchlist?.();
+	};
 }
 
 export {
 	runScheduledNightlyOnce,
 	startScheduledNightlyWorker,
 } from "./scheduled-nightly";
+export {
+	isWatchlistSearchDue,
+	startWatchlistScheduler,
+	WATCHLIST_SEARCH_ID,
+} from "./watchlist-schedule";
 export { createWorkerRunStore } from "./worker-run.repository";
 export type { WorkersDeps } from "./workers";
 export { createWorkers } from "./workers";
