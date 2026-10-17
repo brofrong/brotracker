@@ -27,6 +27,7 @@ const YEAR_IN_PAREN = /\((?:19|20)\d{2}\)/;
 const STANDALONE_YEAR = /(?<![\p{L}\p{N}×])(?:19|20)\d{2}(?![\p{L}\p{N}×])/u;
 const STANDALONE_YEAR_GLOBAL = new RegExp(STANDALONE_YEAR.source, "gu");
 const BRACKET_GROUP = /\[([^\]]*)\]/g;
+const PAREN_GROUP = /\(([^()]*)\)/g;
 const SEGMENT_SEPARATOR = " / ";
 
 // S\d+ (a season/episode marker like "S01" or "S01E05") deliberately has no trailing
@@ -41,6 +42,14 @@ function tokenRegex(tokens: string, flags: string): RegExp {
 		`(?<![\\p{L}\\p{N}])(?:${tokens})(?![\\p{L}\\p{N}])`,
 		flags,
 	);
+}
+
+// Like tokenRegex, but anchored to the start of whatever string it's tested against
+// (a trimmed " / " segment) instead of allowed anywhere. Used for season markers that
+// must *lead* a segment, not just appear somewhere inside one (so "Open Season 2", a
+// film name, doesn't read as a season marker just because "Season 2" occurs in it).
+function anchoredTokenRegex(tokens: string, flags: string): RegExp {
+	return new RegExp(`^(?:${tokens})(?![\\p{L}\\p{N}])`, flags);
 }
 
 // Long camrip spellings are unambiguous, so any case (CAMRIP, Camrip, HDCAMRip, TeleSynch).
@@ -68,11 +77,41 @@ const NON_RUSSIAN_LANGUAGE_AFTER =
 // unlike "P\d?", this pattern never matches the "P" in "P1"/"P2" at all.
 const RUTOR_VOICE_SUFFIX = /\|\s*(?:D|P|Лицензия)(?![\p{L}\p{N}])/u;
 
-// Season markers, tried in this order; the one that starts earliest in the title wins
-// (ties keep this order), so "2 сезон: 1-7 серии" picks the leading "2 сезон" over the
-// "Сезон: 1-7" reading of the episode range that happens to follow the same word.
-// Each has at most two capture groups: the season number, and (if present) the end of a
-// "N-M" range, which disqualifies the match (a range/pack has no single season → null).
+// Season markers are only trusted at specific positions, never from inside a name (a
+// film called "Open Season 2" must not read as "season 2"):
+//   1. a " / "-segment that *starts with* the marker ("Сезон: 2", "Season 5", "S03");
+//   2. inside a parenthetical or bracket ("(2 сезон: 1-7 серии из 7)", "[Сезон 1]");
+//   3. a standalone S\d+(E\d+)? token, but only in a scene-style release that has no
+//      " / " segments at all ("The.Last.of.Us.S02E05...").
+// Each pattern has at most two capture groups: the season number, and (if present) the
+// end of a "N-M" range, which disqualifies the match (a range/pack has no single season).
+const SEGMENT_SEASON_COLON_REGEX = anchoredTokenRegex(
+	"Сезон[:\\s]*(\\d+)(?:\\s*-\\s*(\\d+))?",
+	"iu",
+);
+const SEGMENT_SEASON_PREFIX_NUMBER_REGEX = anchoredTokenRegex(
+	"(\\d+)\\s*сезон",
+	"iu",
+);
+const SEGMENT_SEASON_WORD_REGEX = anchoredTokenRegex(
+	"Season\\s+(\\d+)(?:\\s*-\\s*(\\d+))?",
+	"iu",
+);
+// Case-sensitive, matching the file's existing S\d+ convention (DROP_SEGMENT_PREFIX):
+// scene releases write the marker as capital "S"/"E".
+const SEGMENT_SEASON_S_TOKEN_REGEX = anchoredTokenRegex(
+	"S(\\d+)(?:E\\d+)?",
+	"u",
+);
+const SEGMENT_SEASON_REGEXES = [
+	SEGMENT_SEASON_COLON_REGEX,
+	SEGMENT_SEASON_PREFIX_NUMBER_REGEX,
+	SEGMENT_SEASON_WORD_REGEX,
+	SEGMENT_SEASON_S_TOKEN_REGEX,
+];
+
+// Same three word/prefix markers, unanchored, for scanning inside a (...)/[...] group's
+// inner text (rule 2) where the marker need not be the very first character.
 const SEASON_COLON_REGEX = tokenRegex(
 	"Сезон[:\\s]*(\\d+)(?:\\s*-\\s*(\\d+))?",
 	"iu",
@@ -82,29 +121,71 @@ const SEASON_WORD_REGEX = tokenRegex(
 	"Season\\s+(\\d+)(?:\\s*-\\s*(\\d+))?",
 	"iu",
 );
-const SEASON_S_TOKEN_REGEX = tokenRegex("S(\\d+)(?:E\\d+)?", "iu");
-const SEASON_REGEXES = [
+const BRACKETED_SEASON_REGEXES = [
 	SEASON_COLON_REGEX,
 	SEASON_PREFIX_NUMBER_REGEX,
 	SEASON_WORD_REGEX,
-	SEASON_S_TOKEN_REGEX,
 ];
 
+// Case-sensitive S\d+(E\d+)? token, unanchored, for rule 3 (scene-style names only).
+const SCENE_SEASON_S_TOKEN_REGEX = tokenRegex("S(\\d+)(?:E\\d+)?", "u");
+
+type SeasonCandidate = { index: number; start: number; end: number | null };
+
 function findSeason(title: string): number | null {
-	let best: RegExpExecArray | null = null;
-	for (const regex of SEASON_REGEXES) {
-		const match = regex.exec(title);
-		if (match && (best === null || match.index < best.index)) {
-			best = match;
+	let best: SeasonCandidate | null = null;
+	const consider = (index: number, start: number, end: number | null) => {
+		if (best === null || index < best.index) best = { index, start, end };
+	};
+
+	// Rule 1: a " / "-segment that starts with a season marker.
+	const segments = title.split(SEGMENT_SEPARATOR);
+	let offset = 0;
+	for (const segment of segments) {
+		const trimmed = segment.trimStart();
+		const segmentStart = offset + (segment.length - trimmed.length);
+		for (const regex of SEGMENT_SEASON_REGEXES) {
+			const match = regex.exec(trimmed);
+			if (match) {
+				consider(
+					segmentStart,
+					Number(match[1]),
+					match[2] !== undefined ? Number(match[2]) : null,
+				);
+			}
+		}
+		offset += segment.length + SEGMENT_SEPARATOR.length;
+	}
+
+	// Rule 2: inside a parenthetical or bracket.
+	for (const groupRegex of [PAREN_GROUP, BRACKET_GROUP]) {
+		for (const group of title.matchAll(groupRegex)) {
+			const inner = group[1] ?? "";
+			const innerStart = (group.index ?? 0) + 1;
+			for (const regex of BRACKETED_SEASON_REGEXES) {
+				const match = regex.exec(inner);
+				if (match) {
+					consider(
+						innerStart + match.index,
+						Number(match[1]),
+						match[2] !== undefined ? Number(match[2]) : null,
+					);
+				}
+			}
 		}
 	}
-	if (!best) return null;
 
-	const start = Number(best[1]);
-	const end = best[2] !== undefined ? Number(best[2]) : null;
+	// Rule 3: a standalone S\d+(E\d+)? token, but only for a scene-style release with no
+	// " / " segments at all (so "Show / ... / S03 / ..." still only matches via rule 1).
+	if (segments.length === 1) {
+		const match = SCENE_SEASON_S_TOKEN_REGEX.exec(title);
+		if (match) consider(match.index, Number(match[1]), null);
+	}
+
+	if (!best) return null;
 	// A range ("Сезон: 1-10") or multi-season pack has no single season.
-	if (end !== null) return null;
-	return start;
+	if (best.end !== null) return null;
+	return best.start;
 }
 
 function lastStandaloneYear(text: string): RegExpExecArray | null {
@@ -228,6 +309,8 @@ export function parseReleaseTitle(title: string): ParsedReleaseTitle {
 	const yearResult = findYear(title);
 	// Scanned over the whole title (not just the trailing "details"): season markers like
 	// "Сезон: 2" or "(2 сезон: ...)" commonly sit inside the name head, before the year.
+	// findSeason itself restricts *where* in the title a marker is trusted from, so a
+	// name like "Open Season 2" is never misread as a season.
 	const season = findSeason(title);
 	const nameHeadEnd = findNameHeadEnd(title, yearResult);
 	const rawNameHead = title.slice(0, nameHeadEnd);

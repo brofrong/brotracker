@@ -128,6 +128,9 @@ describe("parseReleaseTitle: season", () => {
 		["Stranger Things / Season 5 [2025, WEB-DL]", 5],
 		["Друзья / Friends / Сезон: 1-10 [1994-2004, BDRip]", null],
 		["Одиссея / The Odyssey [2026, WEB-DL 2160p]", null],
+		// A season-shaped phrase inside a *name* (not a marker position) doesn't count.
+		["Сезон охоты 2 / Open Season 2 [2008, BDRip]", null],
+		["Open.Season.2.2008.BDRip", null],
 	])("%p -> season=%p", (title, expected) => {
 		expect(parseReleaseTitle(title).season).toBe(expected);
 	});
