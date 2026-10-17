@@ -63,10 +63,17 @@ type TmdbMovieDetails = {
 	translations?: { translations?: TmdbTranslation[] };
 };
 
+type TmdbTvSeason = {
+	season_number?: number;
+	air_date?: string | null;
+};
+
 type TmdbTvDetails = {
 	name?: string;
 	original_name?: string;
 	first_air_date?: string;
+	last_air_date?: string | null;
+	seasons?: TmdbTvSeason[];
 	overview?: string;
 	poster_path?: string | null;
 	backdrop_path?: string | null;
@@ -249,6 +256,19 @@ export function russianAlternativeNames(input: {
 	return result;
 }
 
+/** Season number → TMDB air year; seasons without a usable air date are left out. */
+export function parseSeasonAirYears(
+	seasons: TmdbTvSeason[] | undefined,
+): Record<number, number> {
+	const years: Record<number, number> = {};
+	for (const season of seasons ?? []) {
+		if (season.season_number == null) continue;
+		const year = yearFromDate(season.air_date ?? undefined);
+		if (year !== null) years[season.season_number] = year;
+	}
+	return years;
+}
+
 export function parseMovieDetails(
 	details: TmdbMovieDetails,
 	credits: TmdbCredits,
@@ -274,6 +294,8 @@ export function parseMovieDetails(
 			details.runtime != null && details.runtime > 0 ? details.runtime : null,
 		status: null,
 		seasons: null,
+		seasonAirYears: {},
+		lastAirYear: null,
 		originalName,
 		alternativeNames: russianAlternativeNames({
 			mainName: name,
@@ -319,6 +341,8 @@ export function parseTvDetails(
 			details.number_of_seasons != null && details.number_of_seasons > 0
 				? details.number_of_seasons
 				: null,
+		seasonAirYears: parseSeasonAirYears(details.seasons),
+		lastAirYear: yearFromDate(details.last_air_date ?? undefined),
 		originalName,
 		alternativeNames: russianAlternativeNames({
 			mainName: name,

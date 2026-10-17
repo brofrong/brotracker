@@ -28,6 +28,8 @@ const emptyMeta = (): TitleMeta => ({
 	seasons: null,
 	originalName: null,
 	alternativeNames: [],
+	seasonAirYears: {},
+	lastAirYear: null,
 });
 
 const sampleMeta = (overrides: Partial<TmdbMeta> = {}): TmdbMeta => ({
@@ -53,6 +55,8 @@ const sampleMeta = (overrides: Partial<TmdbMeta> = {}): TmdbMeta => ({
 	seasons: null,
 	originalName: "Inception",
 	alternativeNames: [],
+	seasonAirYears: {},
+	lastAirYear: null,
 	voteAverage: 8.4,
 	voteCount: 30_000,
 	...overrides,
@@ -186,6 +190,8 @@ describe("title.get", () => {
 				seasons: meta.seasons,
 				originalName: meta.originalName,
 				alternativeNames: meta.alternativeNames,
+				seasonAirYears: meta.seasonAirYears,
+				lastAirYear: meta.lastAirYear,
 			},
 			ratings: [
 				{

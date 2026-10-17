@@ -148,3 +148,40 @@ describe("parseTvDetails names", () => {
 		expect(result.alternativeNames).toEqual([]);
 	});
 });
+
+describe("parseTvDetails season air years", () => {
+	test("maps each season number to its air year and keeps the last air year", () => {
+		const result = parseTvDetails(
+			{
+				name: "Офис",
+				first_air_date: "2001-07-09",
+				last_air_date: "2003-12-27",
+				seasons: [
+					{ season_number: 0, air_date: "2002-01-01" },
+					{ season_number: 1, air_date: "2001-07-09" },
+					{ season_number: 2, air_date: "2002-09-30" },
+					{ season_number: 3, air_date: null },
+					{ season_number: 4 },
+				],
+			},
+			credits(),
+		);
+
+		expect(result.seasonAirYears).toEqual({ 0: 2002, 1: 2001, 2: 2002 });
+		expect(result.lastAirYear).toBe(2003);
+	});
+
+	test("missing seasons/last_air_date -> empty map and null", () => {
+		const result = parseTvDetails({ name: "Офис" }, credits());
+
+		expect(result.seasonAirYears).toEqual({});
+		expect(result.lastAirYear).toBeNull();
+	});
+
+	test("films have no season air years", () => {
+		const result = parseMovieDetails({ title: "Одиссея" }, credits());
+
+		expect(result.seasonAirYears).toEqual({});
+		expect(result.lastAirYear).toBeNull();
+	});
+});

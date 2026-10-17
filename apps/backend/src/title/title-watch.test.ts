@@ -32,6 +32,8 @@ const tvMeta = (): TmdbMeta => ({
 	seasons: 1,
 	originalName: "Test Show",
 	alternativeNames: [],
+	seasonAirYears: {},
+	lastAirYear: null,
 	voteAverage: 7,
 	voteCount: 10,
 });

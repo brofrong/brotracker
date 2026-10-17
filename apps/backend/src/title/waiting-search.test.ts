@@ -68,6 +68,7 @@ const filmTarget: WaitingTarget = {
 	year: 2026,
 	names: ["Одиссея", "The Odyssey"],
 	season: null,
+	seasonYear: null,
 	queries: ["Одиссея 2026"],
 };
 
@@ -196,12 +197,34 @@ describe("createWaitingSearch.checkOne", () => {
 		]);
 	});
 
+	test("film without a TMDB year: a same-name release of another year is not downloaded", async () => {
+		const fake = makeFake({
+			rows: [watchRecord({ year: null })],
+			targets: { w1: { ...filmTarget, year: null, queries: ["Одиссея"] } },
+			search: async () => [
+				candidate({
+					title:
+						"Одиссея / The Odyssey (Андрей Кончаловский) [1997, США, WEB-DL 1080p] Dub",
+				}),
+			],
+		});
+
+		await createWaitingSearch(fake.deps).checkOne("w1");
+
+		expect(fake.adds).toEqual([]);
+		expect(fake.rows.get("w1")).toMatchObject({
+			watch: "waiting",
+			waitingOutcome: "no-releases",
+		});
+	});
+
 	test("series found -> row becomes tracking", async () => {
 		const tvTarget: WaitingTarget = {
 			kind: "tv",
 			year: 2026,
 			names: ["Одиссея", "The Odyssey"],
 			season: 5,
+			seasonYear: 2026,
 			queries: ["Одиссея сезон 5"],
 		};
 		const release = candidate({

@@ -22,6 +22,8 @@ const title = (kind: TitleKind, meta: Partial<Title["meta"]> = {}): Title => ({
 		seasons: null,
 		originalName: "The Odyssey",
 		alternativeNames: [],
+		seasonAirYears: {},
+		lastAirYear: null,
 		...meta,
 	},
 	ratings: [],
@@ -56,6 +58,7 @@ describe("buildWaitingTarget", () => {
 			year: 2026,
 			names: ["Одиссея", "The Odyssey", "Odyssey"],
 			season: null,
+			seasonYear: null,
 			queries: ["The Odyssey 2026", "The Odyssey", "Одиссея 2026", "Одиссея"],
 		});
 	});
@@ -74,6 +77,38 @@ describe("buildWaitingTarget", () => {
 			"The Last of Us сезон 2",
 			"Одни из нас сезон 2",
 		]);
+	});
+
+	test("series: seasonYear is the watched season's TMDB air year", () => {
+		const target = buildWaitingTarget(
+			title("tv", {
+				year: 2001,
+				seasons: 2,
+				seasonAirYears: { 1: 2001, 2: 2002 },
+				lastAirYear: 2003,
+			}),
+			watch(2),
+		);
+		expect(target?.year).toBe(2001);
+		expect(target?.seasonYear).toBe(2002);
+	});
+
+	test("series: season missing from TMDB seasons falls back to the last air year", () => {
+		const target = buildWaitingTarget(
+			title("tv", {
+				year: 2001,
+				seasonAirYears: { 1: 2001 },
+				lastAirYear: 2003,
+			}),
+			watch(3),
+		);
+		expect(target?.seasonYear).toBe(2003);
+	});
+
+	test("series: unknown season air year and no last air year -> null", () => {
+		expect(
+			buildWaitingTarget(title("tv", { year: 2001 }), watch(2))?.seasonYear,
+		).toBeNull();
 	});
 
 	test("an unsearchable or identical original adds no queries", () => {

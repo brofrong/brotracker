@@ -24,6 +24,7 @@ const filmTarget: PickTarget = {
 	year: 2026,
 	names: ["Одиссея", "The Odyssey"],
 	season: null,
+	seasonYear: null,
 };
 
 describe("pickRelease", () => {
@@ -157,6 +158,7 @@ describe("pickRelease", () => {
 			year: 2026,
 			names: ["Одиссея", "The Odyssey"],
 			season: 5,
+			seasonYear: 2026,
 		};
 		const releases = [
 			candidate({
@@ -175,6 +177,7 @@ describe("pickRelease", () => {
 			year: 2026,
 			names: ["Одиссея", "The Odyssey"],
 			season: 5,
+			seasonYear: 2026,
 		};
 		const release = candidate({
 			torrentId: "10",
@@ -207,5 +210,96 @@ describe("pickRelease", () => {
 				DEFAULT_WATCHLIST_SETTINGS,
 			),
 		).toEqual({ status: "none", outcome: "below-resolution", detail: "720p" });
+	});
+
+	describe("strict years (auto-download)", () => {
+		test("film without a TMDB year never matches, even with the same names", () => {
+			const releases = [
+				candidate({
+					torrentId: "20",
+					title:
+						"Одиссея / The Odyssey (Андрей Кончаловский) [1997, США, приключения, WEB-DL 1080p] Dub",
+				}),
+			];
+			expect(
+				pickRelease(
+					releases,
+					{ ...filmTarget, year: null },
+					DEFAULT_WATCHLIST_SETTINGS,
+				),
+			).toEqual({ status: "none", outcome: "no-releases", detail: null });
+		});
+
+		test("film: release year more than one year off -> no-releases", () => {
+			const releases = [
+				candidate({
+					torrentId: "21",
+					title: "Одиссея / The Odyssey [1997, WEB-DL 1080p] Dub",
+				}),
+			];
+			expect(
+				pickRelease(releases, filmTarget, DEFAULT_WATCHLIST_SETTINGS),
+			).toEqual({ status: "none", outcome: "no-releases", detail: null });
+		});
+
+		const office = (overrides: Partial<PickTarget> = {}): PickTarget => ({
+			kind: "tv",
+			year: 2001,
+			names: ["Офис", "The Office"],
+			season: 2,
+			seasonYear: 2002,
+			...overrides,
+		});
+		const officeRelease = (year: number) =>
+			candidate({
+				torrentId: `office-${year}`,
+				title: `Офис / The Office / Сезон: 2 / Серии: 1-6 из 6 [${year}, Великобритания, комедия, WEB-DL 1080p] MVO`,
+			});
+
+		test("series: release far after the watched season's air year -> no-releases", () => {
+			expect(
+				pickRelease(
+					[officeRelease(2005)],
+					office(),
+					DEFAULT_WATCHLIST_SETTINGS,
+				),
+			).toEqual({ status: "none", outcome: "no-releases", detail: null });
+		});
+
+		test("series: release within a year of the season's air year -> found", () => {
+			for (const year of [2001, 2002, 2003]) {
+				const release = officeRelease(year);
+				expect(
+					pickRelease([release], office(), DEFAULT_WATCHLIST_SETTINGS),
+				).toEqual({ status: "found", candidate: release });
+			}
+		});
+
+		test("series: release before the season's air year - 1 -> no-releases", () => {
+			expect(
+				pickRelease(
+					[officeRelease(2000)],
+					office(),
+					DEFAULT_WATCHLIST_SETTINGS,
+				),
+			).toEqual({ status: "none", outcome: "no-releases", detail: null });
+		});
+
+		test("series: unknown season air year never matches", () => {
+			expect(
+				pickRelease(
+					[officeRelease(2002)],
+					office({ seasonYear: null }),
+					DEFAULT_WATCHLIST_SETTINGS,
+				),
+			).toEqual({ status: "none", outcome: "no-releases", detail: null });
+			expect(
+				pickRelease(
+					[officeRelease(2002)],
+					office({ year: null, seasonYear: null }),
+					DEFAULT_WATCHLIST_SETTINGS,
+				),
+			).toEqual({ status: "none", outcome: "no-releases", detail: null });
+		});
 	});
 });

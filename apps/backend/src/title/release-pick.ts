@@ -4,11 +4,18 @@ import {
 } from "@brotracker/rutracker-ts/tracker/release-title";
 import type { WatchlistSettings } from "../settings/watchlist-settings";
 import { scoreTorrentQuality } from "../torrent/quality-score";
-import { type MatchTarget, releaseMatchesTitle } from "./release-match";
+import { type MatchTarget, releaseNamesMatch } from "./release-match";
 import type { TitleTorrentCandidate } from "./title.types";
 import type { WaitingOutcome } from "./watch/check-topic-now";
 
-export type PickTarget = MatchTarget & { season: number | null };
+export type PickTarget = MatchTarget & {
+	season: number | null;
+	/**
+	 * tv: TMDB air year of the watched season (the year its releases carry);
+	 * `null` when unknown. Ignored for films, which use `year`.
+	 */
+	seasonYear: number | null;
+};
 
 export type PickResult =
 	| { status: "found"; candidate: TitleTorrentCandidate }
@@ -62,11 +69,24 @@ function bestByQuality(
 
 type Scored = { candidate: TitleTorrentCandidate; parsed: ParsedReleaseTitle };
 
+/**
+ * Strict year rule for auto-download (stricter than the title page's
+ * `releaseMatchesTitle`): the release year must be within one year of the
+ * film's year / the watched season's air year, and an unknown year on either
+ * side never matches — downloading the wrong film is worse than waiting.
+ */
+function yearFits(parsed: ParsedReleaseTitle, target: PickTarget): boolean {
+	const anchor = target.kind === "films" ? target.year : target.seasonYear;
+	if (parsed.year === null || anchor === null) return false;
+	return Math.abs(parsed.year - anchor) <= 1;
+}
+
 function matchesTarget(
 	parsed: ParsedReleaseTitle,
 	target: PickTarget,
 ): boolean {
-	if (!releaseMatchesTitle(parsed, target)) return false;
+	if (!releaseNamesMatch(parsed, target.names)) return false;
+	if (!yearFits(parsed, target)) return false;
 	if (target.kind === "tv") {
 		return target.season !== null && parsed.season === target.season;
 	}

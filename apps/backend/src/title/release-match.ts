@@ -22,22 +22,30 @@ export type MatchTarget = {
 	names: string[];
 };
 
+/** Whether one release name equals one target name after normalization. */
+export function releaseNamesMatch(
+	release: Pick<ParsedReleaseTitle, "names">,
+	names: string[],
+): boolean {
+	const releaseNames = new Set(release.names.map(normalizeTitleName));
+	return names.some((name) => releaseNames.has(normalizeTitleName(name)));
+}
+
 /**
  * Whether a parsed tracker release belongs to a Title: one release name must
  * equal one target name after normalization, and the release year must fit
  * the target's year. No fuzzy matching or similarity scoring.
+ *
+ * Lenient on purpose (title page `matches` flag): an unknown target year
+ * matches any year and series have no upper bound. The «Жду» auto-download
+ * path uses the strict rules in `release-pick.ts` instead.
  */
 export function releaseMatchesTitle(
 	release: Pick<ParsedReleaseTitle, "names" | "year">,
 	target: MatchTarget,
 ): boolean {
 	if (release.year === null) return false;
-
-	const releaseNames = new Set(release.names.map(normalizeTitleName));
-	const nameMatches = target.names.some((name) =>
-		releaseNames.has(normalizeTitleName(name)),
-	);
-	if (!nameMatches) return false;
+	if (!releaseNamesMatch(release, target.names)) return false;
 
 	if (target.year === null) return true;
 

@@ -57,6 +57,8 @@ const title = (kind: TitleKind, overrides: Partial<Title["meta"]> = {}) =>
 			seasons: kind === "tv" ? 2 : null,
 			originalName: kind === "films" ? "The Odyssey" : "The Last of Us",
 			alternativeNames: [],
+			seasonAirYears: {},
+			lastAirYear: null,
 			...overrides,
 		},
 		ratings: [],

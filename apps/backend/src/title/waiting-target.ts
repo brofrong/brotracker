@@ -40,6 +40,9 @@ export function buildWaitingTarget(
 	}
 
 	const season = title.facet === "tv" ? (watch.season ?? meta.seasons) : null;
+	// A season not (yet) listed with an air date falls back to the last air year.
+	const seasonYear =
+		season === null ? null : (meta.seasonAirYears[season] ?? meta.lastAirYear);
 	const searchNames: string[] = [];
 	for (const name of [searchableOriginalName(meta), meta.name?.trim()]) {
 		if (
@@ -62,6 +65,7 @@ export function buildWaitingTarget(
 		year: meta.year,
 		names,
 		season,
+		seasonYear,
 		queries,
 	};
 }

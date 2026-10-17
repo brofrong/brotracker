@@ -62,6 +62,10 @@ export type TitleMeta = {
 	seasons: number | null;
 	originalName: string | null;
 	alternativeNames: string[];
+	/** tv facet: TMDB air year per season number (seasons without an air date are absent). */
+	seasonAirYears: Record<number, number>;
+	/** tv facet: year of the last aired episode. */
+	lastAirYear: number | null;
 };
 
 export type TmdbRating = {
@@ -137,6 +141,8 @@ export type TmdbMeta = {
 	seasons: number | null;
 	originalName: string | null;
 	alternativeNames: string[];
+	seasonAirYears: Record<number, number>;
+	lastAirYear: number | null;
 	voteAverage: number | null;
 	voteCount: number | null;
 };
