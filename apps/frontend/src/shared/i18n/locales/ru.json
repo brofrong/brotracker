@@ -379,6 +379,10 @@
 		},
 		"torrents": {
 			"heading": "Раздачи",
+			"searchBy": "Искать по",
+			"otherResults": "Другие результаты — может быть не тот фильм ({{count}})",
+			"noExactMatches": "Точных совпадений нет",
+			"downloadAria": "Скачать {{title}}",
 			"seasonLabel": "Сезон",
 			"seasonOption": "Сезон {{n}}",
 			"allSeasons": "Все сезоны",

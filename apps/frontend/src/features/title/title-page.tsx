@@ -206,9 +206,11 @@ export function TitlePage({ id }: { id: string }) {
 				<TitleTorrentsList
 					key={id}
 					facet={facet}
+					originalName={meta.originalName}
 					seasons={meta.seasons}
 					titleId={id}
 					titleName={titleName}
+					year={meta.year}
 				/>
 
 				{meta.similar.length > 0 ? (

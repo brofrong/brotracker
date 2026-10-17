@@ -379,6 +379,10 @@
 		},
 		"torrents": {
 			"heading": "Torrents",
+			"searchBy": "Search by",
+			"otherResults": "Other results — may be a different title ({{count}})",
+			"noExactMatches": "No exact matches",
+			"downloadAria": "Download {{title}}",
 			"seasonLabel": "Season",
 			"seasonOption": "Season {{n}}",
 			"allSeasons": "All seasons",
