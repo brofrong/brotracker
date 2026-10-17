@@ -17,14 +17,17 @@ type YearResult = {
 	index: number;
 };
 
+const YEAR_PATTERN = /(?:19|20)\d{2}/;
 const YEAR_RANGE_EXACT = /^(?:19|20)\d{2}(?:-(?:19|20)\d{2})?$/;
-const YEAR_IN_BRACKET = /(?:19|20)\d{2}/;
 const YEAR_IN_PAREN = /\((?:19|20)\d{2}\)/;
-const YEAR_DIGITS = /(?:19|20)\d{2}/;
 const STANDALONE_YEAR = /(?<![\p{L}\p{N}])(?:19|20)\d{2}(?![\p{L}\p{N}])/u;
 
+// S\d+ (a season/episode marker like "S01" or "S01E05") deliberately has no trailing
+// boundary check: the brief wants segments *starting with* S\d+ dropped regardless of
+// what follows (e.g. "E05"). The word-style prefixes still require a boundary so a real
+// title like "Superman" or "Seasonal Drama" isn't mistaken for a season marker.
 const DROP_SEGMENT_PREFIX =
-	/^(?:Сезон|Серии|Серия|Season|Episodes|Episode|S\d+)(?![\p{L}\p{N}])/u;
+	/^(?:(?:Сезон|Серии|Серия|Season|Episodes|Episode)(?![\p{L}\p{N}])|S\d+)/u;
 
 const CAMRIP_TOKENS =
 	"CAMRip|CamRip|HDCAM|HDTS|HDTC|TeleSync|TeleCine|CAM|TS|TC";
@@ -47,7 +50,7 @@ function findYear(title: string): YearResult {
 	if (bracketOpen !== -1) {
 		const bracketMatch = /\[([^\]]*)\]/.exec(title);
 		const bracketContent = bracketMatch?.[1] ?? "";
-		const yearMatch = YEAR_IN_BRACKET.exec(bracketContent);
+		const yearMatch = YEAR_PATTERN.exec(bracketContent);
 		if (yearMatch) {
 			return {
 				year: Number(yearMatch[0]),
@@ -61,7 +64,7 @@ function findYear(title: string): YearResult {
 		bracketOpen === -1 ? title : title.slice(0, bracketOpen);
 	const parenMatch = YEAR_IN_PAREN.exec(beforeBracket);
 	if (parenMatch) {
-		const yearDigits = YEAR_DIGITS.exec(parenMatch[0]);
+		const yearDigits = YEAR_PATTERN.exec(parenMatch[0]);
 		if (yearDigits) {
 			return {
 				year: Number(yearDigits[0]),

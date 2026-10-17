@@ -45,6 +45,21 @@ describe("parseReleaseTitle: names and year", () => {
 			["Какой-то релиз без года WEB-DL"],
 			null,
 		],
+		[
+			"Show Name / Шоу Имя / S01E05 / 2025 / WEB-DL (1080p)",
+			["Show Name", "Шоу Имя"],
+			2025,
+		],
+		[
+			"Show Name / Шоу Имя / S02 / 2025 / WEB-DL (1080p)",
+			["Show Name", "Шоу Имя"],
+			2025,
+		],
+		[
+			"Superman / Супермен / 1978 / ПМ / BDRip (1080p)",
+			["Superman", "Супермен"],
+			1978,
+		],
 	])("parses %p", (title, names, year) => {
 		const result = parseReleaseTitle(title);
 		expect(result.names).toEqual(names);
