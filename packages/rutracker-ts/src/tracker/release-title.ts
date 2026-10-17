@@ -2,6 +2,8 @@ export type ParsedReleaseTitle = {
 	/** Display names in title order, trimmed. */
 	names: string[];
 	year: number | null;
+	/** Single season number; ranges and multi-season packs are `null`. */
+	season: number | null;
 	/** Camera/screener rip (CAMRip, TS, экранка, ...). */
 	isCamrip: boolean;
 	/** Has a Russian dub/voice-over track (Dub, MVO, ДБ, ПМ, ...). */
@@ -19,7 +21,10 @@ type YearResult = {
 
 const YEAR_RANGE_EXACT = /^(?:19|20)\d{2}(?:-(?:19|20)\d{2})?$/;
 const YEAR_IN_PAREN = /\((?:19|20)\d{2}\)/;
-const STANDALONE_YEAR = /(?<![\p{L}\p{N}])(?:19|20)\d{2}(?![\p{L}\p{N}])/u;
+// "×" (multiplication sign) separates resolution dimensions just like ascii "x" does
+// ("1920×1080"); both must block a year match the same way a letter would, or the width
+// half of a resolution ("1920") gets mistaken for a year.
+const STANDALONE_YEAR = /(?<![\p{L}\p{N}×])(?:19|20)\d{2}(?![\p{L}\p{N}×])/u;
 const STANDALONE_YEAR_GLOBAL = new RegExp(STANDALONE_YEAR.source, "gu");
 const BRACKET_GROUP = /\[([^\]]*)\]/g;
 const SEGMENT_SEPARATOR = " / ";
@@ -57,8 +62,50 @@ const VOICE_ABBR_REGEX = tokenRegex(VOICE_ABBR_TOKENS, "gu");
 // another language's track.
 const NON_RUSSIAN_LANGUAGE_AFTER =
 	/^\s*\(?\s*(?:ukr|eng|kaz|bel|ger|deu|fre|fra|spa|ita|jap|jpn|kor|chi|pol|por|tur|укр\p{L}*|англ\p{L}*|каз|бел)(?![\p{L}\p{N}])/iu;
-// RuTor suffix: "| D" dubbing, "| P" / "| P1" / "| P2" professional voice-over, "| Лицензия".
-const RUTOR_VOICE_SUFFIX = /\|\s*(?:D|P\d?|Лицензия)(?![\p{L}\p{N}])/u;
+// RuTor suffix: "| D" dubbing, "| Лицензия", bare "| P" professional (multi-)voice-over.
+// "| P1" / "| P2" are one-/two-voice-over and must NOT count as Russian voice, so the
+// trailing boundary check (which rejects a digit right after "P") is what excludes them;
+// unlike "P\d?", this pattern never matches the "P" in "P1"/"P2" at all.
+const RUTOR_VOICE_SUFFIX = /\|\s*(?:D|P|Лицензия)(?![\p{L}\p{N}])/u;
+
+// Season markers, tried in this order; the one that starts earliest in the title wins
+// (ties keep this order), so "2 сезон: 1-7 серии" picks the leading "2 сезон" over the
+// "Сезон: 1-7" reading of the episode range that happens to follow the same word.
+// Each has at most two capture groups: the season number, and (if present) the end of a
+// "N-M" range, which disqualifies the match (a range/pack has no single season → null).
+const SEASON_COLON_REGEX = tokenRegex(
+	"Сезон[:\\s]*(\\d+)(?:\\s*-\\s*(\\d+))?",
+	"iu",
+);
+const SEASON_PREFIX_NUMBER_REGEX = tokenRegex("(\\d+)\\s*сезон", "iu");
+const SEASON_WORD_REGEX = tokenRegex(
+	"Season\\s+(\\d+)(?:\\s*-\\s*(\\d+))?",
+	"iu",
+);
+const SEASON_S_TOKEN_REGEX = tokenRegex("S(\\d+)(?:E\\d+)?", "iu");
+const SEASON_REGEXES = [
+	SEASON_COLON_REGEX,
+	SEASON_PREFIX_NUMBER_REGEX,
+	SEASON_WORD_REGEX,
+	SEASON_S_TOKEN_REGEX,
+];
+
+function findSeason(title: string): number | null {
+	let best: RegExpExecArray | null = null;
+	for (const regex of SEASON_REGEXES) {
+		const match = regex.exec(title);
+		if (match && (best === null || match.index < best.index)) {
+			best = match;
+		}
+	}
+	if (!best) return null;
+
+	const start = Number(best[1]);
+	const end = best[2] !== undefined ? Number(best[2]) : null;
+	// A range ("Сезон: 1-10") or multi-season pack has no single season.
+	if (end !== null) return null;
+	return start;
+}
 
 function lastStandaloneYear(text: string): RegExpExecArray | null {
 	let last: RegExpExecArray | null = null;
@@ -179,6 +226,9 @@ function findNameHeadEnd(title: string, yearResult: YearResult): number {
 
 export function parseReleaseTitle(title: string): ParsedReleaseTitle {
 	const yearResult = findYear(title);
+	// Scanned over the whole title (not just the trailing "details"): season markers like
+	// "Сезон: 2" or "(2 сезон: ...)" commonly sit inside the name head, before the year.
+	const season = findSeason(title);
 	const nameHeadEnd = findNameHeadEnd(title, yearResult);
 	const rawNameHead = title.slice(0, nameHeadEnd);
 	// Scene names use dots/underscores for spaces; real titles keep their dots.
@@ -197,7 +247,7 @@ export function parseReleaseTitle(title: string): ParsedReleaseTitle {
 	const hasRussianVoice =
 		hasRussianVoiceToken(details) || RUTOR_VOICE_SUFFIX.test(details);
 
-	return { names, year: yearResult.year, isCamrip, hasRussianVoice };
+	return { names, year: yearResult.year, season, isCamrip, hasRussianVoice };
 }
 
 function hasRussianVoiceToken(text: string): boolean {

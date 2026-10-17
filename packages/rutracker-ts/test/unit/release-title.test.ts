@@ -103,10 +103,33 @@ describe("parseReleaseTitle: names and year", () => {
 		],
 		// Scene name: prefer the last year, a number in the name stays.
 		["Blade.Runner.2049.2017.1080p.BluRay.x264", ["Blade Runner 2049"], 2017],
+		// A resolution written with "×" or ascii "x" isn't mistaken for a year.
+		["Фильм / Film [1920×1080, 2026, BDRip]", ["Фильм", "Film"], 2026],
+		["Фильм / Film [1920x1080, 2026, BDRip]", ["Фильм", "Film"], 2026],
 	])("parses %p", (title, names, year) => {
 		const result = parseReleaseTitle(title);
 		expect(result.names).toEqual(names);
 		expect(result.year).toBe(year);
+	});
+});
+
+describe("parseReleaseTitle: season", () => {
+	it.each<[string, number | null]>([
+		[
+			"Одни из нас / The Last of Us / Сезон: 2 / Серии: 1-7 из 7 (Крэйг Мазин) [2025, США, драма, WEB-DL 1080p] Dub + Original",
+			2,
+		],
+		[
+			"Одни из нас (2 сезон: 1-7 серии из 7) / The Last of Us / 2025 / ПМ / WEB-DL (1080p)",
+			2,
+		],
+		["The.Last.of.Us.S02E05.1080p.WEB-DL", 2],
+		["Show / Шоу / S03 / 2025 / WEB-DL (1080p)", 3],
+		["Stranger Things / Season 5 [2025, WEB-DL]", 5],
+		["Друзья / Friends / Сезон: 1-10 [1994-2004, BDRip]", null],
+		["Одиссея / The Odyssey [2026, WEB-DL 2160p]", null],
+	])("%p -> season=%p", (title, expected) => {
+		expect(parseReleaseTitle(title).season).toBe(expected);
 	});
 });
 
@@ -173,8 +196,10 @@ describe("parseReleaseTitle: hasRussianVoice", () => {
 		["Одиссея / The Odyssey [2024, BDRip] Dub Ukr + Original", false],
 		["Одиссея / The Odyssey [2024, BDRip] Dub (Ukr) + MVO", true],
 		["Одиссея / The Odyssey [2024, BDRip] Dub (Rus) + Original", true],
-		["Одиссея / The Odyssey (2026) WEB-DL 1080p | P1", true],
-		["Одиссея / The Odyssey (2026) WEB-DL 1080p | P2", true],
+		["Фильм / Film (2026) WEB-DL 1080p | P1", false],
+		["Фильм / Film (2026) WEB-DL 1080p | P2", false],
+		["Фильм / Film (2026) WEB-DL 1080p | P", true],
+		["Фильм / Film (2026) WEB-DL 1080p | D", true],
 		["Одиссея / The Odyssey (2026) WEB-DL 1080p | Лицензия", true],
 		["Одиссея / The Odyssey [2024, BDRip] Дублированный", true],
 		["Одиссея / The Odyssey [2025, BDRip] многоголосый закадровый", true],
