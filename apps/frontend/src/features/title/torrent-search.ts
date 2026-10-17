@@ -7,10 +7,25 @@ type TitleNames = {
 	originalName: string | null;
 };
 
-/** Whether the original name differs from the local name (worth offering a toggle). */
+const LATIN_OR_CYRILLIC_LETTER = /[\p{Script=Latin}\p{Script=Cyrillic}]/u;
+
+/**
+ * The original name when it can be searched on the trackers. Release titles
+ * there are Latin/Cyrillic, so an original in Korean, Japanese, Hindi, ... (no
+ * Latin or Cyrillic letter at all) finds nothing and counts as unavailable.
+ */
+function searchableOriginalName(meta: TitleNames): string | null {
+	const originalName = meta.originalName?.trim();
+	if (!originalName || !LATIN_OR_CYRILLIC_LETTER.test(originalName)) {
+		return null;
+	}
+	return originalName;
+}
+
+/** Whether a searchable original name differs from the local name (worth offering a toggle). */
 export function hasDistinctNames(meta: TitleNames): boolean {
 	const name = meta.name?.trim();
-	const originalName = meta.originalName?.trim();
+	const originalName = searchableOriginalName(meta);
 	if (!name || !originalName) {
 		return false;
 	}
@@ -20,9 +35,9 @@ export function hasDistinctNames(meta: TitleNames): boolean {
 /** Picks the name to search by, falling back to the local name when the original is unavailable. */
 export function searchNameFor(by: SearchBy, meta: TitleNames): string {
 	if (by === "original") {
-		const originalName = meta.originalName?.trim();
+		const originalName = searchableOriginalName(meta);
 		if (originalName) {
-			return meta.originalName as string;
+			return originalName;
 		}
 	}
 	return meta.name ?? "";

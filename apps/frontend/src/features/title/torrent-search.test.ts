@@ -27,6 +27,30 @@ describe("hasDistinctNames", () => {
 			false,
 		);
 	});
+
+	it("is false when the original name has no Latin or Cyrillic letters (Korean)", () => {
+		expect(hasDistinctNames({ name: "Паразиты", originalName: "기생충" })).toBe(
+			false,
+		);
+	});
+
+	it("is false when the original name has no Latin or Cyrillic letters (Japanese)", () => {
+		expect(
+			hasDistinctNames({
+				name: "Унесённые призраками",
+				originalName: "千と千尋の神隠し",
+			}),
+		).toBe(false);
+	});
+
+	it("is true for a Latin original that mixes in digits and punctuation", () => {
+		expect(
+			hasDistinctNames({
+				name: "Космическая одиссея",
+				originalName: "2001: A Space Odyssey",
+			}),
+		).toBe(true);
+	});
 });
 
 describe("searchNameFor", () => {
@@ -44,6 +68,36 @@ describe("searchNameFor", () => {
 		expect(
 			searchNameFor("original", { name: "Одиссея", originalName: null }),
 		).toBe("Одиссея");
+	});
+
+	it("falls back to the local name for a Korean original", () => {
+		expect(
+			searchNameFor("original", { name: "Паразиты", originalName: "기생충" }),
+		).toBe("Паразиты");
+	});
+
+	it("falls back to the local name for a Japanese original", () => {
+		expect(
+			searchNameFor("original", {
+				name: "Унесённые призраками",
+				originalName: "千と千尋の神隠し",
+			}),
+		).toBe("Унесённые призраками");
+	});
+
+	it("keeps a Cyrillic original name", () => {
+		expect(
+			searchNameFor("original", { name: "Brother", originalName: "Брат" }),
+		).toBe("Брат");
+	});
+
+	it("falls back to the local name for a digits-only original", () => {
+		expect(
+			searchNameFor("original", {
+				name: "Один девять один семь",
+				originalName: "1917",
+			}),
+		).toBe("Один девять один семь");
 	});
 });
 
