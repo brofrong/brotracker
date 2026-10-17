@@ -19,6 +19,11 @@ import {
 	saveRutrackerSettings,
 	saveTmdbSettings,
 } from "./provider-settings";
+import {
+	loadWatchlistSettings,
+	saveWatchlistSettings,
+	watchlistSettingsSchema,
+} from "./watchlist-settings";
 
 const trackerSetInputSchema = z.object({
 	login: z.string().trim().min(1, "Login is required"),
@@ -208,5 +213,13 @@ export const settingsRouter = router({
 
 			test: protectedProcedure.mutation(async () => testTmdbConnection()),
 		}),
+	}),
+
+	watchlist: router({
+		get: protectedProcedure.query(async () => loadWatchlistSettings()),
+
+		set: protectedProcedure
+			.input(watchlistSettingsSchema)
+			.mutation(async ({ input }) => saveWatchlistSettings(input)),
 	}),
 });
