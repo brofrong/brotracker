@@ -166,6 +166,10 @@ export function createWatchlist(deps: WatchlistDeps) {
 			if (!title.facet) {
 				throw new WatchlistError("Ждать можно только фильм или сериал из TMDB");
 			}
+			// Without TMDB data the row would have no name, season or search queries.
+			if (title.metaStatus !== "ok") {
+				throw new WatchlistError("TMDB недоступен — попробуйте позже");
+			}
 
 			const record = existing
 				? revive(existing, title)

@@ -226,6 +226,9 @@ export async function listQbTorrentsSafe(deps: {
 	}
 }
 
+/** Language of the Title name/poster/year stored on a watch. */
+const WATCH_META_LANGUAGE = "ru-RU";
+
 /** What a watch remembers about its Title for the watchlist. */
 type WatchTitleInfo = {
 	name: string;
@@ -310,16 +313,25 @@ export function createTitleModule(deps: TitleDeps) {
 		return filled;
 	}
 
+	/**
+	 * The Title's watch. `known` fills a watch's missing name/poster/year only
+	 * from a `ru-RU` request, the language rows created by «Жду» use.
+	 * qB is asked only when there is a watch to show progress for, or a series
+	 * to auto-link.
+	 */
 	async function resolveWatchForTitle(
 		titleId: string,
 		facet: TitleKind,
 		known: WatchTitleInfo | null,
+		language: string,
 	): Promise<TitleWatchView | null> {
-		const qbTorrents = await listQbTorrentsSafe(deps);
-
 		const byTitle = await deps.loadWatchByTitleId(titleId);
 		if (byTitle) {
-			return toWatchView(await backfillWatch(byTitle, known), qbTorrents);
+			const record =
+				language === WATCH_META_LANGUAGE
+					? await backfillWatch(byTitle, known)
+					: byTitle;
+			return toWatchView(record, await listQbTorrentsSafe(deps));
 		}
 
 		// Auto-linking a qB transfer onto the Title is for series only.
@@ -330,7 +342,9 @@ export function createTitleModule(deps: TitleDeps) {
 
 		try {
 			const linked = await linkAutoWatchToTitle(titleId, query);
-			return linked ? toWatchView(linked, qbTorrents) : null;
+			return linked
+				? toWatchView(linked, await listQbTorrentsSafe(deps))
+				: null;
 		} catch {
 			return null;
 		}
@@ -374,8 +388,9 @@ export function createTitleModule(deps: TitleDeps) {
 	/**
 	 * A release added by hand for a Title on «Жду»: the waiting watch gets the
 	 * Topic (films → downloading, series → tracking). When another row already
-	 * watches that Topic, it takes the Title and the waiting row goes, so the
-	 * unique `topic_url` never collides.
+	 * watches that Topic for no or the same Title, it takes the Title and the
+	 * waiting row goes; a Topic watched for another Title leaves both rows as
+	 * they are. Either way the unique `topic_url` never collides.
 	 */
 	async function attachTopicToWaiting(
 		waiting: TitleWatchRecord,
@@ -387,6 +402,10 @@ export function createTitleModule(deps: TitleDeps) {
 		const owner = await deps.loadWatchByTopicUrl(topicUrl);
 
 		if (owner && owner.id !== waiting.id) {
+			if (owner.titleId !== null && owner.titleId !== waiting.titleId) {
+				// The topic is watched for another Title: touch neither row.
+				return;
+			}
 			await deps.saveWatch({
 				...owner,
 				titleId: waiting.titleId,
@@ -509,7 +528,7 @@ export function createTitleModule(deps: TitleDeps) {
 						tmdbKind: parsed.kind,
 						tmdbId: parsed.tmdbId,
 					}),
-					watch: await resolveWatchForTitle(id, facet, null),
+					watch: await resolveWatchForTitle(id, facet, null, language),
 				};
 			}
 
@@ -528,11 +547,16 @@ export function createTitleModule(deps: TitleDeps) {
 				metaStatus,
 				meta: metaFromTmdb(outcome.meta),
 				ratings,
-				watch: await resolveWatchForTitle(id, parsed.kind, {
-					name: outcome.meta.name,
-					poster: outcome.meta.poster,
-					year: outcome.meta.year,
-				}),
+				watch: await resolveWatchForTitle(
+					id,
+					parsed.kind,
+					{
+						name: outcome.meta.name,
+						poster: outcome.meta.poster,
+						year: outcome.meta.year,
+					},
+					language,
+				),
 			};
 		},
 

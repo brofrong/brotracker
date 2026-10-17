@@ -2,7 +2,11 @@ import { describe, expect, test } from "bun:test";
 import type { TaggedQbTorrent, Title, TitleKind } from "./title.types";
 import type { TitleWatchRecord } from "./watch/check-topic-now";
 import type { SyncQbTorrent } from "./watch/sync-watches-from-qb";
-import { createWatchlist, type WatchlistDeps } from "./watchlist";
+import {
+	createWatchlist,
+	type WatchlistDeps,
+	WatchlistError,
+} from "./watchlist";
 
 const NOW = "2026-10-17T10:00:00.000Z";
 const TOPIC = "https://rutracker.org/forum/viewtopic.php?t=100";
@@ -275,6 +279,50 @@ describe("watchlist.wait", () => {
 
 		await expect(watchlist.wait({ titleId: "tmdb:films:9" })).rejects.toThrow();
 		expect(fake.rows.size).toBe(0);
+	});
+});
+
+describe("watchlist.wait with degraded TMDB meta", () => {
+	const degraded = (): Title => ({
+		...title("tv", {
+			name: null,
+			poster: null,
+			year: null,
+			seasons: null,
+			originalName: null,
+		}),
+		metaStatus: "degraded",
+	});
+
+	test("refuses to create a nameless row", async () => {
+		const fake = makeFake({ titles: { "tmdb:tv:2": degraded() } });
+		const watchlist = createWatchlist(fake.deps);
+
+		await expect(watchlist.wait({ titleId: "tmdb:tv:2" })).rejects.toThrow(
+			WatchlistError,
+		);
+		expect(fake.rows.size).toBe(0);
+	});
+
+	test("leaves an off row untouched", async () => {
+		const off = watchRecord({
+			id: "w-off",
+			titleId: "tmdb:tv:2",
+			kind: "tv",
+			watch: "off",
+			topicUrl: TOPIC,
+			qbHash: "h1",
+		});
+		const fake = makeFake({
+			rows: [off],
+			titles: { "tmdb:tv:2": degraded() },
+		});
+		const watchlist = createWatchlist(fake.deps);
+
+		await expect(watchlist.wait({ titleId: "tmdb:tv:2" })).rejects.toThrow(
+			WatchlistError,
+		);
+		expect(fake.rows.get("w-off")).toEqual(off);
 	});
 });
 

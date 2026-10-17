@@ -659,6 +659,60 @@ describe("title.get watch for films", () => {
 	});
 });
 
+describe("title.get watch: qB calls and backfill language", () => {
+	test("a film without a watch never asks qB", async () => {
+		let qbCalls = 0;
+		const { module } = createWatchDeps({
+			fetchTmdbMeta: async () => ({ status: "ok", meta: filmMeta() }),
+			listQbTorrents: async () => {
+				qbCalls += 1;
+				return [];
+			},
+		});
+
+		await module.get({ id: "tmdb:films:7" });
+
+		expect(qbCalls).toBe(0);
+	});
+
+	test("a film with a watch asks qB once for progress", async () => {
+		let qbCalls = 0;
+		const { module, store } = createWatchDeps({
+			fetchTmdbMeta: async () => ({ status: "ok", meta: filmMeta() }),
+			listQbTorrents: async () => {
+				qbCalls += 1;
+				return [];
+			},
+		});
+		store.set("waiting-1", waitingWatch());
+
+		await module.get({ id: "tmdb:films:7" });
+
+		expect(qbCalls).toBe(1);
+	});
+
+	test("does not backfill from a non-Russian request", async () => {
+		const { module, store } = createWatchDeps({
+			fetchTmdbMeta: async () => ({
+				status: "ok",
+				meta: { ...filmMeta(), name: "The Odyssey" },
+			}),
+		});
+		store.set(
+			"waiting-1",
+			waitingWatch({ titleName: null, poster: null, year: null }),
+		);
+
+		await module.get({ id: "tmdb:films:7", language: "en-US" });
+
+		expect(store.get("waiting-1")).toMatchObject({
+			titleName: null,
+			poster: null,
+			year: null,
+		});
+	});
+});
+
 describe("title.add onto a waiting watch", () => {
 	const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=88";
 
@@ -746,5 +800,33 @@ describe("title.add onto a waiting watch", () => {
 			watch: "downloading",
 			titleName: "Одиссея",
 		});
+	});
+});
+
+describe("title.add onto a waiting watch whose topic belongs to another Title", () => {
+	test("leaves both rows alone", async () => {
+		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=88";
+		const { module, store, events } = createWatchDeps();
+		const waiting = waitingWatch();
+		const owner: TitleWatchRecord = {
+			...waitingWatch(),
+			id: "owner",
+			topicUrl,
+			titleId: "tmdb:films:99",
+			watch: "downloading",
+		};
+		store.set("waiting-1", waiting);
+		store.set(topicUrl, owner);
+
+		await module.add({
+			torrentFileUrl: "https://rutracker.org/forum/dl.php?t=88",
+			kind: "films",
+			topicUrl,
+			titleId: "tmdb:films:7",
+		});
+
+		expect(store.get("waiting-1")).toEqual(waiting);
+		expect(store.get(topicUrl)).toEqual(owner);
+		expect(events).toEqual([]);
 	});
 });
