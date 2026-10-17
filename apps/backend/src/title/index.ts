@@ -173,7 +173,7 @@ export const watchlist = createWatchlist({
 	listTaggedTorrents,
 	listQbTorrents,
 	checkWaiting: (watchId) => waitingSearch.checkOne(watchId),
-	checkTracking: (titleId) => titleModule.checkNow({ id: titleId }),
+	checkTracking: (target) => titleModule.checkTopic(target),
 	now: watch.now,
 	newId: () => crypto.randomUUID(),
 });

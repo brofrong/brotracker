@@ -25,8 +25,11 @@ export type WatchlistDeps = {
 	listQbTorrents: () => Promise<SyncQbTorrent[]>;
 	/** `waitingSearch.checkOne`. */
 	checkWaiting: (watchId: string) => Promise<TitleWatchRecord | null>;
-	/** The existing `module.checkNow({ id })`. */
-	checkTracking: (titleId: string) => Promise<unknown>;
+	/** `module.checkTopic`: checks the row that watches this topic. */
+	checkTracking: (target: {
+		topicUrl: string;
+		titleId: string;
+	}) => Promise<unknown>;
 	now: () => string;
 	newId: () => string;
 };
@@ -201,6 +204,31 @@ export function createWatchlist(deps: WatchlistDeps) {
 			return records.filter(isListed).map((record) => toItem(record, qb));
 		},
 
+		/** Pause/resume this row (not "the Title's watch": a Title may have several rows). */
+		async setState(input: {
+			id: string;
+			watch: "tracking" | "paused";
+		}): Promise<WatchlistItem | null> {
+			const record = await deps.loadWatchById(input.id);
+			if (!record || !isListed(record)) return null;
+			if (
+				(record.watch !== "tracking" && record.watch !== "paused") ||
+				!record.topicUrl
+			) {
+				throw new WatchlistError(
+					"Приостановить можно только отслеживаемый сериал",
+				);
+			}
+			const updated: TitleWatchRecord & { titleId: string } = {
+				...record,
+				watch: input.watch,
+			};
+			if (record.watch !== input.watch) {
+				await deps.saveWatch(updated);
+			}
+			return toItem(updated, await loadQb());
+		},
+
 		async checkNow(input: { id: string }): Promise<WatchlistItem | null> {
 			const record = await deps.loadWatchById(input.id);
 			if (!record) return null;
@@ -209,9 +237,14 @@ export function createWatchlist(deps: WatchlistDeps) {
 				await deps.checkWaiting(record.id);
 			} else if (
 				(record.watch === "tracking" || record.watch === "paused") &&
-				record.titleId
+				record.titleId &&
+				record.topicUrl
 			) {
-				await deps.checkTracking(record.titleId);
+				// By this row's own topic: a Title may have several rows.
+				await deps.checkTracking({
+					topicUrl: record.topicUrl,
+					titleId: record.titleId,
+				});
 			}
 
 			// A waiting row may have been merged into the row that owns its topic.

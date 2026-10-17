@@ -220,6 +220,27 @@ export const titleRouter = router({
 			return { ok: true as const };
 		}),
 
+	watchlistSetState: protectedProcedure
+		.input(
+			z.object({
+				id: z.string().min(1),
+				watch: z.enum(["tracking", "paused"]),
+			}),
+		)
+		.mutation(async ({ input }) => {
+			try {
+				return await watchlist.setState(input);
+			} catch (error) {
+				if (error instanceof WatchlistError) {
+					throw new TRPCError({
+						code: "PRECONDITION_FAILED",
+						message: error.message,
+					});
+				}
+				throw error;
+			}
+		}),
+
 	watchlistCheck: protectedProcedure
 		.input(z.object({ id: z.string().min(1) }))
 		.mutation(({ input }) => watchlist.checkNow(input)),

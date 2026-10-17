@@ -83,6 +83,15 @@ function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 			return null;
 		},
 		saveWatch: async (record) => {
+			// Mirrors the real `title_watches_topic_url_unique` constraint.
+			if (record.topicUrl !== null) {
+				const other = store.get(record.topicUrl);
+				if (other && other.id !== record.id) {
+					throw new Error(
+						'duplicate key value violates unique constraint "title_watches_topic_url_unique"',
+					);
+				}
+			}
 			// upsert on id, like the real repository
 			for (const [key, value] of store) {
 				if (value.id === record.id) {
@@ -236,6 +245,94 @@ describe("title.setWatch", () => {
 		await module.setWatch({ id: "tmdb:tv:1", watch: "paused" });
 		expect(store.get(topicUrl)?.watch).toBe("paused");
 		expect(store.get(topicUrl)?.id).toBe("watch-1");
+	});
+});
+
+const seriesRow = (
+	overrides: Partial<TitleWatchRecord> = {},
+): TitleWatchRecord => ({
+	id: "row",
+	topicUrl: null,
+	titleId: "tmdb:tv:1",
+	kind: "tv",
+	watch: "tracking",
+	source: "manual",
+	season: null,
+	titleName: null,
+	poster: null,
+	year: null,
+	size: 4,
+	registeredAt: "2024-01-01T00:00:00.000Z",
+	contentHash:
+		"9f64a747e1b97f131fabb6b447296c9b6f0201e79fb3c5356e6c77e89b6a806a",
+	qbHash: null,
+	lastCheckedAt: null,
+	lastChangedAt: null,
+	lastError: null,
+	waitingOutcome: null,
+	waitingOutcomeDetail: null,
+	createdAt: "2026-08-01T00:00:00.000Z",
+	...overrides,
+});
+
+const SEASON_1_TOPIC = "https://rutracker.org/forum/viewtopic.php?t=51";
+const SEASON_2_TOPIC = "https://rutracker.org/forum/viewtopic.php?t=52";
+
+/** Old-model data: one row per season topic for the same Title. */
+function multiRowSeries() {
+	const harness = createWatchDeps();
+	// `loadWatchByTitleId` returns the newest row (season 2) first.
+	harness.store.set(
+		SEASON_2_TOPIC,
+		seriesRow({ id: "s2", topicUrl: SEASON_2_TOPIC, season: 2 }),
+	);
+	harness.store.set(
+		SEASON_1_TOPIC,
+		seriesRow({ id: "s1", topicUrl: SEASON_1_TOPIC, season: 1 }),
+	);
+	return harness;
+}
+
+describe("title.setWatch on a multi-row series", () => {
+	test("a given topicUrl picks that topic's row, not the Title's newest row", async () => {
+		const { module, store } = multiRowSeries();
+
+		await module.setWatch({
+			id: "tmdb:tv:1",
+			watch: "paused",
+			topicUrl: SEASON_1_TOPIC,
+		});
+
+		expect(store.get(SEASON_1_TOPIC)).toMatchObject({
+			id: "s1",
+			watch: "paused",
+		});
+		expect(store.get(SEASON_2_TOPIC)).toMatchObject({
+			id: "s2",
+			watch: "tracking",
+		});
+	});
+});
+
+describe("title.checkTopic", () => {
+	test("checks the given topic through a manual WatchTask", async () => {
+		const { module, deps } = multiRowSeries();
+		const enqueued: { topicUrl: string; titleId: string | null }[] = [];
+		const enqueue = deps.enqueueWatchTask;
+		deps.enqueueWatchTask = async (input) => {
+			enqueued.push({ topicUrl: input.topicUrl, titleId: input.titleId });
+			return enqueue(input);
+		};
+
+		const result = await module.checkTopic({
+			topicUrl: SEASON_1_TOPIC,
+			titleId: "tmdb:tv:1",
+		});
+
+		expect(enqueued).toEqual([
+			{ topicUrl: SEASON_1_TOPIC, titleId: "tmdb:tv:1" },
+		]);
+		expect(result.status).toBe("unchanged");
 	});
 });
 

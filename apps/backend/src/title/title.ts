@@ -665,7 +665,13 @@ export function createTitleModule(deps: TitleDeps) {
 			watch: "tracking" | "paused";
 			topicUrl?: string;
 		}): Promise<{ ok: true }> {
-			const existing = await deps.loadWatchByTitleId(input.id);
+			// A Title may still have several rows (one per season topic, old
+			// model): a given topic picks its own row, so another row is never
+			// re-pointed at it (or collides with it on the unique topic_url).
+			const byTopic = input.topicUrl
+				? await deps.loadWatchByTopicUrl(input.topicUrl)
+				: null;
+			const existing = byTopic ?? (await deps.loadWatchByTitleId(input.id));
 			let topicUrl = input.topicUrl ?? existing?.topicUrl ?? null;
 			let qbHash = existing?.qbHash ?? null;
 			let size = existing?.size ?? null;
@@ -728,13 +734,26 @@ export function createTitleModule(deps: TitleDeps) {
 				};
 			}
 
-			// Same queue path as the nightly worker: create a manual WatchTask
-			// and drain it through processWatchTask instead of calling
-			// checkTopicNow ad hoc. Events are recorded inside checkTopicNow
-			// via the bound recordEvent dep.
-			const task = await deps.enqueueWatchTask({
+			return module.checkTopic({
 				topicUrl: record.topicUrl,
 				titleId: input.id,
+			});
+		},
+
+		/**
+		 * Checks one Topic now — the row that watches `topicUrl`, whatever other
+		 * rows its Title has. Same queue path as the nightly worker: a manual
+		 * WatchTask drained through processWatchTask instead of an ad-hoc
+		 * checkTopicNow. Events are recorded inside checkTopicNow via the bound
+		 * recordEvent dep.
+		 */
+		async checkTopic(input: {
+			topicUrl: string;
+			titleId: string | null;
+		}): Promise<CheckResult> {
+			const task = await deps.enqueueWatchTask({
+				topicUrl: input.topicUrl,
+				titleId: input.titleId,
 				trigger: "manual",
 			});
 			const outcome = await deps.processWatchTask(task.id);

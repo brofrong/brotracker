@@ -82,8 +82,9 @@ function useWatchlistActions() {
 		onSuccess: refresh,
 		onError,
 	});
-	const setWatch = useMutation({
-		...trpc.title.setWatch.mutationOptions(),
+	// By row id: a Title may still have several rows (one per season topic).
+	const setState = useMutation({
+		...trpc.title.watchlistSetState.mutationOptions(),
 		onSuccess: refresh,
 		onError,
 	});
@@ -113,13 +114,8 @@ function useWatchlistActions() {
 			options.push({
 				label: item.watch === "tracking" ? t("menu.pause") : t("menu.resume"),
 				icon: item.watch === "tracking" ? Pause : Play,
-				isDisabled: setWatch.isPending,
-				onClick: () =>
-					setWatch.mutate({
-						id: item.titleId,
-						watch: next,
-						topicUrl: item.topicUrl ?? undefined,
-					}),
+				isDisabled: setState.isPending,
+				onClick: () => setState.mutate({ id: item.id, watch: next }),
 			});
 		}
 		options.push({ type: "divider" });

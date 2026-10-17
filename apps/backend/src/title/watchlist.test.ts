@@ -110,6 +110,16 @@ function makeFake(
 		listWatchlistRecords: async () =>
 			[...rows.values()].filter((r) => r.titleId !== null),
 		saveWatch: async (record) => {
+			// Mirrors the real `title_watches_topic_url_unique` constraint.
+			if (record.topicUrl !== null) {
+				for (const other of rows.values()) {
+					if (other.id !== record.id && other.topicUrl === record.topicUrl) {
+						throw new Error(
+							'duplicate key value violates unique constraint "title_watches_topic_url_unique"',
+						);
+					}
+				}
+			}
 			rows.set(record.id, { ...record });
 		},
 		deleteWatch: async (id) => {
@@ -122,8 +132,8 @@ function makeFake(
 			opts.checkWaiting?.(rows, id);
 			return rows.get(id) ?? null;
 		},
-		checkTracking: async (titleId) => {
-			checkedTracking.push(titleId);
+		checkTracking: async ({ topicUrl }) => {
+			checkedTracking.push(topicUrl);
 			return { status: "unchanged", checkedAt: NOW };
 		},
 		now: () => NOW,
@@ -486,7 +496,7 @@ describe("watchlist.checkNow", () => {
 
 		const item = await createWatchlist(fake.deps).checkNow({ id: "w1" });
 
-		expect(fake.checkedTracking).toEqual(["tmdb:tv:2"]);
+		expect(fake.checkedTracking).toEqual([TOPIC]);
 		expect(fake.checkedWaiting).toEqual([]);
 		expect(item?.id).toBe("w1");
 	});
@@ -515,6 +525,101 @@ describe("watchlist.checkNow", () => {
 		const fake = makeFake();
 		expect(
 			await createWatchlist(fake.deps).checkNow({ id: "nope" }),
+		).toBeNull();
+	});
+});
+
+const SEASON_1_TOPIC = "https://rutracker.org/forum/viewtopic.php?t=51";
+const SEASON_2_TOPIC = "https://rutracker.org/forum/viewtopic.php?t=52";
+
+/** Old-model data: one row per season topic for the same Title. */
+const multiRowSeries = () => [
+	// Newest first, so `loadWatchByTitleId` returns season 2.
+	watchRecord({
+		id: "s2",
+		titleId: "tmdb:tv:2",
+		kind: "tv",
+		watch: "tracking",
+		season: 2,
+		topicUrl: SEASON_2_TOPIC,
+	}),
+	watchRecord({
+		id: "s1",
+		titleId: "tmdb:tv:2",
+		kind: "tv",
+		watch: "tracking",
+		season: 1,
+		topicUrl: SEASON_1_TOPIC,
+	}),
+];
+
+describe("watchlist.checkNow on a multi-row series", () => {
+	test("checks the clicked row's own topic", async () => {
+		const fake = makeFake({ rows: multiRowSeries() });
+
+		const item = await createWatchlist(fake.deps).checkNow({ id: "s1" });
+
+		expect(fake.checkedTracking).toEqual([SEASON_1_TOPIC]);
+		expect(item?.id).toBe("s1");
+	});
+
+	test("a paused row is checked by its own topic too", async () => {
+		const rows = multiRowSeries();
+		rows[1] = { ...(rows[1] as TitleWatchRecord), watch: "paused" };
+		const fake = makeFake({ rows });
+
+		await createWatchlist(fake.deps).checkNow({ id: "s1" });
+
+		expect(fake.checkedTracking).toEqual([SEASON_1_TOPIC]);
+	});
+});
+
+describe("watchlist.setState", () => {
+	test("pauses the clicked row only", async () => {
+		const fake = makeFake({ rows: multiRowSeries() });
+
+		const item = await createWatchlist(fake.deps).setState({
+			id: "s1",
+			watch: "paused",
+		});
+
+		expect(item).toMatchObject({ id: "s1", watch: "paused" });
+		expect(fake.rows.get("s1")).toMatchObject({
+			watch: "paused",
+			topicUrl: SEASON_1_TOPIC,
+		});
+		expect(fake.rows.get("s2")).toMatchObject({
+			watch: "tracking",
+			topicUrl: SEASON_2_TOPIC,
+		});
+	});
+
+	test("resumes a paused row", async () => {
+		const rows = multiRowSeries();
+		rows[1] = { ...(rows[1] as TitleWatchRecord), watch: "paused" };
+		const fake = makeFake({ rows });
+
+		await createWatchlist(fake.deps).setState({ id: "s1", watch: "tracking" });
+
+		expect(fake.rows.get("s1")?.watch).toBe("tracking");
+	});
+
+	test("only a tracking or paused row with a topic can change state", async () => {
+		const fake = makeFake({ rows: [watchRecord()] });
+
+		await expect(
+			createWatchlist(fake.deps).setState({ id: "w1", watch: "paused" }),
+		).rejects.toBeInstanceOf(WatchlistError);
+		expect(fake.rows.get("w1")?.watch).toBe("waiting");
+	});
+
+	test("missing row returns null", async () => {
+		const fake = makeFake();
+		expect(
+			await createWatchlist(fake.deps).setState({
+				id: "nope",
+				watch: "paused",
+			}),
 		).toBeNull();
 	});
 });
