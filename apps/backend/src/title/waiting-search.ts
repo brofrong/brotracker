@@ -9,6 +9,7 @@ import { extractTopicId, findTransferForTopic, topicTag } from "./topic-tag";
 import type {
 	RecordWatchEventInput,
 	TitleWatchRecord,
+	WaitingOutcome,
 } from "./watch/check-topic-now";
 
 export type WaitingTarget = PickTarget & { queries: string[] };
@@ -45,7 +46,21 @@ type CheckOutcome =
 	| { kind: "started"; record: TitleWatchRecord }
 	| { kind: "merged"; record: TitleWatchRecord }
 	| { kind: "waiting"; record: TitleWatchRecord }
-	| { kind: "failed"; record: TitleWatchRecord };
+	| { kind: "failed"; record: TitleWatchRecord }
+	/** The row was removed or left `waiting` while we were working on it. */
+	| { kind: "skipped"; record: null };
+
+/** Result of searching for a watch, before it is applied to the (re-read) row. */
+type Verdict =
+	| { type: "found"; release: TitleTorrentCandidate; kind: TitleKind }
+	| {
+			type: "none";
+			outcome: Exclude<WaitingOutcome, "search-failed">;
+			detail: string | null;
+	  }
+	| { type: "error"; message: string };
+
+const SKIPPED: CheckOutcome = { kind: "skipped", record: null };
 
 function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
@@ -61,6 +76,8 @@ function describeOutcome(outcome: CheckOutcome): string {
 			return `started (${outcome.record.watch})`;
 		case "merged":
 			return "merged into existing watch";
+		case "skipped":
+			return "skipped (no longer waiting)";
 		case "waiting":
 		case "failed": {
 			const { waitingOutcome, waitingOutcomeDetail, lastError } =
@@ -83,6 +100,15 @@ export function createWaitingSearch(deps: WaitingSearchDeps) {
 		} catch {
 			// best-effort; feed recording must not break the search flow
 		}
+	}
+
+	/**
+	 * Re-reads the row so a stale snapshot is never saved back over a watch the
+	 * user removed or another run already started (`saveWatch` upserts by id).
+	 */
+	async function reloadWaiting(id: string): Promise<TitleWatchRecord | null> {
+		const current = await deps.loadWatchById(id);
+		return current && current.watch === "waiting" ? current : null;
 	}
 
 	async function searchAll(
@@ -149,7 +175,14 @@ export function createWaitingSearch(deps: WaitingSearchDeps) {
 			if (!topicId) {
 				throw new Error("Некорректный topic URL");
 			}
-			await deps.addToQb(release.torrentFileUrl, kind, [topicTag(topicId)]);
+			// A previous run may have added it and then failed to save the row.
+			const existing = findTransferForTopic(
+				topicId,
+				await deps.listTaggedTorrents(),
+			);
+			if (!existing) {
+				await deps.addToQb(release.torrentFileUrl, kind, [topicTag(topicId)]);
+			}
 		} catch (error) {
 			const message = errorMessage(error);
 			const record: TitleWatchRecord = {
@@ -160,12 +193,15 @@ export function createWaitingSearch(deps: WaitingSearchDeps) {
 				lastError: message,
 			};
 			await deps.saveWatch(record);
-			await tryRecordEvent({
-				titleId: watch.titleId,
-				topicUrl: release.topicUrl,
-				kind: "add-failed",
-				message,
-			});
+			// One event per distinct error, not one per interval while qB is down.
+			if (message !== watch.lastError) {
+				await tryRecordEvent({
+					titleId: watch.titleId,
+					topicUrl: release.topicUrl,
+					kind: "add-failed",
+					message,
+				});
+			}
 			return { kind: "failed", record };
 		}
 
@@ -194,32 +230,49 @@ export function createWaitingSearch(deps: WaitingSearchDeps) {
 		return { kind: "started", record };
 	}
 
+	async function search(
+		watch: TitleWatchRecord,
+		rules: WatchlistSettings,
+	): Promise<Verdict> {
+		const target = await deps.loadTarget(watch);
+		if (!target) {
+			return { type: "error", message: "Нет данных о тайтле для поиска" };
+		}
+		let candidates: TitleTorrentCandidate[];
+		try {
+			candidates = await searchAll(target.queries);
+		} catch (error) {
+			return { type: "error", message: errorMessage(error) };
+		}
+		const pick = pickRelease(candidates, target, rules);
+		if (pick.status === "found") {
+			return { type: "found", release: pick.candidate, kind: target.kind };
+		}
+		return { type: "none", outcome: pick.outcome, detail: pick.detail };
+	}
+
 	async function check(
 		watch: TitleWatchRecord,
 		rules: WatchlistSettings,
 	): Promise<CheckOutcome> {
 		const checkedAt = deps.now();
-		const target = await deps.loadTarget(watch);
-		if (!target) {
-			return markFailed(watch, "Нет данных о тайтле для поиска", checkedAt);
-		}
+		const verdict = await search(watch, rules);
 
-		let candidates: TitleTorrentCandidate[];
-		try {
-			candidates = await searchAll(target.queries);
-		} catch (error) {
-			return markFailed(watch, errorMessage(error), checkedAt);
-		}
+		// Searching can take a while: apply the verdict to the current row only.
+		const current = await reloadWaiting(watch.id);
+		if (!current) return SKIPPED;
 
-		const pick = pickRelease(candidates, target, rules);
-		if (pick.status === "found") {
-			return startDownload(watch, pick.candidate, target.kind, checkedAt);
+		if (verdict.type === "error") {
+			return markFailed(current, verdict.message, checkedAt);
+		}
+		if (verdict.type === "found") {
+			return startDownload(current, verdict.release, verdict.kind, checkedAt);
 		}
 
 		const record: TitleWatchRecord = {
-			...watch,
-			waitingOutcome: pick.outcome,
-			waitingOutcomeDetail: pick.detail,
+			...current,
+			waitingOutcome: verdict.outcome,
+			waitingOutcomeDetail: verdict.detail,
 			lastCheckedAt: checkedAt,
 			lastError: null,
 		};
@@ -234,19 +287,24 @@ export function createWaitingSearch(deps: WaitingSearchDeps) {
 			if (waiting.length === 0) return run;
 			const rules = await deps.loadRules();
 
-			for (const watch of waiting) {
-				run.checked += 1;
-				let line: string;
+			for (const listed of waiting) {
+				const name = describeWatch(listed);
+				let outcome: CheckOutcome;
 				try {
-					const outcome = await check(watch, rules);
-					if (outcome.kind === "started") run.started += 1;
-					if (outcome.kind === "failed") run.failed += 1;
-					line = describeOutcome(outcome);
+					// `listed` may be stale: the user could have removed it, or
+					// `checkOne` already started it, since `listWaiting` ran.
+					const watch = await reloadWaiting(listed.id);
+					outcome = watch ? await check(watch, rules) : SKIPPED;
 				} catch (error) {
+					run.checked += 1;
 					run.failed += 1;
-					line = `error: ${errorMessage(error)}`;
+					log?.(`${name}: error: ${errorMessage(error)}`);
+					continue;
 				}
-				log?.(`${describeWatch(watch)}: ${line}`);
+				if (outcome.kind !== "skipped") run.checked += 1;
+				if (outcome.kind === "started") run.started += 1;
+				if (outcome.kind === "failed") run.failed += 1;
+				log?.(`${name}: ${describeOutcome(outcome)}`);
 			}
 			return run;
 		},

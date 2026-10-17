@@ -89,6 +89,8 @@ function makeFake(
 		rules?: WatchlistSettings;
 		addToQb?: (call: AddCall) => Promise<void>;
 		torrents?: TaggedQbTorrent[];
+		/** Stale snapshot returned by `listWaiting` instead of the live rows. */
+		waitingSnapshot?: TitleWatchRecord[];
 		recordEvent?: (e: RecordWatchEventInput) => Promise<void>;
 	} = {},
 ): Fake {
@@ -100,6 +102,7 @@ function makeFake(
 
 	const deps: WaitingSearchDeps = {
 		listWaiting: async () =>
+			opts.waitingSnapshot ??
 			[...rows.values()].filter((r) => r.watch === "waiting"),
 		listDownloading: async () =>
 			[...rows.values()].filter((r) => r.watch === "downloading"),
@@ -415,6 +418,103 @@ describe("createWaitingSearch.runAll", () => {
 		expect(lines.length).toBe(2);
 		expect(lines[0]).toContain("Сломанный");
 		expect(lines[0]).toContain("search-failed");
+	});
+});
+
+describe("createWaitingSearch stale and repeated runs", () => {
+	test("watch deleted after listWaiting -> not saved back, no add", async () => {
+		const stale = watchRecord();
+		const fake = makeFake({ rows: [], waitingSnapshot: [stale] });
+
+		const run = await createWaitingSearch(fake.deps).runAll();
+
+		expect(fake.rows.has("w1")).toBe(false);
+		expect(fake.adds).toEqual([]);
+		expect(fake.queries).toEqual([]);
+		expect(run).toEqual({ checked: 0, started: 0, failed: 0 });
+	});
+
+	test("watch already downloading when re-read -> skipped, no second download-started", async () => {
+		const live = watchRecord({
+			watch: "downloading",
+			topicUrl: candidate().topicUrl,
+			size: candidate().size,
+		});
+		const fake = makeFake({
+			rows: [live],
+			waitingSnapshot: [watchRecord()],
+		});
+
+		await createWaitingSearch(fake.deps).runAll();
+
+		expect(fake.rows.get("w1")).toEqual(live);
+		expect(fake.adds).toEqual([]);
+		expect(fake.events).toEqual([]);
+	});
+
+	test("watch removed while searching -> no add, not saved back", async () => {
+		const fake = makeFake({ rows: [watchRecord()] });
+		fake.deps.searchTracker = async () => {
+			fake.rows.delete("w1");
+			return [candidate()];
+		};
+
+		const updated = await createWaitingSearch(fake.deps).checkOne("w1");
+
+		expect(updated).toBeNull();
+		expect(fake.rows.has("w1")).toBe(false);
+		expect(fake.adds).toEqual([]);
+		expect(fake.events).toEqual([]);
+	});
+
+	test("transfer for the topic already in qB -> no add, row still started", async () => {
+		const release = candidate();
+		const fake = makeFake({
+			rows: [watchRecord()],
+			torrents: [
+				{
+					hash: "abc",
+					progress: 0.2,
+					stateKind: "downloading",
+					stateLabel: "Загружается",
+					downloadSpeed: 1000,
+					etaSeconds: 60,
+					tags: topicTag(topicIdOf(release.topicUrl)),
+				},
+			],
+		});
+
+		const updated = await createWaitingSearch(fake.deps).checkOne("w1");
+
+		expect(fake.adds).toEqual([]);
+		expect(updated).toMatchObject({
+			watch: "downloading",
+			topicUrl: release.topicUrl,
+			size: release.size,
+		});
+		expect(fake.events.map((e) => e.kind)).toEqual(["download-started"]);
+	});
+
+	test("add-failed event only when the error message changes", async () => {
+		let message = "qBittorrent недоступен";
+		const fake = makeFake({
+			rows: [watchRecord()],
+			addToQb: async () => {
+				throw new Error(message);
+			},
+		});
+		const search = createWaitingSearch(fake.deps);
+
+		await search.checkOne("w1");
+		await search.checkOne("w1");
+		message = "Неверный пароль qBittorrent";
+		await search.checkOne("w1");
+
+		expect(fake.events.map((e) => [e.kind, e.message])).toEqual([
+			["add-failed", "qBittorrent недоступен"],
+			["add-failed", "Неверный пароль qBittorrent"],
+		]);
+		expect(fake.rows.get("w1")?.lastError).toBe("Неверный пароль qBittorrent");
 	});
 });
 
