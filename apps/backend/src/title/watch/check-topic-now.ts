@@ -1,3 +1,4 @@
+import type { TitleKind } from "../title.types";
 import { extractTopicId, topicTag } from "../topic-tag";
 import type { TitleWatchEventKind } from "./title-watch-event";
 import {
@@ -6,13 +7,35 @@ import {
 	type TorrentFingerprint,
 } from "./torrent-fingerprint";
 
-export type WatchState = "tracking" | "paused" | "completed" | "off";
+export type WatchState =
+	| "waiting"
+	| "downloading"
+	| "tracking"
+	| "paused"
+	| "completed"
+	| "off";
 
+/** Why the last waiting search didn't pick a release. */
+export type WaitingOutcome =
+	| "no-releases"
+	| "only-camrip"
+	| "below-resolution"
+	| "no-hdr"
+	| "no-voice"
+	| "search-failed";
+
+/** One TitleWatch per Title; `topicUrl` is attached once a release is found. */
 export type TitleWatchRecord = {
-	topicUrl: string;
+	id: string;
+	topicUrl: string | null;
 	titleId: string | null;
+	kind: TitleKind | null;
 	watch: WatchState;
 	source: "auto-qb" | "manual";
+	season: number | null;
+	titleName: string | null;
+	poster: string | null;
+	year: number | null;
 	size: number | null;
 	registeredAt: string | null;
 	contentHash: string | null;
@@ -20,6 +43,9 @@ export type TitleWatchRecord = {
 	lastCheckedAt: string | null;
 	lastChangedAt: string | null;
 	lastError: string | null;
+	waitingOutcome: WaitingOutcome | null;
+	waitingOutcomeDetail: string | null;
+	createdAt: string;
 };
 
 export type CheckResult =
@@ -41,7 +67,7 @@ export type TopicMeta = {
 
 export type RecordWatchEventInput = {
 	titleId: string | null;
-	topicUrl: string;
+	topicUrl: string | null;
 	kind: TitleWatchEventKind;
 	message: string | null;
 	previousSize?: number;

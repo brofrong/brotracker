@@ -1,4 +1,8 @@
-import type { TitleWatchRecord } from "./watch/check-topic-now";
+import type {
+	TitleWatchRecord,
+	WaitingOutcome,
+	WatchState,
+} from "./watch/check-topic-now";
 import type { EpisodeProgress } from "./watch/episode-progress";
 import type {
 	ProcessWatchTaskResult,
@@ -87,12 +91,18 @@ export type TitleRating =
 	| ImdbRatingStub
 	| KinopoiskRatingStub;
 
-export type TitleWatchState = "tracking" | "paused" | "completed" | "off";
+export type TitleWatchState = WatchState;
 
 export type TitleWatchView = {
-	topicUrl: string;
+	id: string;
+	/** Null while the watch is still waiting for a release. */
+	topicUrl: string | null;
+	kind: TitleKind | null;
 	watch: TitleWatchState;
 	source: "auto-qb" | "manual";
+	season: number | null;
+	waitingOutcome: WaitingOutcome | null;
+	waitingOutcomeDetail: string | null;
 	lastCheckedAt: string | null;
 	lastChangedAt: string | null;
 	lastError: string | null;
@@ -244,6 +254,6 @@ export type TitleDeps = {
 	loadAllLinks: () => Promise<Record<string, string>>;
 	/** TitleWatches that point at a Title (fallback link for tracked series). */
 	listTitledWatches: () => Promise<
-		Array<{ topicUrl: string; titleId: string; qbHash: string | null }>
+		Array<{ topicUrl: string | null; titleId: string; qbHash: string | null }>
 	>;
 };

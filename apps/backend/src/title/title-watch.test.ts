@@ -76,7 +76,13 @@ function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 			return null;
 		},
 		saveWatch: async (record) => {
-			store.set(record.topicUrl, record);
+			// upsert on id, like the real repository
+			for (const [key, value] of store) {
+				if (value.id === record.id) {
+					store.delete(key);
+				}
+			}
+			store.set(record.topicUrl ?? record.id, record);
 		},
 		listQbTorrents: async () => [],
 		now: () => "2026-08-02T14:00:00.000Z",
@@ -174,20 +180,29 @@ describe("title.setWatch", () => {
 		const record = store.get("https://rutracker.org/forum/viewtopic.php?t=55");
 		expect(record).toMatchObject({
 			titleId: "tmdb:tv:1",
+			kind: "tv",
 			watch: "tracking",
 			source: "manual",
 			qbHash: "h1",
+			createdAt: "2026-08-02T14:00:00.000Z",
 		});
+		expect(record?.id).toMatch(/^[0-9a-f-]{36}$/u);
 	});
 
 	test("can pause an existing watch", async () => {
 		const { module, store } = createWatchDeps();
 		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=55";
 		store.set(topicUrl, {
+			id: "watch-1",
 			topicUrl,
 			titleId: "tmdb:tv:1",
+			kind: "tv",
 			watch: "tracking",
 			source: "manual",
+			season: null,
+			titleName: null,
+			poster: null,
+			year: null,
 			size: 1,
 			registeredAt: null,
 			contentHash: null,
@@ -195,14 +210,81 @@ describe("title.setWatch", () => {
 			lastCheckedAt: null,
 			lastChangedAt: null,
 			lastError: null,
+			waitingOutcome: null,
+			waitingOutcomeDetail: null,
+			createdAt: "2026-08-01T00:00:00.000Z",
 		});
 
 		await module.setWatch({ id: "tmdb:tv:1", watch: "paused" });
 		expect(store.get(topicUrl)?.watch).toBe("paused");
+		expect(store.get(topicUrl)?.id).toBe("watch-1");
+	});
+});
+
+describe("title.add", () => {
+	test("creates a tv watch with its own id for a new topic", async () => {
+		const { module, store } = createWatchDeps();
+		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=77";
+
+		await module.add({
+			torrentFileUrl: "https://rutracker.org/forum/dl.php?t=77",
+			kind: "tv",
+			topicUrl,
+			titleId: "tmdb:tv:1",
+		});
+
+		const record = store.get(topicUrl);
+		expect(record).toMatchObject({
+			topicUrl,
+			titleId: "tmdb:tv:1",
+			kind: "tv",
+			watch: "tracking",
+			source: "manual",
+			waitingOutcome: null,
+			createdAt: "2026-08-02T14:00:00.000Z",
+		});
+		expect(record?.id).toMatch(/^[0-9a-f-]{36}$/u);
 	});
 });
 
 describe("title.checkNow", () => {
+	test("fails without enqueueing when the watch has no topic yet", async () => {
+		const { module, store, deps } = createWatchDeps();
+		let enqueued = 0;
+		const enqueue = deps.enqueueWatchTask;
+		deps.enqueueWatchTask = async (input) => {
+			enqueued += 1;
+			return enqueue(input);
+		};
+		store.set("waiting-1", {
+			id: "waiting-1",
+			topicUrl: null,
+			titleId: "tmdb:tv:1",
+			kind: "tv",
+			watch: "waiting",
+			source: "manual",
+			season: 2,
+			titleName: "Show",
+			poster: null,
+			year: 2025,
+			size: null,
+			registeredAt: null,
+			contentHash: null,
+			qbHash: null,
+			lastCheckedAt: null,
+			lastChangedAt: null,
+			lastError: null,
+			waitingOutcome: "no-releases",
+			waitingOutcomeDetail: null,
+			createdAt: "2026-08-01T00:00:00.000Z",
+		});
+
+		const result = await module.checkNow({ id: "tmdb:tv:1" });
+
+		expect(result.status).toBe("failed");
+		expect(enqueued).toBe(0);
+	});
+
 	test("returns failed CheckResult when tracker errors without throwing", async () => {
 		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=55";
 		const { module, store, checkAdapters } = createWatchDeps();
@@ -210,10 +292,16 @@ describe("title.checkNow", () => {
 			throw new Error("boom");
 		};
 		store.set(topicUrl, {
+			id: "watch-2",
 			topicUrl,
 			titleId: "tmdb:tv:1",
+			kind: "tv",
 			watch: "tracking",
 			source: "manual",
+			season: null,
+			titleName: null,
+			poster: null,
+			year: null,
 			size: 1,
 			registeredAt: null,
 			contentHash: "x",
@@ -221,6 +309,9 @@ describe("title.checkNow", () => {
 			lastCheckedAt: null,
 			lastChangedAt: null,
 			lastError: null,
+			waitingOutcome: null,
+			waitingOutcomeDetail: null,
+			createdAt: "2026-08-01T00:00:00.000Z",
 		});
 
 		const result: CheckResult = await module.checkNow({ id: "tmdb:tv:1" });
@@ -237,10 +328,16 @@ describe("title.checkNow", () => {
 		const processedTaskIds: string[] = [];
 		const { module, store, deps } = createWatchDeps();
 		store.set(topicUrl, {
+			id: "watch-3",
 			topicUrl,
 			titleId: "tmdb:tv:1",
+			kind: "tv",
 			watch: "tracking",
 			source: "manual",
+			season: null,
+			titleName: null,
+			poster: null,
+			year: null,
 			size: 4,
 			registeredAt: "2024-01-01T00:00:00.000Z",
 			contentHash:
@@ -249,6 +346,9 @@ describe("title.checkNow", () => {
 			lastCheckedAt: null,
 			lastChangedAt: null,
 			lastError: null,
+			waitingOutcome: null,
+			waitingOutcomeDetail: null,
+			createdAt: "2026-08-01T00:00:00.000Z",
 		});
 
 		const originalEnqueue = deps.enqueueWatchTask;
@@ -307,10 +407,16 @@ describe("title.get watch", () => {
 			}),
 		});
 		store.set(topicUrl, {
+			id: "watch-4",
 			topicUrl,
 			titleId: null,
+			kind: "tv",
 			watch: "tracking",
 			source: "auto-qb",
+			season: null,
+			titleName: null,
+			poster: null,
+			year: null,
 			size: 100,
 			registeredAt: null,
 			contentHash: null,
@@ -318,6 +424,9 @@ describe("title.get watch", () => {
 			lastCheckedAt: null,
 			lastChangedAt: null,
 			lastError: null,
+			waitingOutcome: null,
+			waitingOutcomeDetail: null,
+			createdAt: "2026-08-01T00:00:00.000Z",
 		});
 
 		const title = await module.get({ id: "tmdb:tv:1" });
@@ -332,10 +441,16 @@ describe("title.get watch", () => {
 		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=55";
 		const { store } = createWatchDeps();
 		store.set(topicUrl, {
+			id: "watch-5",
 			topicUrl,
 			titleId: "tmdb:tv:1",
+			kind: "tv",
 			watch: "tracking",
 			source: "manual",
+			season: null,
+			titleName: null,
+			poster: null,
+			year: null,
 			size: 1,
 			registeredAt: null,
 			contentHash: null,
@@ -343,6 +458,9 @@ describe("title.get watch", () => {
 			lastCheckedAt: null,
 			lastChangedAt: null,
 			lastError: null,
+			waitingOutcome: null,
+			waitingOutcomeDetail: null,
+			createdAt: "2026-08-01T00:00:00.000Z",
 		});
 
 		const { module: moduleWithTorrents } = createWatchDeps({
@@ -356,7 +474,13 @@ describe("title.get watch", () => {
 				return null;
 			},
 			saveWatch: async (record) => {
-				store.set(record.topicUrl, record);
+				// upsert on id, like the real repository
+				for (const [key, value] of store) {
+					if (value.id === record.id) {
+						store.delete(key);
+					}
+				}
+				store.set(record.topicUrl ?? record.id, record);
 			},
 			listQbTorrents: async () => [
 				{
@@ -377,10 +501,16 @@ describe("title.get watch", () => {
 		const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=55";
 		const { store } = createWatchDeps();
 		store.set(topicUrl, {
+			id: "watch-6",
 			topicUrl,
 			titleId: "tmdb:tv:1",
+			kind: "tv",
 			watch: "tracking",
 			source: "manual",
+			season: null,
+			titleName: null,
+			poster: null,
+			year: null,
 			size: 1,
 			registeredAt: null,
 			contentHash: null,
@@ -388,6 +518,9 @@ describe("title.get watch", () => {
 			lastCheckedAt: null,
 			lastChangedAt: null,
 			lastError: null,
+			waitingOutcome: null,
+			waitingOutcomeDetail: null,
+			createdAt: "2026-08-01T00:00:00.000Z",
 		});
 
 		const { module: moduleWithTorrents } = createWatchDeps({
@@ -401,7 +534,13 @@ describe("title.get watch", () => {
 				return null;
 			},
 			saveWatch: async (record) => {
-				store.set(record.topicUrl, record);
+				// upsert on id, like the real repository
+				for (const [key, value] of store) {
+					if (value.id === record.id) {
+						store.delete(key);
+					}
+				}
+				store.set(record.topicUrl ?? record.id, record);
 			},
 			listQbTorrents: async () => [
 				{

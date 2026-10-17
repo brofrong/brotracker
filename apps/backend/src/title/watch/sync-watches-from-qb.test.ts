@@ -26,7 +26,13 @@ describe("syncWatchesFromQb", () => {
 			getSeriesPath: async () => "/data/tv",
 			loadWatch: async (topicUrl) => store.get(topicUrl) ?? null,
 			saveWatch: async (record) => {
-				store.set(record.topicUrl, record);
+				// upsert on id, like the real repository
+				for (const [key, value] of store) {
+					if (value.id === record.id) {
+						store.delete(key);
+					}
+				}
+				store.set(record.topicUrl ?? record.id, record);
 			},
 			isCompletePack: () => false,
 			now: () => "2026-08-02T13:00:00.000Z",
@@ -38,9 +44,13 @@ describe("syncWatchesFromQb", () => {
 			topicUrl,
 			watch: "tracking",
 			source: "auto-qb",
+			kind: "tv",
 			qbHash: "h1",
 			size: 1000,
+			waitingOutcome: null,
+			createdAt: "2026-08-02T13:00:00.000Z",
 		});
+		expect(store.get(topicUrl)?.id).toMatch(/^[0-9a-f-]{36}$/u);
 		expect(store.has("https://rutracker.org/forum/viewtopic.php?t=200")).toBe(
 			false,
 		);
@@ -52,10 +62,16 @@ describe("syncWatchesFromQb", () => {
 			[
 				topicUrl,
 				{
+					id: "watch-1",
 					topicUrl,
 					titleId: null,
+					kind: "tv",
 					watch: "paused",
 					source: "manual",
+					season: null,
+					titleName: null,
+					poster: null,
+					year: null,
 					size: 1000,
 					registeredAt: null,
 					contentHash: null,
@@ -63,6 +79,9 @@ describe("syncWatchesFromQb", () => {
 					lastCheckedAt: null,
 					lastChangedAt: null,
 					lastError: null,
+					waitingOutcome: null,
+					waitingOutcomeDetail: null,
+					createdAt: "2026-08-01T00:00:00.000Z",
 				},
 			],
 		]);
@@ -80,7 +99,13 @@ describe("syncWatchesFromQb", () => {
 			getSeriesPath: async () => "/data/tv",
 			loadWatch: async (url) => store.get(url) ?? null,
 			saveWatch: async (record) => {
-				store.set(record.topicUrl, record);
+				// upsert on id, like the real repository
+				for (const [key, value] of store) {
+					if (value.id === record.id) {
+						store.delete(key);
+					}
+				}
+				store.set(record.topicUrl ?? record.id, record);
 			},
 			isCompletePack: () => false,
 			now: () => "2026-08-02T13:00:00.000Z",
@@ -106,7 +131,13 @@ describe("syncWatchesFromQb", () => {
 			getSeriesPath: async () => "/data/tv",
 			loadWatch: async (url) => store.get(url) ?? null,
 			saveWatch: async (record) => {
-				store.set(record.topicUrl, record);
+				// upsert on id, like the real repository
+				for (const [key, value] of store) {
+					if (value.id === record.id) {
+						store.delete(key);
+					}
+				}
+				store.set(record.topicUrl ?? record.id, record);
 			},
 			isCompletePack: (name) => name.includes("10 из 10"),
 			now: () => "2026-08-02T13:00:00.000Z",
@@ -122,10 +153,16 @@ describe("syncWatchesFromQb", () => {
 			[
 				topicUrl,
 				{
+					id: "watch-2",
 					topicUrl,
 					titleId: "tmdb:tv:1",
+					kind: "tv",
 					watch: "tracking",
 					source: "auto-qb",
+					season: null,
+					titleName: null,
+					poster: null,
+					year: null,
 					size: 1000,
 					registeredAt: null,
 					contentHash: null,
@@ -133,6 +170,9 @@ describe("syncWatchesFromQb", () => {
 					lastCheckedAt: null,
 					lastChangedAt: null,
 					lastError: null,
+					waitingOutcome: null,
+					waitingOutcomeDetail: null,
+					createdAt: "2026-08-01T00:00:00.000Z",
 				},
 			],
 		]);
@@ -150,7 +190,13 @@ describe("syncWatchesFromQb", () => {
 			getSeriesPath: async () => "/data/tv",
 			loadWatch: async (url) => store.get(url) ?? null,
 			saveWatch: async (record) => {
-				store.set(record.topicUrl, record);
+				// upsert on id, like the real repository
+				for (const [key, value] of store) {
+					if (value.id === record.id) {
+						store.delete(key);
+					}
+				}
+				store.set(record.topicUrl ?? record.id, record);
 			},
 			isCompletePack: (name) => name.includes("10 из 10"),
 			now: () => "2026-08-02T13:00:00.000Z",
@@ -165,10 +211,16 @@ describe("syncWatchesFromQb", () => {
 			[
 				topicUrl,
 				{
+					id: "watch-3",
 					topicUrl,
 					titleId: "tmdb:tv:1",
+					kind: "tv",
 					watch: "tracking",
 					source: "auto-qb",
+					season: null,
+					titleName: null,
+					poster: null,
+					year: null,
 					size: 1000,
 					registeredAt: null,
 					contentHash: null,
@@ -176,6 +228,9 @@ describe("syncWatchesFromQb", () => {
 					lastCheckedAt: null,
 					lastChangedAt: null,
 					lastError: null,
+					waitingOutcome: null,
+					waitingOutcomeDetail: null,
+					createdAt: "2026-08-01T00:00:00.000Z",
 				},
 			],
 		]);
@@ -194,7 +249,13 @@ describe("syncWatchesFromQb", () => {
 			getSeriesPath: async () => "/data/tv",
 			loadWatch: async (url) => store.get(url) ?? null,
 			saveWatch: async (record) => {
-				store.set(record.topicUrl, record);
+				// upsert on id, like the real repository
+				for (const [key, value] of store) {
+					if (value.id === record.id) {
+						store.delete(key);
+					}
+				}
+				store.set(record.topicUrl ?? record.id, record);
 			},
 			isCompletePack: (name) => name.includes("10 из 10"),
 			now: () => "2026-08-02T13:00:00.000Z",
@@ -212,10 +273,16 @@ describe("syncWatchesFromQb", () => {
 			[
 				topicUrl,
 				{
+					id: "watch-4",
 					topicUrl,
 					titleId: "tmdb:tv:1",
+					kind: "tv",
 					watch: "tracking",
 					source: "auto-qb",
+					season: null,
+					titleName: null,
+					poster: null,
+					year: null,
 					size: 1000,
 					registeredAt: null,
 					contentHash: null,
@@ -223,6 +290,9 @@ describe("syncWatchesFromQb", () => {
 					lastCheckedAt: null,
 					lastChangedAt: null,
 					lastError: null,
+					waitingOutcome: null,
+					waitingOutcomeDetail: null,
+					createdAt: "2026-08-01T00:00:00.000Z",
 				},
 			],
 		]);
@@ -240,7 +310,13 @@ describe("syncWatchesFromQb", () => {
 			getSeriesPath: async () => "/data/tv",
 			loadWatch: async (url) => store.get(url) ?? null,
 			saveWatch: async (record) => {
-				store.set(record.topicUrl, record);
+				// upsert on id, like the real repository
+				for (const [key, value] of store) {
+					if (value.id === record.id) {
+						store.delete(key);
+					}
+				}
+				store.set(record.topicUrl ?? record.id, record);
 			},
 			isCompletePack: (name) => name.includes("10 из 10"),
 			now: () => "2026-08-02T13:00:00.000Z",

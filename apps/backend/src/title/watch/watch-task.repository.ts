@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { db } from "../../db/db";
 import { titleWatches } from "../../db/title/title-watch.schema";
 import { watchTasks } from "../../db/title/watch-task.schema";
@@ -89,11 +89,16 @@ export async function listPendingWatchTaskIds(): Promise<string[]> {
 export async function listTrackingWatches(): Promise<
 	{ topicUrl: string; titleId: string | null }[]
 > {
-	return db
+	const rows = await db
 		.select({
 			topicUrl: titleWatches.topicUrl,
 			titleId: titleWatches.titleId,
 		})
 		.from(titleWatches)
-		.where(eq(titleWatches.watch, "tracking"));
+		.where(
+			and(eq(titleWatches.watch, "tracking"), isNotNull(titleWatches.topicUrl)),
+		);
+	return rows.flatMap((row) =>
+		row.topicUrl ? [{ topicUrl: row.topicUrl, titleId: row.titleId }] : [],
+	);
 }

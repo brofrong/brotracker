@@ -27,7 +27,10 @@ type TitleWatchEventKind =
 	| "torrent-updated"
 	| "progress-changed"
 	| "completed"
-	| "check-failed";
+	| "check-failed"
+	| "download-started"
+	| "downloaded"
+	| "add-failed";
 
 type TitleWatchFeedItemData = {
 	id: string;
@@ -42,12 +45,15 @@ const TITLE_WATCH_EVENT_KEYS: Record<TitleWatchEventKind, string> = {
 	"progress-changed": "titleWatchFeed.events.progressChanged",
 	completed: "titleWatchFeed.events.completed",
 	"check-failed": "titleWatchFeed.events.checkFailed",
+	"download-started": "titleWatchFeed.events.downloadStarted",
+	downloaded: "titleWatchFeed.events.downloaded",
+	"add-failed": "titleWatchFeed.events.addFailed",
 };
 
 function titleWatchEventVariant(
 	kind: TitleWatchEventKind,
 ): "success" | "error" | "accent" {
-	if (kind === "check-failed") return "error";
+	if (kind === "check-failed" || kind === "add-failed") return "error";
 	if (kind === "progress-changed") return "accent";
 	return "success";
 }

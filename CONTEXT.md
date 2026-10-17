@@ -29,7 +29,8 @@ Either `films` or `tv`.
 _Avoid_: movie/series as type names in code
 
 **TitleWatch**:
-The user's follow/tracking link between a Title and a Topic / qBittorrent torrent.
+The user's follow/tracking link between a Title and a Topic / qBittorrent torrent. One TitleWatch per Title; the Topic is attached once a release is found (a watch may start without one).
+States: `waiting` (searching for a release that passes the rules), `downloading` (film release added to qBittorrent), `tracking` (series Topic re-checked nightly), `paused`, `completed`, `off` (switched off; kept so qB sync doesn't recreate it).
 _Avoid_: Follow, subscription (except UI copy)
 
 **WatchTask**:

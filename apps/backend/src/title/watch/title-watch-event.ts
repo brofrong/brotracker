@@ -2,13 +2,17 @@ export type TitleWatchEventKind =
 	| "torrent-updated"
 	| "progress-changed"
 	| "completed"
-	| "check-failed";
+	| "check-failed"
+	| "download-started"
+	| "downloaded"
+	| "add-failed";
 
 export type TitleWatchEvent = {
 	id: string;
 	/** May be null if the topic isn't linked to a Title yet; feed skips these. */
 	titleId: string | null;
-	topicUrl: string;
+	/** Null for events raised before a Topic is attached (e.g. add-failed while waiting). */
+	topicUrl: string | null;
 	kind: TitleWatchEventKind;
 	message: string | null;
 	previousSize: number | null;

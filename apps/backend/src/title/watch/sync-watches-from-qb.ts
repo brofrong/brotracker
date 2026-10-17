@@ -73,10 +73,16 @@ export async function syncWatchesFromQb(
 				continue;
 			}
 			await deps.saveWatch({
+				id: crypto.randomUUID(),
 				topicUrl,
 				titleId: null,
+				kind: "tv",
 				watch: "tracking",
 				source: "auto-qb",
+				season: null,
+				titleName: null,
+				poster: null,
+				year: null,
 				size: torrent.size,
 				registeredAt: null,
 				contentHash: null,
@@ -84,16 +90,17 @@ export async function syncWatchesFromQb(
 				lastCheckedAt: null,
 				lastChangedAt: null,
 				lastError: null,
+				waitingOutcome: null,
+				waitingOutcomeDetail: null,
+				createdAt: deps.now(),
 			});
 			upserted += 1;
 			continue;
 		}
 
-		if (
-			existing.watch === "paused" ||
-			existing.watch === "completed" ||
-			existing.watch === "off"
-		) {
+		// Only tracking watches progress here; paused/completed/off and the
+		// watchlist states (waiting/downloading) just get the live qB hash.
+		if (existing.watch !== "tracking") {
 			await deps.saveWatch({
 				...existing,
 				qbHash: torrent.hash,

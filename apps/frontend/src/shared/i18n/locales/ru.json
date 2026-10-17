@@ -272,7 +272,10 @@
 				"torrentUpdated": "Раздача обновилась",
 				"progressChanged": "Прогресс обновился",
 				"completed": "Все серии скачаны",
-				"checkFailed": "Ошибка проверки"
+				"checkFailed": "Ошибка проверки",
+				"downloadStarted": "Начал качаться",
+				"downloaded": "Скачан",
+				"addFailed": "Не удалось добавить в qBittorrent"
 			}
 		}
 	},

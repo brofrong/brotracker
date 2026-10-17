@@ -3,6 +3,7 @@ import type {
 	RecordWatchEventInput,
 	TitleWatchRecord,
 	TopicMeta,
+	WatchState,
 } from "./check-topic-now";
 import type {
 	ProcessWatchTaskResult,
@@ -13,9 +14,15 @@ import type { SyncQbTorrent } from "./sync-watches-from-qb";
 import type { TitleWatchEvent } from "./title-watch-event";
 
 export type WatchStore = {
+	loadById: (id: string) => Promise<TitleWatchRecord | null>;
 	loadByTopicUrl: (topicUrl: string) => Promise<TitleWatchRecord | null>;
 	loadByTitleId: (titleId: string) => Promise<TitleWatchRecord | null>;
+	/** Upserts on `id`. */
 	save: (record: TitleWatchRecord) => Promise<void>;
+	delete: (id: string) => Promise<void>;
+	listByState: (states: WatchState[]) => Promise<TitleWatchRecord[]>;
+	/** titleId set and watch <> 'off', newest first. */
+	listWatchlist: () => Promise<TitleWatchRecord[]>;
 	listTracking: () => Promise<{ topicUrl: string; titleId: string | null }[]>;
 	appendEvent: (event: TitleWatchEvent) => Promise<void>;
 	listRecentEvents: (limit: number) => Promise<TitleWatchEvent[]>;
@@ -80,6 +87,8 @@ export type {
 	RecordWatchEventInput,
 	TitleWatchRecord,
 	TopicMeta,
+	WaitingOutcome,
+	WatchState,
 } from "./check-topic-now";
 export type {
 	ProcessWatchTaskResult,

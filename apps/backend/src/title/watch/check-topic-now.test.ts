@@ -6,12 +6,20 @@ import {
 	type TitleWatchRecord,
 } from "./check-topic-now";
 
+const TOPIC_URL = "https://rutracker.org/forum/viewtopic.php?t=55";
+
 function watch(partial: Partial<TitleWatchRecord> = {}): TitleWatchRecord {
 	return {
-		topicUrl: "https://rutracker.org/forum/viewtopic.php?t=55",
+		id: "watch-1",
+		topicUrl: TOPIC_URL,
 		titleId: "tmdb:tv:1",
+		kind: "tv",
 		watch: "tracking",
 		source: "manual",
+		season: null,
+		titleName: null,
+		poster: null,
+		year: null,
 		size: 100,
 		registeredAt: "2024-01-01T00:00:00.000Z",
 		contentHash: "oldhash",
@@ -19,6 +27,9 @@ function watch(partial: Partial<TitleWatchRecord> = {}): TitleWatchRecord {
 		lastCheckedAt: null,
 		lastChangedAt: null,
 		lastError: null,
+		waitingOutcome: null,
+		waitingOutcomeDetail: null,
+		createdAt: "2026-08-01T00:00:00.000Z",
 		...partial,
 	};
 }
@@ -32,7 +43,7 @@ describe("checkTopicNow", () => {
 		const replaceCalls: string[] = [];
 
 		const result = await checkTopicNow(
-			{ topicUrl: watch().topicUrl },
+			{ topicUrl: TOPIC_URL },
 			{
 				loadWatch: async () => watch({ contentHash, size: 4 }),
 				saveWatch: async (record) => {
@@ -66,7 +77,7 @@ describe("checkTopicNow", () => {
 		const replaceCalls: string[] = [];
 
 		const result = await checkTopicNow(
-			{ topicUrl: watch().topicUrl },
+			{ topicUrl: TOPIC_URL },
 			{
 				loadWatch: async () => watch({ contentHash: "different", size: 99 }),
 				saveWatch: async (record) => {
@@ -103,7 +114,7 @@ describe("checkTopicNow", () => {
 	test("returns failed without throwing when tracker fetch fails", async () => {
 		const saved: TitleWatchRecord[] = [];
 		const result = await checkTopicNow(
-			{ topicUrl: watch().topicUrl },
+			{ topicUrl: TOPIC_URL },
 			{
 				loadWatch: async () => watch(),
 				saveWatch: async (record) => {
@@ -138,7 +149,7 @@ describe("checkTopicNow", () => {
 		const replaceCalls: string[] = [];
 
 		const result = await checkTopicNow(
-			{ topicUrl: watch().topicUrl },
+			{ topicUrl: TOPIC_URL },
 			{
 				loadWatch: async () => watch({ contentHash: null, size: 100 }),
 				saveWatch: async (record) => {
@@ -169,7 +180,7 @@ describe("checkTopicNow", () => {
 		const events: RecordWatchEventInput[] = [];
 
 		const result = await checkTopicNow(
-			{ topicUrl: watch().topicUrl },
+			{ topicUrl: TOPIC_URL },
 			{
 				loadWatch: async () =>
 					watch({ contentHash: "different", size: 99, titleId: "tmdb:tv:1" }),
@@ -205,7 +216,7 @@ describe("checkTopicNow", () => {
 		const events: RecordWatchEventInput[] = [];
 
 		const result = await checkTopicNow(
-			{ topicUrl: watch().topicUrl },
+			{ topicUrl: TOPIC_URL },
 			{
 				loadWatch: async () => watch({ titleId: "tmdb:tv:1" }),
 				saveWatch: async () => {},
@@ -242,7 +253,7 @@ describe("checkTopicNow", () => {
 			"9f64a747e1b97f131fabb6b447296c9b6f0201e79fb3c5356e6c77e89b6a806a";
 
 		await checkTopicNow(
-			{ topicUrl: watch().topicUrl },
+			{ topicUrl: TOPIC_URL },
 			{
 				loadWatch: async () => watch({ contentHash, size: 4 }),
 				saveWatch: async () => {},
@@ -267,7 +278,7 @@ describe("checkTopicNow", () => {
 
 	test("swallows recordEvent failures without affecting the check result", async () => {
 		const result = await checkTopicNow(
-			{ topicUrl: watch().topicUrl },
+			{ topicUrl: TOPIC_URL },
 			{
 				loadWatch: async () => watch({ contentHash: "different", size: 99 }),
 				saveWatch: async () => {},

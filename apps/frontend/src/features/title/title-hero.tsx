@@ -87,9 +87,27 @@ function FilledStarIcon(props: SVGProps<SVGSVGElement>) {
 }
 
 type TitleWatchView = {
-	topicUrl: string;
-	watch: "tracking" | "paused" | "completed" | "off";
+	id: string;
+	topicUrl: string | null;
+	kind: "films" | "tv" | null;
+	watch:
+		| "waiting"
+		| "downloading"
+		| "tracking"
+		| "paused"
+		| "completed"
+		| "off";
 	source: "auto-qb" | "manual";
+	season: number | null;
+	waitingOutcome:
+		| "no-releases"
+		| "only-camrip"
+		| "below-resolution"
+		| "no-hdr"
+		| "no-voice"
+		| "search-failed"
+		| null;
+	waitingOutcomeDetail: string | null;
 	lastCheckedAt: string | null;
 	lastChangedAt: string | null;
 	lastError: string | null;

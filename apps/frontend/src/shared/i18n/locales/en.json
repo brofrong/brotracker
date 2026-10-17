@@ -272,7 +272,10 @@
 				"torrentUpdated": "Torrent updated",
 				"progressChanged": "Progress updated",
 				"completed": "All episodes downloaded",
-				"checkFailed": "Check failed"
+				"checkFailed": "Check failed",
+				"downloadStarted": "Started downloading",
+				"downloaded": "Downloaded",
+				"addFailed": "Couldn't add to qBittorrent"
 			}
 		}
 	},

@@ -39,6 +39,8 @@ function createInMemoryDeps(
 	const replaceCalls: { topicId: string }[] = [];
 
 	const store: WatchStore = {
+		loadById: async (id) =>
+			[...watches.values()].find((record) => record.id === id) ?? null,
 		loadByTopicUrl: async (topicUrl) => watches.get(topicUrl) ?? null,
 		loadByTitleId: async (titleId) => {
 			for (const record of watches.values()) {
@@ -49,12 +51,33 @@ function createInMemoryDeps(
 			return null;
 		},
 		save: async (record) => {
-			watches.set(record.topicUrl, record);
+			// upsert on id, like the real repository
+			for (const [key, value] of watches) {
+				if (value.id === record.id) {
+					watches.delete(key);
+				}
+			}
+			watches.set(record.topicUrl ?? record.id, record);
 		},
-		listTracking: async () =>
+		delete: async (id) => {
+			for (const [key, value] of watches) {
+				if (value.id === id) {
+					watches.delete(key);
+				}
+			}
+		},
+		listByState: async (states) =>
+			[...watches.values()].filter((record) => states.includes(record.watch)),
+		listWatchlist: async () =>
 			[...watches.values()]
-				.filter((w) => w.watch === "tracking")
-				.map((w) => ({ topicUrl: w.topicUrl, titleId: w.titleId })),
+				.filter((record) => record.titleId !== null && record.watch !== "off")
+				.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
+		listTracking: async () =>
+			[...watches.values()].flatMap((w) =>
+				w.watch === "tracking" && w.topicUrl
+					? [{ topicUrl: w.topicUrl, titleId: w.titleId }]
+					: [],
+			),
 		appendEvent: async (event) => {
 			events.push(event);
 		},
@@ -169,10 +192,16 @@ describe("createWatch", () => {
 	test("processTask drains a pending WatchTask through the bound check path", async () => {
 		const { deps, watches, tasks, replaceCalls } = createInMemoryDeps();
 		watches.set(TOPIC_URL, {
+			id: "watch-1",
 			topicUrl: TOPIC_URL,
 			titleId: "tmdb:tv:1",
+			kind: "tv",
 			watch: "tracking",
 			source: "manual",
+			season: null,
+			titleName: null,
+			poster: null,
+			year: null,
 			size: 1,
 			registeredAt: null,
 			contentHash: null,
@@ -180,6 +209,9 @@ describe("createWatch", () => {
 			lastCheckedAt: null,
 			lastChangedAt: null,
 			lastError: null,
+			waitingOutcome: null,
+			waitingOutcomeDetail: null,
+			createdAt: "2026-08-01T00:00:00.000Z",
 		});
 		tasks.set("task-1", {
 			id: "task-1",
@@ -213,10 +245,16 @@ describe("createWatch", () => {
 	test("enqueueNightly creates pending WatchTasks for tracking watches", async () => {
 		const { deps, watches } = createInMemoryDeps();
 		watches.set(TOPIC_URL, {
+			id: "watch-2",
 			topicUrl: TOPIC_URL,
 			titleId: "tmdb:tv:1",
+			kind: "tv",
 			watch: "tracking",
 			source: "auto-qb",
+			season: null,
+			titleName: null,
+			poster: null,
+			year: null,
 			size: 1000,
 			registeredAt: null,
 			contentHash: null,
@@ -224,12 +262,21 @@ describe("createWatch", () => {
 			lastCheckedAt: null,
 			lastChangedAt: null,
 			lastError: null,
+			waitingOutcome: null,
+			waitingOutcomeDetail: null,
+			createdAt: "2026-08-01T00:00:00.000Z",
 		});
 		watches.set("https://rutracker.org/forum/viewtopic.php?t=200", {
+			id: "watch-3",
 			topicUrl: "https://rutracker.org/forum/viewtopic.php?t=200",
 			titleId: null,
+			kind: "tv",
 			watch: "paused",
 			source: "manual",
+			season: null,
+			titleName: null,
+			poster: null,
+			year: null,
 			size: 1,
 			registeredAt: null,
 			contentHash: null,
@@ -237,6 +284,9 @@ describe("createWatch", () => {
 			lastCheckedAt: null,
 			lastChangedAt: null,
 			lastError: null,
+			waitingOutcome: null,
+			waitingOutcomeDetail: null,
+			createdAt: "2026-08-01T00:00:00.000Z",
 		});
 
 		const watch = createWatch(deps);

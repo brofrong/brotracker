@@ -200,9 +200,14 @@ function toWatchView(
 	qbTorrents: SyncQbTorrent[],
 ): TitleWatchView {
 	return {
+		id: record.id,
 		topicUrl: record.topicUrl,
+		kind: record.kind,
 		watch: record.watch,
 		source: record.source,
+		season: record.season,
+		waitingOutcome: record.waitingOutcome,
+		waitingOutcomeDetail: record.waitingOutcomeDetail,
 		lastCheckedAt: record.lastCheckedAt,
 		lastChangedAt: record.lastChangedAt,
 		lastError: record.lastError,
@@ -232,6 +237,32 @@ export class TitleLinkError extends Error {
 }
 
 export function createTitleModule(deps: TitleDeps) {
+	/** Fresh manual tracking watch for a Topic; callers override what they know. */
+	function newWatchRecord(topicUrl: string, kind: TitleKind): TitleWatchRecord {
+		return {
+			id: crypto.randomUUID(),
+			topicUrl,
+			titleId: null,
+			kind,
+			watch: "tracking",
+			source: "manual",
+			season: null,
+			titleName: null,
+			poster: null,
+			year: null,
+			size: null,
+			registeredAt: null,
+			contentHash: null,
+			qbHash: null,
+			lastCheckedAt: null,
+			lastChangedAt: null,
+			lastError: null,
+			waitingOutcome: null,
+			waitingOutcomeDetail: null,
+			createdAt: deps.now(),
+		};
+	}
+
 	async function resolveWatchForTitle(
 		titleId: string,
 		facet: TitleKind | null,
@@ -481,21 +512,15 @@ export function createTitleModule(deps: TitleDeps) {
 					existing.watch === "off" ||
 					(input.titleId && !existing.titleId)
 				) {
+					const base = existing ?? newWatchRecord(input.topicUrl, "tv");
 					await deps.saveWatch({
-						topicUrl: input.topicUrl,
-						titleId: input.titleId ?? existing?.titleId ?? null,
+						...base,
+						titleId: input.titleId ?? base.titleId,
+						kind: base.kind ?? "tv",
 						watch:
 							existing && existing.watch !== "off"
 								? existing.watch
 								: "tracking",
-						source: existing?.source ?? "manual",
-						size: existing?.size ?? null,
-						registeredAt: existing?.registeredAt ?? null,
-						contentHash: existing?.contentHash ?? null,
-						qbHash: existing?.qbHash ?? null,
-						lastCheckedAt: existing?.lastCheckedAt ?? null,
-						lastChangedAt: existing?.lastChangedAt ?? null,
-						lastError: existing?.lastError ?? null,
 					});
 				}
 			}
@@ -527,18 +552,15 @@ export function createTitleModule(deps: TitleDeps) {
 
 			const previous = existing ?? (await deps.loadWatchByTopicUrl(topicUrl));
 
+			const base = previous ?? newWatchRecord(topicUrl, "tv");
 			await deps.saveWatch({
+				...base,
 				topicUrl,
 				titleId: input.id,
+				kind: base.kind ?? "tv",
 				watch: input.watch,
-				source: previous?.source ?? "manual",
-				size: previous?.size ?? size,
-				registeredAt: previous?.registeredAt ?? null,
-				contentHash: previous?.contentHash ?? null,
-				qbHash: previous?.qbHash ?? qbHash,
-				lastCheckedAt: previous?.lastCheckedAt ?? null,
-				lastChangedAt: previous?.lastChangedAt ?? null,
-				lastError: previous?.lastError ?? null,
+				size: base.size ?? size,
+				qbHash: base.qbHash ?? qbHash,
 			});
 
 			return { ok: true };
@@ -556,21 +578,22 @@ export function createTitleModule(deps: TitleDeps) {
 					};
 				}
 				record = {
-					topicUrl: found.topicUrl,
+					...newWatchRecord(found.topicUrl, "tv"),
 					titleId: input.id,
-					watch: "tracking",
-					source: "manual",
 					size: found.size,
-					registeredAt: null,
-					contentHash: null,
 					qbHash: found.qbHash,
-					lastCheckedAt: null,
-					lastChangedAt: null,
-					lastError: null,
 				};
 				await deps.saveWatch(record);
 			} else if (!record.titleId) {
 				await deps.saveWatch({ ...record, titleId: input.id });
+			}
+
+			if (!record.topicUrl) {
+				return {
+					status: "failed",
+					checkedAt: deps.now(),
+					message: "Раздача для этого тайтла ещё не найдена",
+				};
 			}
 
 			// Same queue path as the nightly worker: create a manual WatchTask
@@ -613,7 +636,7 @@ export function createTitleModule(deps: TitleDeps) {
 				if (watch.qbHash) {
 					watchByHash.set(watch.qbHash, watch.titleId);
 				}
-				const topicId = extractTopicId(watch.topicUrl);
+				const topicId = watch.topicUrl ? extractTopicId(watch.topicUrl) : null;
 				if (topicId) {
 					watchByTopicId.set(topicId, watch.titleId);
 				}

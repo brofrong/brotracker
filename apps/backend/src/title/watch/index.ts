@@ -14,6 +14,10 @@ import { isCompletePack } from "./episode-progress";
 import { createNightlyWorker } from "./nightly-worker";
 import { createReplaceTorrentInQb } from "./replace-torrent-in-qb";
 import {
+	deleteWatch,
+	listWatchesByState,
+	listWatchlistRecords,
+	loadWatchById,
 	loadWatchByTitleId,
 	loadWatchByTopicUrl,
 	saveWatch,
@@ -105,9 +109,13 @@ const replaceInQb = createReplaceTorrentInQb({
 
 export const watch = createWatch({
 	store: {
+		loadById: loadWatchById,
 		loadByTopicUrl: loadWatchByTopicUrl,
 		loadByTitleId: loadWatchByTitleId,
 		save: saveWatch,
+		delete: deleteWatch,
+		listByState: listWatchesByState,
+		listWatchlist: listWatchlistRecords,
 		listTracking: listTrackingWatches,
 		appendEvent: appendWatchEvent,
 		listRecentEvents: listRecentWatchEvents,
@@ -148,6 +156,18 @@ export {
 	type NightlyTickResult,
 	type NightlyWorker,
 } from "./nightly-worker";
-export { listTitledWatches } from "./title-watch.repository";
+export {
+	deleteWatch,
+	listTitledWatches,
+	listWatchesByState,
+	listWatchlistRecords,
+	loadWatchById,
+} from "./title-watch.repository";
 export { createWatch } from "./watch";
-export type { Watch, WatchDeps } from "./watch.types";
+export type {
+	TitleWatchRecord,
+	WaitingOutcome,
+	Watch,
+	WatchDeps,
+	WatchState,
+} from "./watch.types";
