@@ -7,6 +7,7 @@ import {
 	stageOf,
 	type WatchlistItem,
 	waitingStatus,
+	waitingStatusDisplay,
 } from "./watchlist-view";
 
 type Watch = WatchlistItem["watch"];
@@ -171,5 +172,72 @@ describe("formatRelativeTime", () => {
 		expect(formatRelativeTime("2026-10-17T11:59:50Z", now, "en-US")).toBe(
 			"now",
 		);
+	});
+});
+
+describe("waitingStatusDisplay", () => {
+	const COPY: Record<string, string> = {
+		"outcome.no-releases": "Раздач пока нет",
+		"outcome.below-resolution": "Есть только {{best}} — ниже порога",
+		"outcome.belowResolutionUnknown":
+			"Есть только раздачи без указанного разрешения — пропущены",
+		"outcome.search-failed": "Трекеры недоступны — повторю позже",
+		notChecked: "ещё не проверялось",
+	};
+	const fakeT = (key: string, options?: Record<string, unknown>) =>
+		(COPY[key] ?? key).replace(/\{\{(\w+)\}\}/g, (_, name: string) =>
+			String(options?.[name] ?? ""),
+		);
+
+	it("names the best resolution when it is known", () => {
+		expect(
+			waitingStatusDisplay(
+				{ kind: "outcome", outcome: "below-resolution", detail: "720p" },
+				fakeT,
+			),
+		).toEqual({ text: "Есть только 720p — ниже порога", variant: "warning" });
+	});
+
+	it("says the resolution is unknown when there is no detail", () => {
+		expect(
+			waitingStatusDisplay(
+				{ kind: "outcome", outcome: "below-resolution", detail: null },
+				fakeT,
+			),
+		).toEqual({
+			text: "Есть только раздачи без указанного разрешения — пропущены",
+			variant: "warning",
+		});
+	});
+
+	it("marks a search failure as an error", () => {
+		expect(
+			waitingStatusDisplay(
+				{ kind: "outcome", outcome: "search-failed", detail: null },
+				fakeT,
+			),
+		).toEqual({ text: "Трекеры недоступны — повторю позже", variant: "error" });
+	});
+
+	it("shows other outcomes as warnings", () => {
+		expect(
+			waitingStatusDisplay(
+				{ kind: "outcome", outcome: "no-releases", detail: null },
+				fakeT,
+			),
+		).toEqual({ text: "Раздач пока нет", variant: "warning" });
+	});
+
+	it("shows the raw error message", () => {
+		expect(
+			waitingStatusDisplay({ kind: "error", message: "qB down" }, fakeT),
+		).toEqual({ text: "qB down", variant: "error" });
+	});
+
+	it("shows not checked yet as neutral", () => {
+		expect(waitingStatusDisplay({ kind: "unchecked" }, fakeT)).toEqual({
+			text: "ещё не проверялось",
+			variant: "neutral",
+		});
 	});
 });

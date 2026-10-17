@@ -1,10 +1,13 @@
 "use client";
 
 import { useAppShellMobile } from "@astryxdesign/core/AppShell";
+import { AspectRatio } from "@astryxdesign/core/AspectRatio";
 import { Badge } from "@astryxdesign/core/Badge";
+import { Center } from "@astryxdesign/core/Center";
 import type { DropdownMenuOption } from "@astryxdesign/core/DropdownMenu";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Heading } from "@astryxdesign/core/Heading";
+import { Icon } from "@astryxdesign/core/Icon";
 import { List, ListItem } from "@astryxdesign/core/List";
 import { MoreMenu } from "@astryxdesign/core/MoreMenu";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
@@ -14,11 +17,17 @@ import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Tab, TabList } from "@astryxdesign/core/TabList";
 import { Text } from "@astryxdesign/core/Text";
-import { Thumbnail } from "@astryxdesign/core/Thumbnail";
 import { useToast } from "@astryxdesign/core/Toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ExternalLink, Pause, Play, RefreshCw, Trash2 } from "lucide-react";
+import {
+	ExternalLink,
+	ImageOff,
+	Pause,
+	Play,
+	RefreshCw,
+	Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocale } from "#/shared/i18n/locale-provider";
@@ -33,11 +42,14 @@ import {
 	type WatchlistItem,
 	type WatchlistStage,
 	waitingStatus,
+	waitingStatusDisplay,
 } from "./watchlist-view";
 
 type StageFilter = "all" | WatchlistStage;
 
 const POLL_MS = 5_000;
+/** Poster thumbnail width in a row (2:3, like the title page poster). */
+const POSTER_WIDTH = 40;
 
 function isStageFilter(value: string): value is StageFilter {
 	return value === "all" || (STAGE_ORDER as readonly string[]).includes(value);
@@ -168,20 +180,7 @@ function DownloadingStatus({ item }: { item: WatchlistItem }) {
 function WaitingStatusLine({ item }: { item: WatchlistItem }) {
 	const { t } = useTranslation("watchlist");
 	const { bcp47 } = useLocale();
-	const status = waitingStatus(item);
-
-	let text: string;
-	let variant: "neutral" | "warning" | "error";
-	if (status.kind === "outcome") {
-		text = t(`outcome.${status.outcome}`, { best: status.detail ?? "SD" });
-		variant = status.outcome === "search-failed" ? "error" : "warning";
-	} else if (status.kind === "error") {
-		text = status.message;
-		variant = "error";
-	} else {
-		text = t("notChecked");
-		variant = "neutral";
-	}
+	const { text, variant } = waitingStatusDisplay(waitingStatus(item), t);
 
 	const checked = item.lastCheckedAt
 		? t("checkedAt", {
@@ -261,6 +260,26 @@ function StatusLine({
 	}
 }
 
+function Poster({ name, src }: { name: string; src: string | null }) {
+	return (
+		<VStack className="shrink-0" width={POSTER_WIDTH}>
+			<AspectRatio
+				className="overflow-hidden rounded-md bg-muted"
+				fit="cover"
+				ratio={2 / 3}
+			>
+				{src ? (
+					<img alt={name} src={src} />
+				) : (
+					<Center height="100%" width="100%">
+						<Icon color="secondary" icon={ImageOff} size="sm" />
+					</Center>
+				)}
+			</AspectRatio>
+		</VStack>
+	);
+}
+
 function WatchlistRow({
 	item,
 	menuItems,
@@ -294,7 +313,7 @@ function WatchlistRow({
 					name
 				)
 			}
-			startContent={<Thumbnail alt={name} src={item.poster ?? undefined} />}
+			startContent={<Poster name={name} src={item.poster} />}
 		/>
 	);
 }
@@ -340,6 +359,7 @@ export function WatchlistPage() {
 					<>
 						<HStack isScrollable width="100%">
 							<TabList
+								aria-label={t("filter.label")}
 								onChange={(value) => {
 									if (isStageFilter(value)) {
 										setFilter(value);
@@ -372,7 +392,7 @@ export function WatchlistPage() {
 						</HStack>
 
 						{visibleStages.length === 0 ? (
-							<EmptyState title={t("empty")} />
+							<EmptyState title={t("emptyFilter")} />
 						) : (
 							<VStack gap={4} width="100%">
 								{visibleStages.map((stage) => (

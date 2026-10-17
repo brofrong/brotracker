@@ -690,6 +690,7 @@
 		"loading": "Loading watchlist",
 		"loadFailed": "Couldn't load the watchlist",
 		"filter": {
+			"label": "Filter by stage",
 			"all": "All"
 		},
 		"checkedAt": "checked {{time}}",
@@ -709,7 +710,8 @@
 			"below-resolution": "Only {{best}} — below your minimum",
 			"no-hdr": "No HDR releases",
 			"no-voice": "No Russian voice-over",
-			"search-failed": "Trackers unavailable — will retry"
+			"search-failed": "Trackers unavailable — will retry",
+			"belowResolutionUnknown": "Only releases with unknown resolution — skipped"
 		},
 		"menu": {
 			"label": "Actions",
@@ -719,6 +721,7 @@
 			"pause": "Pause",
 			"resume": "Resume"
 		},
-		"empty": "Nothing on your watchlist yet"
+		"empty": "Nothing on your watchlist yet",
+		"emptyFilter": "Nothing here"
 	}
 }

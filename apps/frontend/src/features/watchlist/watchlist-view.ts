@@ -83,6 +83,33 @@ export function waitingStatus(
 	return { kind: "unchecked" };
 }
 
+export type WaitingStatusDisplay = {
+	text: string;
+	variant: "neutral" | "warning" | "error";
+};
+
+/** Copy + StatusDot variant for a waiting row; keys live in the `watchlist` namespace. */
+export function waitingStatusDisplay(
+	status: WaitingStatus,
+	t: (key: string, options?: Record<string, unknown>) => string,
+): WaitingStatusDisplay {
+	if (status.kind === "error") {
+		return { text: status.message, variant: "error" };
+	}
+	if (status.kind === "unchecked") {
+		return { text: t("notChecked"), variant: "neutral" };
+	}
+	const variant = status.outcome === "search-failed" ? "error" : "warning";
+	if (status.outcome === "below-resolution" && status.detail == null) {
+		// No release had a parsed resolution — naming one would be false.
+		return { text: t("outcome.belowResolutionUnknown"), variant };
+	}
+	return {
+		text: t(`outcome.${status.outcome}`, { best: status.detail }),
+		variant,
+	};
+}
+
 const RELATIVE_UNITS: ReadonlyArray<[Intl.RelativeTimeFormatUnit, number]> = [
 	["year", 365 * 24 * 3600],
 	["month", 30 * 24 * 3600],
