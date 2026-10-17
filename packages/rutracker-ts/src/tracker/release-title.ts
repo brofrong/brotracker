@@ -133,10 +133,12 @@ const SCENE_SEASON_S_TOKEN_REGEX = tokenRegex("S(\\d+)(?:E\\d+)?", "u");
 type SeasonCandidate = { index: number; start: number; end: number | null };
 
 function findSeason(title: string): number | null {
-	let best: SeasonCandidate | null = null;
-	const consider = (index: number, start: number, end: number | null) => {
-		if (best === null || index < best.index) best = { index, start, end };
-	};
+	// Collected into a plain array (rather than a `let best` mutated from a closure) so
+	// the final narrowing below is a normal, same-scope check: TS's control-flow analysis
+	// doesn't track reassignments of an outer `let` made from inside a nested function,
+	// and widens it back to its declared type (here, effectively `null`) at the point of
+	// use, which made `best.end`/`best.start` type as `never` after the `!best` guard.
+	const candidates: SeasonCandidate[] = [];
 
 	// Rule 1: a " / "-segment that starts with a season marker.
 	const segments = title.split(SEGMENT_SEPARATOR);
@@ -147,11 +149,11 @@ function findSeason(title: string): number | null {
 		for (const regex of SEGMENT_SEASON_REGEXES) {
 			const match = regex.exec(trimmed);
 			if (match) {
-				consider(
-					segmentStart,
-					Number(match[1]),
-					match[2] !== undefined ? Number(match[2]) : null,
-				);
+				candidates.push({
+					index: segmentStart,
+					start: Number(match[1]),
+					end: match[2] !== undefined ? Number(match[2]) : null,
+				});
 			}
 		}
 		offset += segment.length + SEGMENT_SEPARATOR.length;
@@ -165,11 +167,11 @@ function findSeason(title: string): number | null {
 			for (const regex of BRACKETED_SEASON_REGEXES) {
 				const match = regex.exec(inner);
 				if (match) {
-					consider(
-						innerStart + match.index,
-						Number(match[1]),
-						match[2] !== undefined ? Number(match[2]) : null,
-					);
+					candidates.push({
+						index: innerStart + match.index,
+						start: Number(match[1]),
+						end: match[2] !== undefined ? Number(match[2]) : null,
+					});
 				}
 			}
 		}
@@ -179,10 +181,21 @@ function findSeason(title: string): number | null {
 	// " / " segments at all (so "Show / ... / S03 / ..." still only matches via rule 1).
 	if (segments.length === 1) {
 		const match = SCENE_SEASON_S_TOKEN_REGEX.exec(title);
-		if (match) consider(match.index, Number(match[1]), null);
+		if (match) {
+			candidates.push({
+				index: match.index,
+				start: Number(match[1]),
+				end: null,
+			});
+		}
 	}
 
-	if (!best) return null;
+	if (candidates.length === 0) return null;
+	// The match that starts earliest in the title wins; ties keep the earlier-pushed
+	// candidate (rule 1 segments in order, then rule 2 groups in order, then rule 3).
+	const best = candidates.reduce((leftmost, candidate) =>
+		candidate.index < leftmost.index ? candidate : leftmost,
+	);
 	// A range ("Сезон: 1-10") or multi-season pack has no single season.
 	if (best.end !== null) return null;
 	return best.start;
