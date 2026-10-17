@@ -313,3 +313,11 @@ for **90 days**. The home feed keeps working.
 - `hasRussianVoice` currently counts RuTor `| P1` / `| P2` (one-/two-voice) and amateur multi-voice; the user's rule is dub or professional multi-voice only. Tighten before auto-download uses the flag, against a fixture file of real tracker titles.
 - `[1920×1080, …]` (Unicode `×`) can be read as year 1920. Cover in the same fixtures.
 - The title-page query includes the year; the waiting worker should also query without the year (or ±1) so a premiere-year mismatch doesn't hide releases the ±1 matcher would accept.
+
+## Carry-overs from part 2 (follow-ups)
+
+- Parser drops the season for list forms like «Сезон 3, 1-8 серии из 10» / «Season 2, 10 episodes» (fails safe: the watch keeps waiting); other pack shapes (`Сезон: 1 и 2`, `S01, S02`) still read as season 1.
+- Waiting for the **next** season of a series that is already followed or completed isn't possible yet (one watch per Title).
+- The «Жду» button shows «Качается» without a percentage.
+- The legacy-name backfill on /watchlist retries failing rows on every load (capped at 5).
+- Deploy note: after the `title_watches` migration, rolling back to an older image breaks watch saves (old code inserts rows without `id`).
