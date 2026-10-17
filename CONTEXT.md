@@ -40,6 +40,10 @@ _Avoid_: Job, cron item (say WatchTask)
 A recorded outcome from a watch check (found, replaced, unchanged, failed).
 _Avoid_: Log line, notification (domain event first)
 
+**Release match**:
+Whether a tracker release belongs to a Title: one release name equals one Title name after normalization, and the year fits.
+_Avoid_: fuzzy match, similarity.
+
 ### Workers
 
 **Worker**:
