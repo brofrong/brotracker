@@ -60,6 +60,49 @@ describe("parseReleaseTitle: names and year", () => {
 			["Superman", "Супермен"],
 			1978,
 		],
+		// Numeric film names: a year-looking first segment is a name, not the year.
+		[
+			"1917 / 1917 (Сэм Мендес / Sam Mendes) [2019, Великобритания, США, BDRip 1080p] Dub",
+			["1917", "1917"],
+			2019,
+		],
+		["1917 / 1917 / 2019 / ДБ / BDRip (1080p)", ["1917", "1917"], 2019],
+		[
+			"2012 / 2012 (Роланд Эммерих / Roland Emmerich) [2009, США, BDRip 1080p] Dub",
+			["2012", "2012"],
+			2009,
+		],
+		["2012 / 2012 / 2009 / ДБ / BDRip (1080p)", ["2012", "2012"], 2009],
+		[
+			"1984 / Nineteen Eighty-Four (Майкл Рэдфорд / Michael Radford) [1984, Великобритания, BDRip 1080p] MVO",
+			["1984", "Nineteen Eighty-Four"],
+			1984,
+		],
+		[
+			"1984 / Nineteen Eighty-Four / 1984 / ПМ / BDRip (1080p)",
+			["1984", "Nineteen Eighty-Four"],
+			1984,
+		],
+		["1917.2019.1080p.BluRay.x264", ["1917"], 2019],
+		// RuTor: a bracket before the (YYYY) group.
+		[
+			"Слово пацана. Кровь на асфальте [01-08 из 08] (2023) WEB-DL 1080p",
+			["Слово пацана. Кровь на асфальте"],
+			2023,
+		],
+		[
+			"Слово пацана. Кровь на асфальте [S01] (2023) WEB-DL 1080p",
+			["Слово пацана. Кровь на асфальте"],
+			2023,
+		],
+		// A year only in a later bracket.
+		[
+			"Слово пацана / The Boy's Word [Сезон 1] [2023, Россия, WEB-DL 1080p]",
+			["Слово пацана", "The Boy's Word"],
+			2023,
+		],
+		// Scene name: prefer the last year, a number in the name stays.
+		["Blade.Runner.2049.2017.1080p.BluRay.x264", ["Blade Runner 2049"], 2017],
 	])("parses %p", (title, names, year) => {
 		const result = parseReleaseTitle(title);
 		expect(result.names).toEqual(names);
@@ -75,6 +118,19 @@ describe("parseReleaseTitle: isCamrip", () => {
 		["Одиссея / The Odyssey (2026) экранка, звук отличный", true],
 		["Одиссея / The Odyssey [2010, BDRip 1080p, DTS-HD MA]", false],
 		["Одиссея / The Odyssey [2026, WEB-DL 1080p]", false],
+		["Одиссея / The Odyssey [2026, HDCAMRip]", true],
+		["Одиссея / The Odyssey [2026, Camrip]", true],
+		["Одиссея / The Odyssey [2026, CAMRIP]", true],
+		["Одиссея / The Odyssey [2026, TELESYNC]", true],
+		["Одиссея / The Odyssey [2026, Telesync]", true],
+		["Одиссея / The Odyssey [2026, TeleSynch]", true],
+		["Одиссея / The Odyssey [2026, TSRip]", true],
+		["Одиссея / The Odyssey (2026) HDTSRip | D", true],
+		["Одиссея / The Odyssey / 2026 / ДБ / CAMRip", true],
+		["Odyssey CAMRip", true],
+		// Tokens inside the name don't count.
+		["TS-17 / TS-17 [2024, WEB-DL]", false],
+		["Camrip / Камрип [2024, WEB-DL 1080p]", false],
 	])("%p -> isCamrip=%p", (title, expected) => {
 		expect(parseReleaseTitle(title).isCamrip).toBe(expected);
 	});
@@ -112,6 +168,18 @@ describe("parseReleaseTitle: hasRussianVoice", () => {
 		["Одиссея / The Odyssey [2026, WEB-DL 1080p] Original + Sub", false],
 		["Одиссея / The Odyssey [2024, BDRip] AVO", false],
 		["Ампм / Ampm [2024, WEB-DL]", false],
+		["Одиссея / The Odyssey [2024, BDRip] Dub (Ukr) + Original", false],
+		["Одиссея / The Odyssey [2024, BDRip] MVO (Eng) + Sub", false],
+		["Одиссея / The Odyssey [2024, BDRip] Dub Ukr + Original", false],
+		["Одиссея / The Odyssey [2024, BDRip] Dub (Ukr) + MVO", true],
+		["Одиссея / The Odyssey [2024, BDRip] Dub (Rus) + Original", true],
+		["Одиссея / The Odyssey (2026) WEB-DL 1080p | P1", true],
+		["Одиссея / The Odyssey (2026) WEB-DL 1080p | P2", true],
+		["Одиссея / The Odyssey (2026) WEB-DL 1080p | Лицензия", true],
+		["Одиссея / The Odyssey [2024, BDRip] Дублированный", true],
+		["Одиссея / The Odyssey [2025, BDRip] многоголосый закадровый", true],
+		// Tokens inside the name don't count.
+		["ПМ / PM [2024, WEB-DL] Original + Sub", false],
 	])("%p -> hasRussianVoice=%p", (title, expected) => {
 		expect(parseReleaseTitle(title).hasRussianVoice).toBe(expected);
 	});
