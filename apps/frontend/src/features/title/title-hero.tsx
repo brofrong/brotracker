@@ -1,5 +1,6 @@
 "use client";
 
+import { useAppShellMobile } from "@astryxdesign/core/AppShell";
 import { AspectRatio } from "@astryxdesign/core/AspectRatio";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Banner } from "@astryxdesign/core/Banner";
@@ -17,11 +18,15 @@ import { Text } from "@astryxdesign/core/Text";
 import { useToast } from "@astryxdesign/core/Toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ImageOff, Star } from "lucide-react";
-import type { SVGProps } from "react";
+import { type SVGProps, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AppLocale } from "#/shared/i18n/locale";
 import { useLocale } from "#/shared/i18n/locale-provider";
 import { trpc } from "#/shared/lib/trpc";
+
+const MOBILE_POSTER_WIDTH = 96;
+const DESKTOP_POSTER_WIDTH = 208;
+const OVERVIEW_CLAMP_LINES = 3;
 
 function formatRuntime(
 	minutes: number,
@@ -256,6 +261,8 @@ export type TitleHeroProps = {
 		runtimeMinutes: number | null;
 		status: string | null;
 		seasons: number | null;
+		originalName: string | null;
+		alternativeNames: string[];
 	};
 	crewGroups: Array<{ job: string; names: string[] }>;
 	ratings: Array<{
@@ -283,146 +290,224 @@ export function TitleHero({
 	const { t } = useTranslation("title");
 	const { t: tCommon } = useTranslation("common");
 	const { locale, bcp47 } = useLocale();
+	const { isMobile } = useAppShellMobile();
+	const [isOverviewExpanded, setIsOverviewExpanded] = useState(false);
 	const progressLabel = episodeProgressLabel(watch, t);
 
-	return (
-		<HStack gap={6} vAlign="center" wrap="nowrap" width="100%">
-			<VStack className="shrink-0" width={208}>
-				{meta.poster ? (
-					<VStack
-						aria-label={t("detail.openPosterAria", { title: titleName })}
-						as="button"
-						className="cursor-pointer"
-						onClick={onOpenPoster}
-						width="100%"
-					>
-						<AspectRatio
-							className="overflow-hidden rounded-lg shadow-md"
-							fit="cover"
-							ratio={2 / 3}
-						>
-							<img alt={titleName} src={meta.poster} />
-						</AspectRatio>
-					</VStack>
-				) : (
+	const showOriginalName =
+		meta.originalName != null &&
+		meta.originalName.trim().length > 0 &&
+		meta.originalName.toLowerCase() !== titleName.toLowerCase();
+	const showAlsoKnownAs = meta.alternativeNames.length > 0;
+
+	const poster = (width: number) => (
+		<VStack className="shrink-0" width={width}>
+			{meta.poster ? (
+				<VStack
+					aria-label={t("detail.openPosterAria", { title: titleName })}
+					as="button"
+					className="cursor-pointer"
+					onClick={onOpenPoster}
+					width="100%"
+				>
 					<AspectRatio
 						className="overflow-hidden rounded-lg shadow-md"
 						fit="cover"
 						ratio={2 / 3}
 					>
-						<Center height="100%" width="100%">
-							<ImageOff aria-hidden size={48} strokeWidth={1.5} />
-						</Center>
+						<img alt={titleName} src={meta.poster} />
 					</AspectRatio>
-				)}
+				</VStack>
+			) : (
+				<AspectRatio
+					className="overflow-hidden rounded-lg shadow-md"
+					fit="cover"
+					ratio={2 / 3}
+				>
+					<Center height="100%" width="100%">
+						<ImageOff aria-hidden size={48} strokeWidth={1.5} />
+					</Center>
+				</AspectRatio>
+			)}
+		</VStack>
+	);
+
+	const badges = (
+		<HStack gap={2} vAlign="center" wrap="wrap">
+			{facet ? (
+				<Badge
+					label={facet === "films" ? t("detail.film") : t("detail.series")}
+					variant="teal"
+				/>
+			) : null}
+			{meta.year != null ? <Text type="supporting">{meta.year}</Text> : null}
+			{facet === "films" && meta.runtimeMinutes != null ? (
+				<Text type="supporting">
+					{formatRuntime(meta.runtimeMinutes, tCommon)}
+				</Text>
+			) : null}
+			{facet === "tv" && meta.status ? (
+				<Text type="supporting">{meta.status}</Text>
+			) : null}
+			{facet === "tv" && meta.seasons != null ? (
+				<Text type="supporting">
+					{t("detail.seasonsCount", { count: meta.seasons })}
+				</Text>
+			) : null}
+			{facet === "tv" ? (
+				<HStack gap={1} vAlign="center">
+					<StatusDot
+						label={progressLabel}
+						variant={episodeProgressVariant(watch)}
+					/>
+					<Text type="supporting">{progressLabel}</Text>
+				</HStack>
+			) : null}
+		</HStack>
+	);
+
+	const namesBlock =
+		showOriginalName || showAlsoKnownAs ? (
+			<VStack gap={0.5}>
+				{showOriginalName ? (
+					<Text type="supporting">
+						{t("detail.originalName")}: {meta.originalName}
+					</Text>
+				) : null}
+				{showAlsoKnownAs ? (
+					<Text type="supporting">
+						{t("detail.alsoKnownAs")}: {meta.alternativeNames.join(" · ")}
+					</Text>
+				) : null}
 			</VStack>
+		) : null;
+
+	const genresText =
+		meta.genres.length > 0 ? (
+			<Text type="supporting">{meta.genres.join(" · ")}</Text>
+		) : null;
+
+	const crewBlock =
+		crewGroups.length > 0 ? (
+			<VStack gap={1}>
+				<Text type="supporting">{t("detail.crewHeading")}</Text>
+				{crewGroups.map((group) => (
+					<Text key={group.job} type="body">
+						<Text color="secondary" type="inherit">
+							{group.job}:{" "}
+						</Text>
+						{group.names.join(", ")}
+					</Text>
+				))}
+			</VStack>
+		) : null;
+
+	const ratingsBlock = hasRatings ? (
+		<HStack gap={5} wrap="wrap">
+			{ratings.map((rating) =>
+				rating.status === "ok" && rating.value != null ? (
+					<VStack gap={0.5} key={rating.source}>
+						<HStack gap={1} vAlign="center">
+							<Icon
+								color={ratingColor(rating.value)}
+								icon={FilledStarIcon}
+								size="sm"
+							/>
+							<Text
+								className={ratingTextClass(rating.value)}
+								hasTabularNumbers
+								size="2xl"
+								weight="bold"
+							>
+								{rating.value.toFixed(1)}
+							</Text>
+						</HStack>
+						<Text type="supporting">
+							{rating.voteCount != null
+								? t("detail.ratingWithVotes", {
+										source: t(`detail.ratingSources.${rating.source}`, {
+											defaultValue: rating.source,
+										}),
+										count: rating.voteCount.toLocaleString(bcp47),
+										votesWord: votesWord(rating.voteCount, locale, tCommon),
+									})
+								: t(`detail.ratingSources.${rating.source}`, {
+										defaultValue: rating.source,
+									})}
+						</Text>
+					</VStack>
+				) : null,
+			)}
+		</HStack>
+	) : null;
+
+	const watchBlock =
+		facet === "tv" ? <TitleWatchPanel titleId={titleId} watch={watch} /> : null;
+
+	if (isMobile) {
+		return (
+			<VStack gap={3} width="100%">
+				<HStack gap={3} vAlign="end" wrap="nowrap" width="100%">
+					{poster(MOBILE_POSTER_WIDTH)}
+					<StackItem className="min-w-0" size="fill">
+						<VStack gap={1}>
+							<Heading level={1}>{titleName}</Heading>
+							{badges}
+							{genresText}
+						</VStack>
+					</StackItem>
+				</HStack>
+
+				{namesBlock}
+
+				{ratingsBlock}
+
+				{meta.overview ? (
+					<VStack gap={1}>
+						<Text
+							maxLines={isOverviewExpanded ? 0 : OVERVIEW_CLAMP_LINES}
+							type="body"
+						>
+							{meta.overview}
+						</Text>
+						<Button
+							label={
+								isOverviewExpanded ? t("detail.showLess") : t("detail.showMore")
+							}
+							onClick={() => setIsOverviewExpanded((expanded) => !expanded)}
+							size="sm"
+							variant="ghost"
+						/>
+					</VStack>
+				) : null}
+
+				{crewBlock}
+
+				{watchBlock}
+			</VStack>
+		);
+	}
+
+	return (
+		<HStack gap={6} vAlign="center" wrap="nowrap" width="100%">
+			{poster(DESKTOP_POSTER_WIDTH)}
 
 			<StackItem className="min-w-0" size="fill">
 				<VStack gap={3} width="100%">
 					<VStack gap={1}>
 						<Heading level={1}>{titleName}</Heading>
-						<HStack gap={2} vAlign="center" wrap="wrap">
-							{facet ? (
-								<Badge
-									label={
-										facet === "films" ? t("detail.film") : t("detail.series")
-									}
-									variant="teal"
-								/>
-							) : null}
-							{meta.year != null ? (
-								<Text type="supporting">{meta.year}</Text>
-							) : null}
-							{facet === "films" && meta.runtimeMinutes != null ? (
-								<Text type="supporting">
-									{formatRuntime(meta.runtimeMinutes, tCommon)}
-								</Text>
-							) : null}
-							{facet === "tv" && meta.status ? (
-								<Text type="supporting">{meta.status}</Text>
-							) : null}
-							{facet === "tv" && meta.seasons != null ? (
-								<Text type="supporting">
-									{t("detail.seasonsCount", { count: meta.seasons })}
-								</Text>
-							) : null}
-							{facet === "tv" ? (
-								<HStack gap={1} vAlign="center">
-									<StatusDot
-										label={progressLabel}
-										variant={episodeProgressVariant(watch)}
-									/>
-									<Text type="supporting">{progressLabel}</Text>
-								</HStack>
-							) : null}
-						</HStack>
-						{meta.genres.length > 0 ? (
-							<Text type="supporting">{meta.genres.join(" · ")}</Text>
-						) : null}
+						{badges}
+						{namesBlock}
+						{genresText}
 					</VStack>
 
 					{meta.overview ? <Text type="body">{meta.overview}</Text> : null}
 
-					{crewGroups.length > 0 ? (
-						<VStack gap={1}>
-							<Text type="supporting">{t("detail.crewHeading")}</Text>
-							{crewGroups.map((group) => (
-								<Text key={group.job} type="body">
-									<Text color="secondary" type="inherit">
-										{group.job}:{" "}
-									</Text>
-									{group.names.join(", ")}
-								</Text>
-							))}
-						</VStack>
-					) : null}
+					{crewBlock}
 
-					{hasRatings ? (
-						<HStack gap={5} wrap="wrap">
-							{ratings.map((rating) =>
-								rating.status === "ok" && rating.value != null ? (
-									<VStack gap={0.5} key={rating.source}>
-										<HStack gap={1} vAlign="center">
-											<Icon
-												color={ratingColor(rating.value)}
-												icon={FilledStarIcon}
-												size="sm"
-											/>
-											<Text
-												className={ratingTextClass(rating.value)}
-												hasTabularNumbers
-												size="2xl"
-												weight="bold"
-											>
-												{rating.value.toFixed(1)}
-											</Text>
-										</HStack>
-										<Text type="supporting">
-											{rating.voteCount != null
-												? t("detail.ratingWithVotes", {
-														source: t(`detail.ratingSources.${rating.source}`, {
-															defaultValue: rating.source,
-														}),
-														count: rating.voteCount.toLocaleString(bcp47),
-														votesWord: votesWord(
-															rating.voteCount,
-															locale,
-															tCommon,
-														),
-													})
-												: t(`detail.ratingSources.${rating.source}`, {
-														defaultValue: rating.source,
-													})}
-										</Text>
-									</VStack>
-								) : null,
-							)}
-						</HStack>
-					) : null}
+					{ratingsBlock}
 
-					{facet === "tv" ? (
-						<TitleWatchPanel titleId={titleId} watch={watch} />
-					) : null}
+					{watchBlock}
 				</VStack>
 			</StackItem>
 		</HStack>
