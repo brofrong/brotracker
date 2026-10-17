@@ -69,6 +69,17 @@ export function rulesSummary(
 	return parts.join(" · ");
 }
 
+/**
+ * The series «Следить» panel. Hidden while the series waits for a release:
+ * «Жду» owns that row, and following now would attach a topic behind its back.
+ */
+export function showsWatchPanel(
+	facet: "films" | "tv" | null,
+	watch: { watch: TitleWatchState } | null,
+): boolean {
+	return facet === "tv" && watch?.watch !== "waiting";
+}
+
 /** «Жду» needs a TMDB title whose metadata loaded fully (the backend refuses otherwise). */
 export function canWaitFor(input: {
 	titleId: string;

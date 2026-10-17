@@ -13,7 +13,7 @@ import { MoreMenu } from "@astryxdesign/core/MoreMenu";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { Section } from "@astryxdesign/core/Section";
 import { Spinner } from "@astryxdesign/core/Spinner";
-import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Tab, TabList } from "@astryxdesign/core/TabList";
 import { Text } from "@astryxdesign/core/Text";
@@ -28,7 +28,7 @@ import {
 	RefreshCw,
 	Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocale } from "#/shared/i18n/locale-provider";
 import { formatEta, formatProgress, formatSpeed } from "#/shared/lib/format";
@@ -173,6 +173,18 @@ function DownloadingStatus({ item }: { item: WatchlistItem }) {
 	);
 }
 
+/** Status dot + text on one line: the dot never wraps away, long text wraps beside it. */
+function DotLine({ dot, children }: { dot: ReactNode; children: ReactNode }) {
+	return (
+		<HStack gap={1} vAlign="center" wrap="nowrap" width="100%">
+			<StackItem className="shrink-0">{dot}</StackItem>
+			<StackItem className="min-w-0" size="fill">
+				{children}
+			</StackItem>
+		</HStack>
+	);
+}
+
 function WaitingStatusLine({ item }: { item: WatchlistItem }) {
 	const { t } = useTranslation("watchlist");
 	const { bcp47 } = useLocale();
@@ -185,10 +197,9 @@ function WaitingStatusLine({ item }: { item: WatchlistItem }) {
 		: null;
 
 	return (
-		<HStack gap={1} vAlign="center" wrap="wrap">
-			<StatusDot label={text} variant={variant} />
+		<DotLine dot={<StatusDot label={text} variant={variant} />}>
 			<Text type="supporting">{checked ? `${text} · ${checked}` : text}</Text>
-		</HStack>
+		</DotLine>
 	);
 }
 
@@ -225,15 +236,17 @@ function TrackingStatus({ item }: { item: WatchlistItem }) {
 	if (parts.length === 0 && !isPaused) {
 		return null;
 	}
-	return (
-		<HStack gap={1} vAlign="center" wrap="wrap">
-			{isPaused ? (
-				<StatusDot label={t("menu.pause")} variant="neutral" />
-			) : null}
-			<Text hasTabularNumbers type="supporting">
-				{(isPaused ? [t("menu.pause"), ...parts] : parts).join(" · ")}
-			</Text>
-		</HStack>
+	const text = (
+		<Text hasTabularNumbers type="supporting">
+			{(isPaused ? [t("menu.pause"), ...parts] : parts).join(" · ")}
+		</Text>
+	);
+	return isPaused ? (
+		<DotLine dot={<StatusDot label={t("menu.pause")} variant="neutral" />}>
+			{text}
+		</DotLine>
+	) : (
+		text
 	);
 }
 

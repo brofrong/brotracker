@@ -24,7 +24,7 @@ import type { AppLocale } from "#/shared/i18n/locale";
 import { useLocale } from "#/shared/i18n/locale-provider";
 import { trpc } from "#/shared/lib/trpc";
 import { WaitButton } from "./wait-button";
-import type { TitleWatchState } from "./wait-state";
+import { showsWatchPanel, type TitleWatchState } from "./wait-state";
 
 const MOBILE_POSTER_WIDTH = 96;
 const DESKTOP_POSTER_WIDTH = 208;
@@ -458,8 +458,9 @@ export function TitleHero({
 		</HStack>
 	) : null;
 
-	const watchBlock =
-		facet === "tv" ? <TitleWatchPanel titleId={titleId} watch={watch} /> : null;
+	const watchBlock = showsWatchPanel(facet, watch) ? (
+		<TitleWatchPanel titleId={titleId} watch={watch} />
+	) : null;
 
 	const waitBlock = canWait ? (
 		<WaitButton isFullWidth={isMobile} titleId={titleId} watch={watch} />

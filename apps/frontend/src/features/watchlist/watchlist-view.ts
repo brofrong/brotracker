@@ -53,9 +53,14 @@ export function groupByStage<T extends StageInput>(
 	return groups;
 }
 
-/** The page polls while anything is downloading. */
+/**
+ * The page polls while anything is downloading in qB. A downloading film whose
+ * torrent is gone from qB has no transfer to watch, so it doesn't keep polling.
+ */
 export function hasActiveDownload(items: StageInput[]): boolean {
-	return items.some((item) => stageOf(item) === "downloading");
+	return items.some(
+		(item) => stageOf(item) === "downloading" && item.transfer != null,
+	);
 }
 
 export type WaitingStatus =

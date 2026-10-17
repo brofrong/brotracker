@@ -5,6 +5,7 @@ import {
 	nextAction,
 	parseCssDuration,
 	rulesSummary,
+	showsWatchPanel,
 	type TitleWatchState,
 	type WatchlistSettings,
 	waitButtonState,
@@ -152,5 +153,23 @@ describe("confettiColors", () => {
 				["--a", "--b", "--c", "--d", "--e"],
 			),
 		).toEqual(["#0171E3", "#EB6E00", "#abc"]);
+	});
+});
+
+describe("showsWatchPanel", () => {
+	it("shows «Следить» for a series without a watch or with a topic watch", () => {
+		expect(showsWatchPanel("tv", null)).toBe(true);
+		for (const watch of ["tracking", "paused", "off", "completed"] as const) {
+			expect(showsWatchPanel("tv", { watch })).toBe(true);
+		}
+	});
+
+	it("hides it while the series is waiting for a release", () => {
+		expect(showsWatchPanel("tv", { watch: "waiting" })).toBe(false);
+	});
+
+	it("never for films", () => {
+		expect(showsWatchPanel("films", null)).toBe(false);
+		expect(showsWatchPanel(null, null)).toBe(false);
 	});
 });

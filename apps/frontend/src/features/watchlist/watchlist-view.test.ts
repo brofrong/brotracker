@@ -103,6 +103,18 @@ describe("hasActiveDownload", () => {
 			]),
 		).toBe(false);
 	});
+
+	it("is false for a downloading film whose torrent is gone from qB", () => {
+		expect(hasActiveDownload([{ watch: "downloading", transfer: null }])).toBe(
+			false,
+		);
+	});
+
+	it("is true for a downloading film with a transfer", () => {
+		expect(
+			hasActiveDownload([{ watch: "downloading", transfer: transfer(0.2) }]),
+		).toBe(true);
+	});
 });
 
 describe("waitingStatus", () => {
