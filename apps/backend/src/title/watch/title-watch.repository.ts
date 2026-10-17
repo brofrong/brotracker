@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, ne, sql } from "drizzle-orm";
 import { db } from "../../db/db";
 import { titleWatches } from "../../db/title/title-watch.schema";
 import type { TitleWatchRecord, WatchState } from "./check-topic-now";
@@ -88,6 +88,7 @@ export async function loadWatchByTopicUrl(
 	return row ? fromWatchRow(row) : null;
 }
 
+/** The Title's watch: an active one (`watch <> 'off'`) first, then the newest. */
 export async function loadWatchByTitleId(
 	titleId: string,
 ): Promise<TitleWatchRecord | null> {
@@ -95,6 +96,10 @@ export async function loadWatchByTitleId(
 		.select()
 		.from(titleWatches)
 		.where(eq(titleWatches.titleId, titleId))
+		.orderBy(
+			asc(sql`${titleWatches.watch} = 'off'`),
+			desc(titleWatches.createdAt),
+		)
 		.limit(1);
 	const row = rows[0];
 	return row ? fromWatchRow(row) : null;

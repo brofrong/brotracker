@@ -7,6 +7,7 @@ import {
 } from "../qbittorent/qbittorent.client";
 import { addFromTracker } from "../qbittorent/qbittorent.service";
 import { resolveTmdbCredentials } from "../settings/provider-settings";
+import { loadWatchlistSettings } from "../settings/watchlist-settings";
 import { createTmdbBrowse } from "../tmdb/browse";
 import { logger } from "../utils/logger";
 import { createFetchTmdbMeta } from "./fetch-tmdb-meta";
@@ -19,13 +20,20 @@ import {
 } from "./title";
 import type { TitleTorrentCandidate, TitleTorrentsSearch } from "./title.types";
 import { loadAllLinks, upsertLink } from "./title-link.repository";
+import { createWaitingSearch } from "./waiting-search";
+import { buildWaitingTarget } from "./waiting-target";
 import {
+	deleteWatch,
 	getTitleWatchFeed,
 	listQbTorrents,
 	listTitledWatches,
+	listWatchesByState,
+	listWatchlistRecords,
+	loadWatchById,
 	nightlyWorker,
 	watch,
 } from "./watch";
+import { createWatchlist, WatchlistError } from "./watchlist";
 
 function toCandidate(hit: CatalogSearchResult): TitleTorrentCandidate {
 	return {
@@ -113,6 +121,8 @@ export const titleModule = createTitleModule({
 	loadWatchByTopicUrl: watch.loadByTopicUrl,
 	loadWatchByTitleId: watch.loadByTitleId,
 	saveWatch: watch.save,
+	deleteWatch,
+	recordEvent: watch.recordEvent,
 	listQbTorrents,
 	now: watch.now,
 	enqueueWatchTask: watch.enqueueTask,
@@ -122,11 +132,59 @@ export const titleModule = createTitleModule({
 	listTitledWatches,
 });
 
+/** Tracker-only search for «Жду»; throws when the trackers are unavailable. */
+async function searchTracker(query: string): Promise<TitleTorrentCandidate[]> {
+	const page = await catalog.searchRefresh(query, {});
+	return page.results.map(toCandidate);
+}
+
+/** Watch search metadata always comes from TMDB `ru-RU` (Russian name for queries). */
+const getTitleRu = (titleId: string) =>
+	titleModule.get({ id: titleId, language: "ru-RU" });
+
+export const waitingSearch = createWaitingSearch({
+	listWaiting: () => listWatchesByState(["waiting"]),
+	listDownloading: () => listWatchesByState(["downloading"]),
+	loadWatchById,
+	loadWatchByTopicUrl: watch.loadByTopicUrl,
+	saveWatch: watch.save,
+	deleteWatch,
+	loadTarget: async (record) =>
+		record.titleId
+			? buildWaitingTarget(await getTitleRu(record.titleId), record)
+			: null,
+	searchTracker,
+	loadRules: loadWatchlistSettings,
+	addToQb: async (torrentFileUrl, kind, tags) => {
+		await addFromTracker(torrentFileUrl, kind, tags);
+	},
+	listTaggedTorrents,
+	recordEvent: watch.recordEvent,
+	now: watch.now,
+});
+
+export const watchlist = createWatchlist({
+	getTitle: getTitleRu,
+	loadWatchByTitleId: watch.loadByTitleId,
+	loadWatchById,
+	listWatchlistRecords,
+	saveWatch: watch.save,
+	deleteWatch,
+	listTaggedTorrents,
+	listQbTorrents,
+	checkWaiting: (watchId) => waitingSearch.checkOne(watchId),
+	checkTracking: (titleId) => titleModule.checkNow({ id: titleId }),
+	now: watch.now,
+	newId: () => crypto.randomUUID(),
+});
+
 export const tmdbBrowse = createTmdbBrowse({
 	resolveCredentials: resolveTmdbCredentials,
 });
 
 export { createFetchTmdbMeta } from "./fetch-tmdb-meta";
+export type { WaitingSearchRun } from "./waiting-search";
+export type { WatchlistItem } from "./watchlist";
 export {
 	createTitleModule,
 	getTitleWatchFeed,
@@ -134,4 +192,5 @@ export {
 	TitleAddError,
 	TitleLinkError,
 	TitleWatchError,
+	WatchlistError,
 };

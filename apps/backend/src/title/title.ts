@@ -195,7 +195,7 @@ function progressForWatch(
 	return parseEpisodeProgress(torrent.name);
 }
 
-function toWatchView(
+export function toWatchView(
 	record: TitleWatchRecord,
 	qbTorrents: SyncQbTorrent[],
 ): TitleWatchView {
@@ -214,6 +214,24 @@ function toWatchView(
 		progress: progressForWatch(record, qbTorrents),
 	};
 }
+
+/** qB torrents for episode progress; empty when qB is unreachable. */
+export async function listQbTorrentsSafe(deps: {
+	listQbTorrents: () => Promise<SyncQbTorrent[]>;
+}): Promise<SyncQbTorrent[]> {
+	try {
+		return await deps.listQbTorrents();
+	} catch {
+		return [];
+	}
+}
+
+/** What a watch remembers about its Title for the watchlist. */
+type WatchTitleInfo = {
+	name: string;
+	poster: string | null;
+	year: number | null;
+};
 
 export class TitleAddError extends Error {
 	constructor(message: string) {
@@ -263,33 +281,55 @@ export function createTitleModule(deps: TitleDeps) {
 		};
 	}
 
+	/** Fills the Title's name/poster/year on a watch that doesn't have them yet. */
+	async function backfillWatch(
+		record: TitleWatchRecord,
+		known: WatchTitleInfo | null,
+	): Promise<TitleWatchRecord> {
+		if (!known) {
+			return record;
+		}
+		const filled: TitleWatchRecord = {
+			...record,
+			titleName: record.titleName ?? known.name,
+			poster: record.poster ?? known.poster,
+			year: record.year ?? known.year,
+		};
+		if (
+			filled.titleName === record.titleName &&
+			filled.poster === record.poster &&
+			filled.year === record.year
+		) {
+			return record;
+		}
+		try {
+			await deps.saveWatch(filled);
+		} catch {
+			// best-effort; a missing name only affects the watchlist display
+		}
+		return filled;
+	}
+
 	async function resolveWatchForTitle(
 		titleId: string,
-		facet: TitleKind | null,
-		titleName: string | null,
+		facet: TitleKind,
+		known: WatchTitleInfo | null,
 	): Promise<TitleWatchView | null> {
-		if (facet !== "tv") {
-			return null;
-		}
-
-		let qbTorrents: SyncQbTorrent[] = [];
-		try {
-			qbTorrents = await deps.listQbTorrents();
-		} catch {
-			qbTorrents = [];
-		}
+		const qbTorrents = await listQbTorrentsSafe(deps);
 
 		const byTitle = await deps.loadWatchByTitleId(titleId);
 		if (byTitle) {
-			return toWatchView(byTitle, qbTorrents);
+			return toWatchView(await backfillWatch(byTitle, known), qbTorrents);
 		}
 
-		if (!titleName?.trim()) {
+		// Auto-linking a qB transfer onto the Title is for series only.
+		const query = known?.name.trim();
+		if (facet !== "tv" || !query) {
 			return null;
 		}
 
 		try {
-			const linked = await linkAutoWatchToTitle(titleId, titleName.trim());
+			const linked = await linkAutoWatchToTitle(titleId, query);
 			return linked ? toWatchView(linked, qbTorrents) : null;
 		} catch {
 			return null;
@@ -329,6 +369,61 @@ export function createTitleModule(deps: TitleDeps) {
 		}
 
 		return null;
+	}
+
+	/**
+	 * A release added by hand for a Title on «Жду»: the waiting watch gets the
+	 * Topic (films → downloading, series → tracking). When another row already
+	 * watches that Topic, it takes the Title and the waiting row goes, so the
+	 * unique `topic_url` never collides.
+	 */
+	async function attachTopicToWaiting(
+		waiting: TitleWatchRecord,
+		topicUrl: string,
+		kind: TitleKind,
+	): Promise<void> {
+		const startedState = kind === "films" ? "downloading" : "tracking";
+		const changedAt = deps.now();
+		const owner = await deps.loadWatchByTopicUrl(topicUrl);
+
+		if (owner && owner.id !== waiting.id) {
+			await deps.saveWatch({
+				...owner,
+				titleId: waiting.titleId,
+				kind: owner.kind ?? kind,
+				watch: owner.watch === "off" ? startedState : owner.watch,
+				season: owner.season ?? waiting.season,
+				titleName: owner.titleName ?? waiting.titleName,
+				poster: owner.poster ?? waiting.poster,
+				year: owner.year ?? waiting.year,
+				lastChangedAt: changedAt,
+			});
+			await deps.deleteWatch(waiting.id);
+		} else {
+			await deps.saveWatch({
+				...waiting,
+				topicUrl,
+				kind,
+				watch: startedState,
+				source: "manual",
+				qbHash: null,
+				lastChangedAt: changedAt,
+				lastError: null,
+				waitingOutcome: null,
+				waitingOutcomeDetail: null,
+			});
+		}
+
+		try {
+			await deps.recordEvent({
+				titleId: waiting.titleId,
+				topicUrl,
+				kind: "download-started",
+				message: null,
+			});
+		} catch {
+			// best-effort; the feed must not fail the add
+		}
 	}
 
 	async function findTopicInQbForTitle(
@@ -433,7 +528,11 @@ export function createTitleModule(deps: TitleDeps) {
 				metaStatus,
 				meta: metaFromTmdb(outcome.meta),
 				ratings,
-				watch: await resolveWatchForTitle(id, parsed.kind, outcome.meta.name),
+				watch: await resolveWatchForTitle(id, parsed.kind, {
+					name: outcome.meta.name,
+					poster: outcome.meta.poster,
+					year: outcome.meta.year,
+				}),
 			};
 		},
 
@@ -503,6 +602,11 @@ export function createTitleModule(deps: TitleDeps) {
 			// Save topic link for both films and tv when titleId is provided
 			if (input.titleId) {
 				await deps.upsertLink(`topic:${topicId}`, input.titleId);
+				const titleWatch = await deps.loadWatchByTitleId(input.titleId);
+				if (titleWatch?.watch === "waiting") {
+					await attachTopicToWaiting(titleWatch, input.topicUrl, input.kind);
+					return { ok: true };
+				}
 			}
 
 			if (input.kind === "tv") {

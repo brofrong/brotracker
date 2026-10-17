@@ -1,4 +1,5 @@
 import type {
+	RecordWatchEvent,
 	TitleWatchRecord,
 	WaitingOutcome,
 	WatchState,
@@ -116,7 +117,7 @@ export type Title = {
 	meta: TitleMeta;
 	metaStatus: TitleMetaStatus;
 	ratings: TitleRating[];
-	/** TV follow state when linked to this title; null for films / no follow. */
+	/** The Title's watch (series follow or «Жду»); null when nothing watches it. */
 	watch: TitleWatchView | null;
 };
 
@@ -175,6 +176,27 @@ export type TitleTorrentTransfer = {
 	stateLabel: string;
 	downloadSpeed: number;
 	etaSeconds: number;
+};
+
+/** One row on the «Жду» page. */
+export type WatchlistItem = {
+	id: string;
+	titleId: string;
+	kind: TitleKind | null;
+	name: string | null;
+	poster: string | null;
+	year: number | null;
+	season: number | null;
+	watch: TitleWatchState;
+	topicUrl: string | null;
+	lastCheckedAt: string | null;
+	lastChangedAt: string | null;
+	lastError: string | null;
+	waitingOutcome: WaitingOutcome | null;
+	waitingOutcomeDetail: string | null;
+	episodes: EpisodeProgress | null;
+	transfer: TitleTorrentTransfer | null;
+	createdAt: string;
 };
 
 export type TitleTorrent = {
@@ -238,6 +260,9 @@ export type TitleDeps = {
 	loadWatchByTopicUrl: (topicUrl: string) => Promise<TitleWatchRecord | null>;
 	loadWatchByTitleId: (titleId: string) => Promise<TitleWatchRecord | null>;
 	saveWatch: (record: TitleWatchRecord) => Promise<void>;
+	deleteWatch: (id: string) => Promise<void>;
+	/** Feed event (e.g. `download-started` when a waiting watch gets a topic). */
+	recordEvent: RecordWatchEvent;
 	listQbTorrents: () => Promise<SyncQbTorrent[]>;
 	now: () => string;
 	/** Enqueues a WatchTask row (manual trigger, always fresh — no dedup). */

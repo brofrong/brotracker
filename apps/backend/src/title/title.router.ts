@@ -13,6 +13,8 @@ import {
 	TitleWatchError,
 	titleModule,
 	tmdbBrowse,
+	WatchlistError,
+	watchlist,
 } from "./index";
 
 function browseOrThrow(outcome: BrowseOutcome) {
@@ -186,6 +188,41 @@ export const titleRouter = router({
 			assertTitleId(input.id);
 			return titleModule.checkNow(input);
 		}),
+
+	wait: protectedProcedure
+		.input(z.object({ id: z.string().min(1) }))
+		.mutation(async ({ input }) => {
+			if (!input.id.startsWith("tmdb:")) {
+				throw new TRPCError({
+					code: "PRECONDITION_FAILED",
+					message: "Ждать можно только тайтл из TMDB",
+				});
+			}
+			try {
+				return await watchlist.wait({ titleId: input.id });
+			} catch (error) {
+				if (error instanceof WatchlistError) {
+					throw new TRPCError({
+						code: "PRECONDITION_FAILED",
+						message: error.message,
+					});
+				}
+				throw error;
+			}
+		}),
+
+	watchlist: protectedProcedure.query(() => watchlist.list()),
+
+	watchlistRemove: protectedProcedure
+		.input(z.object({ id: z.string().min(1) }))
+		.mutation(async ({ input }) => {
+			await watchlist.remove(input);
+			return { ok: true as const };
+		}),
+
+	watchlistCheck: protectedProcedure
+		.input(z.object({ id: z.string().min(1) }))
+		.mutation(({ input }) => watchlist.checkNow(input)),
 
 	transferLinks: protectedProcedure.query(async () => {
 		return titleModule.transferLinks();

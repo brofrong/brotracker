@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { createTitleModule, type TitleDeps } from "./title";
 import type { TitleRating, TmdbMeta } from "./title.types";
-import type { CheckResult, TitleWatchRecord } from "./watch/check-topic-now";
+import type {
+	CheckResult,
+	RecordWatchEventInput,
+	TitleWatchRecord,
+} from "./watch/check-topic-now";
 import { checkTopicNow } from "./watch/check-topic-now";
 import type { WatchTask } from "./watch/process-watch-task";
 import { processWatchTask } from "./watch/process-watch-task";
@@ -45,6 +49,7 @@ type CheckAdapters = {
 function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 	const store = new Map<string, TitleWatchRecord>();
 	const tasks = new Map<string, WatchTask>();
+	const events: RecordWatchEventInput[] = [];
 
 	const checkAdapters: CheckAdapters = {
 		fetchTorrentBytes: async () => new Uint8Array([1, 2, 3, 4]),
@@ -83,6 +88,16 @@ function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 				}
 			}
 			store.set(record.topicUrl ?? record.id, record);
+		},
+		deleteWatch: async (id) => {
+			for (const [key, value] of store) {
+				if (value.id === id) {
+					store.delete(key);
+				}
+			}
+		},
+		recordEvent: async (event) => {
+			events.push(event);
 		},
 		listQbTorrents: async () => [],
 		now: () => "2026-08-02T14:00:00.000Z",
@@ -135,6 +150,7 @@ function createWatchDeps(overrides: Partial<TitleDeps> = {}) {
 		store,
 		deps,
 		checkAdapters,
+		events,
 	};
 }
 
@@ -555,5 +571,180 @@ describe("title.get watch", () => {
 
 		const title = await moduleWithTorrents.get({ id: "tmdb:tv:1" });
 		expect(title.watch?.progress).toBeNull();
+	});
+});
+
+const filmMeta = (): TmdbMeta => ({
+	...tvMeta(),
+	kind: "films",
+	name: "Одиссея",
+	poster: "film.jpg",
+	year: 2026,
+	status: null,
+	seasons: null,
+	originalName: "The Odyssey",
+});
+
+const waitingWatch = (
+	overrides: Partial<TitleWatchRecord> = {},
+): TitleWatchRecord => ({
+	id: "waiting-1",
+	topicUrl: null,
+	titleId: "tmdb:films:7",
+	kind: "films",
+	watch: "waiting",
+	source: "manual",
+	season: null,
+	titleName: "Одиссея",
+	poster: "film.jpg",
+	year: 2026,
+	size: null,
+	registeredAt: null,
+	contentHash: null,
+	qbHash: null,
+	lastCheckedAt: "2026-08-01T10:00:00.000Z",
+	lastChangedAt: null,
+	lastError: null,
+	waitingOutcome: "no-voice",
+	waitingOutcomeDetail: null,
+	createdAt: "2026-08-01T00:00:00.000Z",
+	...overrides,
+});
+
+describe("title.get watch for films", () => {
+	test("a film with a waiting watch returns it", async () => {
+		const { module, store } = createWatchDeps({
+			fetchTmdbMeta: async () => ({ status: "ok", meta: filmMeta() }),
+		});
+		store.set("waiting-1", waitingWatch());
+
+		const title = await module.get({ id: "tmdb:films:7" });
+
+		expect(title.watch?.watch).toBe("waiting");
+		expect(title.watch?.id).toBe("waiting-1");
+	});
+
+	test("backfills name, poster and year on a loaded watch", async () => {
+		const { module, store } = createWatchDeps({
+			fetchTmdbMeta: async () => ({ status: "ok", meta: filmMeta() }),
+		});
+		store.set(
+			"waiting-1",
+			waitingWatch({ titleName: null, poster: null, year: null }),
+		);
+
+		await module.get({ id: "tmdb:films:7" });
+
+		expect(store.get("waiting-1")).toMatchObject({
+			titleName: "Одиссея",
+			poster: "film.jpg",
+			year: 2026,
+		});
+	});
+
+	test("a film without a watch is never auto-linked", async () => {
+		let searched = 0;
+		const { module } = createWatchDeps({
+			fetchTmdbMeta: async () => ({ status: "ok", meta: filmMeta() }),
+			searchTorrents: async () => {
+				searched += 1;
+				return { status: "degraded", local: [], trackerError: "unavailable" };
+			},
+		});
+
+		const title = await module.get({ id: "tmdb:films:7" });
+
+		expect(title.watch).toBeNull();
+		expect(searched).toBe(0);
+	});
+});
+
+describe("title.add onto a waiting watch", () => {
+	const topicUrl = "https://rutracker.org/forum/viewtopic.php?t=88";
+
+	test("a waiting film starts downloading with the topic", async () => {
+		const { module, store, events } = createWatchDeps();
+		store.set("waiting-1", waitingWatch());
+
+		await module.add({
+			torrentFileUrl: "https://rutracker.org/forum/dl.php?t=88",
+			kind: "films",
+			topicUrl,
+			titleId: "tmdb:films:7",
+		});
+
+		expect([...store.values()]).toHaveLength(1);
+		expect(store.get(topicUrl)).toMatchObject({
+			id: "waiting-1",
+			topicUrl,
+			kind: "films",
+			watch: "downloading",
+			source: "manual",
+			lastChangedAt: "2026-08-02T14:00:00.000Z",
+			waitingOutcome: null,
+			lastError: null,
+		});
+		expect(events).toEqual([
+			{
+				titleId: "tmdb:films:7",
+				topicUrl,
+				kind: "download-started",
+				message: null,
+			},
+		]);
+	});
+
+	test("a waiting series starts tracking with the topic", async () => {
+		const { module, store, events } = createWatchDeps();
+		store.set(
+			"waiting-1",
+			waitingWatch({ titleId: "tmdb:tv:1", kind: "tv", season: 2 }),
+		);
+
+		await module.add({
+			torrentFileUrl: "https://rutracker.org/forum/dl.php?t=88",
+			kind: "tv",
+			topicUrl,
+			titleId: "tmdb:tv:1",
+		});
+
+		expect([...store.values()]).toHaveLength(1);
+		expect(store.get(topicUrl)).toMatchObject({
+			id: "waiting-1",
+			watch: "tracking",
+			season: 2,
+		});
+		expect(events.map((event) => event.kind)).toEqual(["download-started"]);
+	});
+
+	test("a topic already watched by another row takes the Title; the waiting row goes", async () => {
+		const { module, store } = createWatchDeps();
+		store.set("waiting-1", waitingWatch());
+		store.set(topicUrl, {
+			...waitingWatch(),
+			id: "owner",
+			topicUrl,
+			titleId: null,
+			watch: "downloading",
+			source: "auto-qb",
+			titleName: null,
+			poster: null,
+			year: null,
+		});
+
+		await module.add({
+			torrentFileUrl: "https://rutracker.org/forum/dl.php?t=88",
+			kind: "films",
+			topicUrl,
+			titleId: "tmdb:films:7",
+		});
+
+		expect([...store.values()]).toHaveLength(1);
+		expect(store.get(topicUrl)).toMatchObject({
+			id: "owner",
+			titleId: "tmdb:films:7",
+			watch: "downloading",
+			titleName: "Одиссея",
+		});
 	});
 });
