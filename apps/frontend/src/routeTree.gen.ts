@@ -15,6 +15,7 @@ import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as TorrentsRouteImport } from './routes/torrents'
+import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as WorkersRouteImport } from './routes/workers'
 import { Route as PersonIdRouteImport } from './routes/person.$id'
 import { Route as SettingsIndexRouteImport } from './routes/settings.index'
@@ -57,6 +58,11 @@ const StatsRoute = StatsRouteImport.update({
 const TorrentsRoute = TorrentsRouteImport.update({
   id: '/torrents',
   path: '/torrents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WatchlistRoute = WatchlistRouteImport.update({
+  id: '/watchlist',
+  path: '/watchlist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkersRoute = WorkersRouteImport.update({
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRouteWithChildren
   '/stats': typeof StatsRoute
   '/torrents': typeof TorrentsRoute
+  '/watchlist': typeof WatchlistRoute
   '/workers': typeof WorkersRouteWithChildren
   '/person/$id': typeof PersonIdRoute
   '/settings/downloads': typeof SettingsDownloadsRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/stats': typeof StatsRoute
   '/torrents': typeof TorrentsRoute
+  '/watchlist': typeof WatchlistRoute
   '/workers': typeof WorkersRouteWithChildren
   '/person/$id': typeof PersonIdRoute
   '/settings/downloads': typeof SettingsDownloadsRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRouteWithChildren
   '/stats': typeof StatsRoute
   '/torrents': typeof TorrentsRoute
+  '/watchlist': typeof WatchlistRoute
   '/workers': typeof WorkersRouteWithChildren
   '/person/$id': typeof PersonIdRoute
   '/settings/downloads': typeof SettingsDownloadsRoute
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/stats'
     | '/torrents'
+    | '/watchlist'
     | '/workers'
     | '/person/$id'
     | '/settings/downloads'
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/stats'
     | '/torrents'
+    | '/watchlist'
     | '/workers'
     | '/person/$id'
     | '/settings/downloads'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/stats'
     | '/torrents'
+    | '/watchlist'
     | '/workers'
     | '/person/$id'
     | '/settings/downloads'
@@ -258,6 +270,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRouteWithChildren
   StatsRoute: typeof StatsRoute
   TorrentsRoute: typeof TorrentsRoute
+  WatchlistRoute: typeof WatchlistRoute
   WorkersRoute: typeof WorkersRouteWithChildren
   PersonIdRoute: typeof PersonIdRoute
   TitleIdRoute: typeof TitleIdRoute
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       path: '/torrents'
       fullPath: '/torrents'
       preLoaderRoute: typeof TorrentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/watchlist': {
+      id: '/watchlist'
+      path: '/watchlist'
+      fullPath: '/watchlist'
+      preLoaderRoute: typeof WatchlistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workers': {
@@ -455,6 +475,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRouteWithChildren,
   StatsRoute: StatsRoute,
   TorrentsRoute: TorrentsRoute,
+  WatchlistRoute: WatchlistRoute,
   WorkersRoute: WorkersRouteWithChildren,
   PersonIdRoute: PersonIdRoute,
   TitleIdRoute: TitleIdRoute,

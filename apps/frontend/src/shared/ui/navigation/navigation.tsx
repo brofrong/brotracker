@@ -18,6 +18,7 @@ import {
 	Download,
 	Film,
 	Home,
+	Hourglass,
 	Search,
 	Settings,
 } from "lucide-react";
@@ -82,6 +83,13 @@ export function NavItems() {
 				href="/title"
 				icon={Film}
 				isSelected={pathname === "/title" || pathname.startsWith("/title/")}
+			/>
+			<SideNavItem
+				as={SideNavLink}
+				label={t("watchlist")}
+				href="/watchlist"
+				icon={Hourglass}
+				isSelected={pathname === "/watchlist"}
 			/>
 			<SideNavItem
 				as={SideNavLink}

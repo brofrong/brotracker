@@ -79,6 +79,7 @@
 		"sectionActions": "Actions",
 		"home": "Home",
 		"films": "Movies",
+		"watchlist": "Watchlist",
 		"search": "Search",
 		"torrents": "Torrents",
 		"stats": "Stats",
@@ -684,6 +685,40 @@
 			"downloading": "Downloading",
 			"tracking": "Following",
 			"completed": "Done"
-		}
+		},
+		"heading": "Watchlist",
+		"loading": "Loading watchlist",
+		"loadFailed": "Couldn't load the watchlist",
+		"filter": {
+			"all": "All"
+		},
+		"checkedAt": "checked {{time}}",
+		"changedAt": "updated {{time}}",
+		"notChecked": "not checked yet",
+		"episodes": "{{have}} of {{total}}",
+		"season": "Season {{season}}",
+		"kind": {
+			"films": "Movie",
+			"tv": "Series"
+		},
+		"progressAria": "Download progress of “{{name}}”",
+		"untitled": "Untitled",
+		"outcome": {
+			"no-releases": "No releases yet",
+			"only-camrip": "Only screen recordings — skipped",
+			"below-resolution": "Only {{best}} — below your minimum",
+			"no-hdr": "No HDR releases",
+			"no-voice": "No Russian voice-over",
+			"search-failed": "Trackers unavailable — will retry"
+		},
+		"menu": {
+			"label": "Actions",
+			"checkNow": "Check now",
+			"open": "Open",
+			"remove": "Remove",
+			"pause": "Pause",
+			"resume": "Resume"
+		},
+		"empty": "Nothing on your watchlist yet"
 	}
 }

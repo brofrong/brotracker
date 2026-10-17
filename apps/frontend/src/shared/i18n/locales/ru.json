@@ -79,6 +79,7 @@
 		"sectionActions": "Действия",
 		"home": "Главная",
 		"films": "Фильмы",
+		"watchlist": "Жду",
 		"search": "Поиск",
 		"torrents": "Торренты",
 		"stats": "Статистика",
@@ -690,6 +691,40 @@
 			"downloading": "Качается",
 			"tracking": "Слежу",
 			"completed": "Готово"
-		}
+		},
+		"heading": "Жду",
+		"loading": "Загрузка списка",
+		"loadFailed": "Не удалось загрузить список",
+		"filter": {
+			"all": "Все"
+		},
+		"checkedAt": "проверено {{time}}",
+		"changedAt": "обновлено {{time}}",
+		"notChecked": "ещё не проверялось",
+		"episodes": "{{have}} из {{total}}",
+		"season": "Сезон {{season}}",
+		"kind": {
+			"films": "Фильм",
+			"tv": "Сериал"
+		},
+		"progressAria": "Прогресс загрузки «{{name}}»",
+		"untitled": "Без названия",
+		"outcome": {
+			"no-releases": "Раздач пока нет",
+			"only-camrip": "Есть только экранка — пропущена",
+			"below-resolution": "Есть только {{best}} — ниже порога",
+			"no-hdr": "Нет раздач с HDR",
+			"no-voice": "Нет русской озвучки",
+			"search-failed": "Трекеры недоступны — повторю позже"
+		},
+		"menu": {
+			"label": "Действия",
+			"checkNow": "Проверить сейчас",
+			"open": "Открыть",
+			"remove": "Убрать",
+			"pause": "Пауза",
+			"resume": "Продолжить"
+		},
+		"empty": "Пока ничего не ждёте"
 	}
 }
