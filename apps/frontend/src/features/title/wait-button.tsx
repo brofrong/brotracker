@@ -10,14 +10,16 @@ import { useToast } from "@astryxdesign/core/Toast";
 import { useTheme } from "@astryxdesign/core/theme";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Hourglass, Plus } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { trpc } from "#/shared/lib/trpc";
 import {
 	confettiColors,
+	nextAction,
 	parseCssDuration,
 	rulesSummary,
 	type TitleWatchState,
+	type WaitButtonState,
 	type WaitStage,
 	waitButtonState,
 } from "./wait-state";
@@ -48,6 +50,18 @@ function prefersReducedMotion(): boolean {
 		typeof window.matchMedia === "function" &&
 		window.matchMedia("(prefers-reduced-motion: reduce)").matches
 	);
+}
+
+/** Tap feedback for «Жду»: squeeze + ring, confetti burst, a short vibration. */
+function celebrate(element: HTMLElement, token: (name: string) => string) {
+	animateButton(element, token("--color-accent"), token("--spacing-3"));
+	void burstConfetti(
+		element,
+		confettiColors(token, CONFETTI_COLOR_TOKENS),
+	).catch(() => undefined);
+	if (!prefersReducedMotion()) {
+		navigator.vibrate?.(VIBRATE_MS);
+	}
 }
 
 /** Squeeze-and-spring plus an expanding accent ring, timed by the theme's motion tokens. */
@@ -122,7 +136,7 @@ export function WaitButton({
 	isFullWidth,
 }: {
 	titleId: string;
-	watch: { watch: TitleWatchState } | null;
+	watch: { id: string; watch: TitleWatchState } | null;
 	isFullWidth: boolean;
 }) {
 	const { t } = useTranslation(["title", "watchlist"]);
@@ -130,39 +144,55 @@ export function WaitButton({
 	const toast = useToast();
 	const queryClient = useQueryClient();
 	const buttonRef = useRef<HTMLButtonElement>(null);
+	// Synchronous guard: two taps in one frame must not create two watch rows.
+	const inFlightRef = useRef(false);
+	// Optimistic state while a request is in flight; cleared once title.get refetched.
+	const [optimistic, setOptimistic] = useState<"add" | "waiting" | null>(null);
+
+	const refreshTitle = () =>
+		Promise.all([
+			queryClient.invalidateQueries({
+				queryKey: trpc.title.get.queryKey({ id: titleId }),
+			}),
+			queryClient.invalidateQueries({
+				queryKey: trpc.title.watchlist.queryKey(),
+			}),
+		]);
 
 	const waitMutation = useMutation({
 		...trpc.title.wait.mutationOptions(),
-		onSuccess: (result) => {
-			const element = buttonRef.current;
-			if (result.watch === "waiting" && element) {
-				animateButton(element, token("--color-accent"), token("--spacing-3"));
-				void burstConfetti(
-					element,
-					confettiColors(token, CONFETTI_COLOR_TOKENS),
-				).catch(() => undefined);
-				navigator.vibrate?.(VIBRATE_MS);
-			}
-			// Not awaited: the label must morph while the button is still animating,
-			// and the mutation stays pending (spinner) until onSuccess settles.
-			void Promise.all([
-				queryClient.invalidateQueries({
-					queryKey: trpc.title.get.queryKey({ id: titleId }),
-				}),
-				queryClient.invalidateQueries({
-					queryKey: trpc.title.watchlist.queryKey(),
-				}),
-			]);
+		onSuccess: refreshTitle,
+		onError: (error) => {
+			toast({ type: "error", body: error.message });
+		},
+		onSettled: () => {
+			inFlightRef.current = false;
+			setOptimistic(null);
+		},
+	});
+
+	const removeMutation = useMutation({
+		...trpc.title.watchlistRemove.mutationOptions(),
+		onSuccess: async () => {
+			waitMutation.reset();
+			await refreshTitle();
 		},
 		onError: (error) => {
 			toast({ type: "error", body: error.message });
 		},
+		onSettled: () => {
+			inFlightRef.current = false;
+			setOptimistic(null);
+		},
 	});
 
-	// The mutation result bridges the gap until title.get refetches.
+	// The wait result bridges the gap if title.get has not caught up yet.
 	const current =
 		watch && watch.watch !== "off" ? watch : (waitMutation.data ?? watch);
-	const state = waitButtonState(current);
+	const state: WaitButtonState = optimistic
+		? { kind: optimistic }
+		: waitButtonState(current);
+	const isBusy = waitMutation.isPending || removeMutation.isPending;
 	const width = isFullWidth ? "100%" : undefined;
 
 	if (state.kind === "stage") {
@@ -176,20 +206,36 @@ export function WaitButton({
 		);
 	}
 
+	const onClick = () => {
+		if (isBusy || inFlightRef.current) {
+			return;
+		}
+		const action = nextAction(state);
+		if (action === "wait") {
+			inFlightRef.current = true;
+			setOptimistic("waiting");
+			const element = buttonRef.current;
+			if (element) {
+				celebrate(element, token);
+			}
+			waitMutation.mutate({ id: titleId });
+		} else if (action === "remove" && current) {
+			inFlightRef.current = true;
+			setOptimistic("add");
+			removeMutation.mutate({ id: current.id });
+		}
+	};
+
 	const isWaiting = state.kind === "waiting";
 
 	return (
 		<VStack gap={1} hAlign={isFullWidth ? "stretch" : "start"} width={width}>
 			<Button
+				aria-busy={isBusy}
+				aria-disabled={isBusy}
 				icon={<Icon icon={isWaiting ? Hourglass : Plus} size="sm" />}
-				isLoading={waitMutation.isPending}
 				label={isWaiting ? t("wait.active") : t("wait.add")}
-				onClick={() => {
-					if (isWaiting || waitMutation.isPending) {
-						return;
-					}
-					waitMutation.mutate({ id: titleId });
-				}}
+				onClick={onClick}
 				ref={buttonRef}
 				variant={isWaiting ? "secondary" : "primary"}
 				width={width}

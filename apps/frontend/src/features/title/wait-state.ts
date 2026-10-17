@@ -38,6 +38,20 @@ export function waitButtonState(
 	}
 }
 
+export type WaitAction = "wait" | "remove" | "none";
+
+/** What tapping the «Жду» control does: add → wait, waiting → remove, stages are read-only. */
+export function nextAction(state: WaitButtonState): WaitAction {
+	switch (state.kind) {
+		case "add":
+			return "wait";
+		case "waiting":
+			return "remove";
+		default:
+			return "none";
+	}
+}
+
 /** "1080p+ · с озвучкой", "4K+ · HDR" — keys live under the `title` namespace. */
 export function rulesSummary(
 	settings: WatchlistSettings,

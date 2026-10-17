@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	canWaitFor,
 	confettiColors,
+	nextAction,
 	parseCssDuration,
 	rulesSummary,
 	type TitleWatchState,
@@ -48,6 +49,22 @@ describe("waitButtonState", () => {
 			expect(waitButtonState({ watch })).toEqual(expected);
 		});
 	}
+});
+
+describe("nextAction", () => {
+	it("waits from the add state", () => {
+		expect(nextAction({ kind: "add" })).toBe("wait");
+	});
+
+	it("removes from the waiting state", () => {
+		expect(nextAction({ kind: "waiting" })).toBe("remove");
+	});
+
+	it("does nothing for later stages", () => {
+		for (const stage of ["downloading", "tracking", "completed"] as const) {
+			expect(nextAction({ kind: "stage", stage })).toBe("none");
+		}
+	});
 });
 
 describe("rulesSummary", () => {
