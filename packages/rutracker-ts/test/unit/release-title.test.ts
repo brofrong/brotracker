@@ -131,6 +131,21 @@ describe("parseReleaseTitle: season", () => {
 		// A season-shaped phrase inside a *name* (not a marker position) doesn't count.
 		["Сезон охоты 2 / Open Season 2 [2008, BDRip]", null],
 		["Open.Season.2.2008.BDRip", null],
+		// Multi-season packs have no single season.
+		["Офис / The Office / S01-S04 / 2005-2008 / WEB-DL (1080p)", null],
+		["Офис / The Office / S01-03 / 2005-2007 / WEB-DL (1080p)", null],
+		["The.Office.S01-S04.1080p.WEB-DL", null],
+		["The.Office.S01-03.1080p.WEB-DL", null],
+		[
+			"Офис / The Office / Сезон: 1, 2 / Серии: 1-28 из 28 [2005, WEB-DL 1080p] MVO",
+			null,
+		],
+		["Show (Сезон 1, 2) [2020, WEB-DL]", null],
+		["Show / Season 1, 2 [2020, WEB-DL]", null],
+		// An episode range inside one season is still that season.
+		["The.Office.S02E01-E05.1080p.WEB-DL", 2],
+		// A year right after the season is not a second season.
+		["Show (Сезон 1, 2025) [WEB-DL]", 1],
 	])("%p -> season=%p", (title, expected) => {
 		expect(parseReleaseTitle(title).season).toBe(expected);
 	});

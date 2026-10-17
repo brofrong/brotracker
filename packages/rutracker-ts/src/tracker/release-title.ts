@@ -83,10 +83,17 @@ const RUTOR_VOICE_SUFFIX = /\|\s*(?:D|P|Лицензия)(?![\p{L}\p{N}])/u;
 //   2. inside a parenthetical or bracket ("(2 сезон: 1-7 серии из 7)", "[Сезон 1]");
 //   3. a standalone S\d+(E\d+)? token, but only in a scene-style release that has no
 //      " / " segments at all ("The.Last.of.Us.S02E05...").
-// Each pattern has at most two capture groups: the season number, and (if present) the
-// end of a "N-M" range, which disqualifies the match (a range/pack has no single season).
+// Each pattern has at most two capture groups: the season number, and (if present) a
+// second season — the end of a "N-M" range or the next item of a "N, M" list — which
+// disqualifies the match (a range/multi-season pack has no single season).
+// The list form only accepts a 1-2 digit number after the comma so "Сезон 1, 2025" (a
+// season followed by the year) still reads as season 1.
+const SEASON_SECOND = "(?:\\s*-\\s*|\\s*,\\s*(?=\\d{1,2}(?!\\d)))(\\d+)";
+// Scene packs: "S01-S04" / "S01-03". The second number is 1-2 digits so a following year
+// ("S01-2025") never reads as a range.
+const S_TOKEN = "S(\\d+)(?:-S?(\\d{1,2})(?!\\d))?(?:E\\d+)?";
 const SEGMENT_SEASON_COLON_REGEX = anchoredTokenRegex(
-	"Сезон[:\\s]*(\\d+)(?:\\s*-\\s*(\\d+))?",
+	`Сезон[:\\s]*(\\d+)(?:${SEASON_SECOND})?`,
 	"iu",
 );
 const SEGMENT_SEASON_PREFIX_NUMBER_REGEX = anchoredTokenRegex(
@@ -94,15 +101,12 @@ const SEGMENT_SEASON_PREFIX_NUMBER_REGEX = anchoredTokenRegex(
 	"iu",
 );
 const SEGMENT_SEASON_WORD_REGEX = anchoredTokenRegex(
-	"Season\\s+(\\d+)(?:\\s*-\\s*(\\d+))?",
+	`Season\\s+(\\d+)(?:${SEASON_SECOND})?`,
 	"iu",
 );
 // Case-sensitive, matching the file's existing S\d+ convention (DROP_SEGMENT_PREFIX):
 // scene releases write the marker as capital "S"/"E".
-const SEGMENT_SEASON_S_TOKEN_REGEX = anchoredTokenRegex(
-	"S(\\d+)(?:E\\d+)?",
-	"u",
-);
+const SEGMENT_SEASON_S_TOKEN_REGEX = anchoredTokenRegex(S_TOKEN, "u");
 const SEGMENT_SEASON_REGEXES = [
 	SEGMENT_SEASON_COLON_REGEX,
 	SEGMENT_SEASON_PREFIX_NUMBER_REGEX,
@@ -113,12 +117,12 @@ const SEGMENT_SEASON_REGEXES = [
 // Same three word/prefix markers, unanchored, for scanning inside a (...)/[...] group's
 // inner text (rule 2) where the marker need not be the very first character.
 const SEASON_COLON_REGEX = tokenRegex(
-	"Сезон[:\\s]*(\\d+)(?:\\s*-\\s*(\\d+))?",
+	`Сезон[:\\s]*(\\d+)(?:${SEASON_SECOND})?`,
 	"iu",
 );
 const SEASON_PREFIX_NUMBER_REGEX = tokenRegex("(\\d+)\\s*сезон", "iu");
 const SEASON_WORD_REGEX = tokenRegex(
-	"Season\\s+(\\d+)(?:\\s*-\\s*(\\d+))?",
+	`Season\\s+(\\d+)(?:${SEASON_SECOND})?`,
 	"iu",
 );
 const BRACKETED_SEASON_REGEXES = [
@@ -128,7 +132,7 @@ const BRACKETED_SEASON_REGEXES = [
 ];
 
 // Case-sensitive S\d+(E\d+)? token, unanchored, for rule 3 (scene-style names only).
-const SCENE_SEASON_S_TOKEN_REGEX = tokenRegex("S(\\d+)(?:E\\d+)?", "u");
+const SCENE_SEASON_S_TOKEN_REGEX = tokenRegex(S_TOKEN, "u");
 
 type SeasonCandidate = { index: number; start: number; end: number | null };
 
@@ -185,7 +189,7 @@ function findSeason(title: string): number | null {
 			candidates.push({
 				index: match.index,
 				start: Number(match[1]),
-				end: null,
+				end: match[2] !== undefined ? Number(match[2]) : null,
 			});
 		}
 	}
