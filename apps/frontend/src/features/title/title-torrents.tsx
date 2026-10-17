@@ -359,28 +359,25 @@ export function TitleTorrentsList({
 				}
 				endContent={
 					<HStack gap={1}>
-						{transfer ? null : isMobile ? (
+						{transfer ? null : (
 							<Button
-								icon={<Icon icon={Download} size="sm" />}
+								icon={isMobile ? <Icon icon={Download} size="sm" /> : undefined}
 								isDisabled={addMutation.isPending}
-								isIconOnly
-								label={t("torrents.downloadAria", { title: item.title })}
+								isIconOnly={isMobile}
+								label={
+									isMobile
+										? t("torrents.downloadAria", { title: item.title })
+										: t("torrents.download")
+								}
 								onClick={() => onAdd(item)}
 								size="sm"
 								variant="secondary"
-							/>
-						) : (
-							<Button
-								label={t("torrents.download")}
-								size="sm"
-								variant="secondary"
-								isDisabled={addMutation.isPending}
-								onClick={() => onAdd(item)}
 							/>
 						)}
 						<Button
 							href={item.topicUrl}
 							icon={<Icon icon="externalLink" size="sm" />}
+							isIconOnly={isMobile}
 							rel="noopener noreferrer"
 							label={t("torrents.onTracker")}
 							size="sm"
@@ -432,7 +429,11 @@ export function TitleTorrentsList({
 					{others.length > 0 ? (
 						<Collapsible
 							defaultIsOpen={false}
-							trigger={t("torrents.otherResults", { count: others.length })}
+							trigger={
+								<Text type="supporting">
+									{t("torrents.otherResults", { count: others.length })}
+								</Text>
+							}
 						>
 							<List density="compact" hasDividers>
 								{others.map(renderRow)}
