@@ -1,4 +1,5 @@
 import { yearFromDate } from "../tmdb/dates";
+import { normalizeTitleName } from "./release-match";
 import type {
 	TitleCastMember,
 	TitleCrewMember,
@@ -33,8 +34,23 @@ type TmdbCrewMember = {
 	job: string;
 };
 
+type TmdbAltTitle = {
+	iso_3166_1?: string;
+	title: string;
+};
+
+type TmdbTranslation = {
+	iso_639_1?: string;
+	iso_3166_1?: string;
+	data?: {
+		title?: string;
+		name?: string;
+	};
+};
+
 type TmdbMovieDetails = {
 	title?: string;
+	original_title?: string;
 	release_date?: string;
 	overview?: string;
 	poster_path?: string | null;
@@ -43,10 +59,13 @@ type TmdbMovieDetails = {
 	runtime?: number | null;
 	vote_average?: number;
 	vote_count?: number;
+	alternative_titles?: { titles?: TmdbAltTitle[] };
+	translations?: { translations?: TmdbTranslation[] };
 };
 
 type TmdbTvDetails = {
 	name?: string;
+	original_name?: string;
 	first_air_date?: string;
 	overview?: string;
 	poster_path?: string | null;
@@ -56,6 +75,8 @@ type TmdbTvDetails = {
 	number_of_seasons?: number | null;
 	vote_average?: number;
 	vote_count?: number;
+	alternative_titles?: { results?: TmdbAltTitle[] };
+	translations?: { translations?: TmdbTranslation[] };
 };
 
 type TmdbSimilarEntry = {
@@ -186,15 +207,63 @@ export function parseSimilar(
 	return items;
 }
 
+/**
+ * Russian alternative names: the RU translation title (if any), then RU
+ * alternative titles in TMDB order, deduped by normalized form and excluding
+ * the main and original names.
+ */
+export function russianAlternativeNames(input: {
+	mainName: string;
+	originalName: string | null;
+	translationName: string | null;
+	altTitles: TmdbAltTitle[];
+}): string[] {
+	const excluded = new Set(
+		[input.mainName, input.originalName]
+			.filter((name): name is string => name != null)
+			.map(normalizeTitleName),
+	);
+
+	const candidates: string[] = [];
+	if (input.translationName) {
+		candidates.push(input.translationName);
+	}
+	for (const alt of input.altTitles) {
+		if (alt.iso_3166_1 === "RU") {
+			candidates.push(alt.title);
+		}
+	}
+
+	const seen = new Set<string>();
+	const result: string[] = [];
+	for (const name of candidates) {
+		const normalized = normalizeTitleName(name);
+		if (excluded.has(normalized) || seen.has(normalized)) {
+			continue;
+		}
+		seen.add(normalized);
+		result.push(name);
+	}
+
+	return result;
+}
+
 export function parseMovieDetails(
 	details: TmdbMovieDetails,
 	credits: TmdbCredits,
 ): Omit<TmdbMeta, "similar"> {
+	const name = details.title ?? "";
+	const originalName = details.original_title ?? null;
+	const translationName =
+		details.translations?.translations?.find((t) => t.iso_639_1 === "ru")?.data
+			?.title ?? null;
+	const altTitles = details.alternative_titles?.titles ?? [];
+
 	return {
 		kind: "films",
 		poster: posterUrl(details.poster_path),
 		backdrop: backdropUrl(details.backdrop_path),
-		name: details.title ?? "",
+		name,
 		year: yearFromDate(details.release_date),
 		overview: details.overview ?? null,
 		genres: (details.genres ?? []).map((g) => g.name),
@@ -204,6 +273,13 @@ export function parseMovieDetails(
 			details.runtime != null && details.runtime > 0 ? details.runtime : null,
 		status: null,
 		seasons: null,
+		originalName,
+		alternativeNames: russianAlternativeNames({
+			mainName: name,
+			originalName,
+			translationName,
+			altTitles,
+		}),
 		voteAverage:
 			details.vote_average != null && details.vote_average > 0
 				? details.vote_average
@@ -219,11 +295,18 @@ export function parseTvDetails(
 	details: TmdbTvDetails,
 	credits: TmdbCredits,
 ): Omit<TmdbMeta, "similar"> {
+	const name = details.name ?? "";
+	const originalName = details.original_name ?? null;
+	const translationName =
+		details.translations?.translations?.find((t) => t.iso_639_1 === "ru")?.data
+			?.name ?? null;
+	const altTitles = details.alternative_titles?.results ?? [];
+
 	return {
 		kind: "tv",
 		poster: posterUrl(details.poster_path),
 		backdrop: backdropUrl(details.backdrop_path),
-		name: details.name ?? "",
+		name,
 		year: yearFromDate(details.first_air_date),
 		overview: details.overview ?? null,
 		genres: (details.genres ?? []).map((g) => g.name),
@@ -235,6 +318,13 @@ export function parseTvDetails(
 			details.number_of_seasons != null && details.number_of_seasons > 0
 				? details.number_of_seasons
 				: null,
+		originalName,
+		alternativeNames: russianAlternativeNames({
+			mainName: name,
+			originalName,
+			translationName,
+			altTitles,
+		}),
 		voteAverage:
 			details.vote_average != null && details.vote_average > 0
 				? details.vote_average

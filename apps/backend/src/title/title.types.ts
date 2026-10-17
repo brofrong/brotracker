@@ -55,6 +55,8 @@ export type TitleMeta = {
 	status: string | null;
 	/** tv facet */
 	seasons: number | null;
+	originalName: string | null;
+	alternativeNames: string[];
 };
 
 export type TmdbRating = {
@@ -122,6 +124,8 @@ export type TmdbMeta = {
 	runtimeMinutes: number | null;
 	status: string | null;
 	seasons: number | null;
+	originalName: string | null;
+	alternativeNames: string[];
 	voteAverage: number | null;
 	voteCount: number | null;
 };

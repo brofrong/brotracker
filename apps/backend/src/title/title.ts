@@ -101,6 +101,8 @@ const emptyMeta = (): TitleMeta => ({
 	runtimeMinutes: null,
 	status: null,
 	seasons: null,
+	originalName: null,
+	alternativeNames: [],
 });
 
 function metaFromTmdb(meta: TmdbMeta): TitleMeta {
@@ -117,6 +119,8 @@ function metaFromTmdb(meta: TmdbMeta): TitleMeta {
 		runtimeMinutes: meta.runtimeMinutes,
 		status: meta.status,
 		seasons: meta.seasons,
+		originalName: meta.originalName,
+		alternativeNames: meta.alternativeNames,
 	};
 }
 

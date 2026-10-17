@@ -64,7 +64,7 @@ export function createFetchTmdbMeta(
 		}
 
 		const segment = kind === "films" ? "movie" : "tv";
-		const detailsPath = `/${segment}/${tmdbId}`;
+		const detailsPath = `/${segment}/${tmdbId}?append_to_response=alternative_titles,translations`;
 		const creditsPath = `/${segment}/${tmdbId}/credits`;
 		const similarPath = `/${segment}/${tmdbId}/similar`;
 

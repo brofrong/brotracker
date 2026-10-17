@@ -26,6 +26,8 @@ const tvMeta = (): TmdbMeta => ({
 	runtimeMinutes: null,
 	status: "Returning Series",
 	seasons: 1,
+	originalName: "Test Show",
+	alternativeNames: [],
 	voteAverage: 7,
 	voteCount: 10,
 });

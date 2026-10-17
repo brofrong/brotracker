@@ -43,6 +43,8 @@ function deps(overrides: Partial<TitleDeps> = {}): TitleDeps {
 				runtimeMinutes: 148,
 				status: null,
 				seasons: null,
+				originalName: "Inception",
+				alternativeNames: [],
 				voteAverage: 8,
 				voteCount: 1,
 			},
