@@ -15,7 +15,7 @@ import {
 	startScheduledNightlyWorker,
 } from "./scheduled-nightly";
 import {
-	isWatchlistSearchDue,
+	runWatchlistTickOnce,
 	startWatchlistScheduler,
 	WATCHLIST_SEARCH_ID,
 } from "./watchlist-schedule";
@@ -102,20 +102,24 @@ export function startWorkers(
 		stopWatchlist = startWatchlistScheduler({
 			tickMs: WATCHLIST_SEARCH_TICK_MS,
 			tick: async () => {
-				await waitingSearch.syncDownloads();
-				const detail = await workers.get(WATCHLIST_SEARCH_ID);
-				if (detail?.status === "running") {
-					return;
-				}
-				const settings = await loadWatchlistSettings();
-				const due = isWatchlistSearchDue({
-					lastStartedAt: detail?.lastRun?.startedAt.toISOString() ?? null,
-					intervalHours: settings.checkIntervalHours,
-					now: new Date(),
+				await runWatchlistTickOnce({
+					syncDownloads: () => waitingSearch.syncDownloads(),
+					onSyncError: (err) => {
+						logger.warn({ err }, "Watchlist download sync failed");
+					},
+					loadLastRun: async () => {
+						const detail = await workers.get(WATCHLIST_SEARCH_ID);
+						return {
+							running: detail?.status === "running",
+							lastStartedAt: detail?.lastRun?.startedAt.toISOString() ?? null,
+						};
+					},
+					loadIntervalHours: async () =>
+						(await loadWatchlistSettings()).checkIntervalHours,
+					runScheduled: () =>
+						workers.run(WATCHLIST_SEARCH_ID, { trigger: "scheduled" }),
+					now: () => new Date(),
 				});
-				if (due) {
-					await workers.run(WATCHLIST_SEARCH_ID, { trigger: "scheduled" });
-				}
 			},
 		});
 	})();
@@ -132,6 +136,7 @@ export {
 } from "./scheduled-nightly";
 export {
 	isWatchlistSearchDue,
+	runWatchlistTickOnce,
 	startWatchlistScheduler,
 	WATCHLIST_SEARCH_ID,
 } from "./watchlist-schedule";

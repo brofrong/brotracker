@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { TitleWatchRecord } from "./check-topic-now";
-import { fromWatchRow, toWatchRow } from "./title-watch.repository";
+import {
+	fromWatchRow,
+	titleWatchByTitleIdQuery,
+	toWatchRow,
+} from "./title-watch.repository";
 
 const waitingRecord: TitleWatchRecord = {
 	id: "8f7b1c2e-0000-4000-8000-000000000001",
@@ -45,5 +49,15 @@ describe("title watch row mapping", () => {
 		expect(row.lastCheckedAt).toEqual(new Date("2026-10-17T08:00:00.000Z"));
 		expect(row.createdAt).toEqual(new Date("2026-10-16T21:30:00.000Z"));
 		expect(row.lastChangedAt).toBeNull();
+	});
+});
+
+describe("loadWatchByTitleId order", () => {
+	test("active first, then newest created, then most recently updated", () => {
+		const { sql, params } = titleWatchByTitleIdQuery("tmdb:tv:1399").toSQL();
+		expect(sql).toContain(
+			'order by "title_watches"."watch" = \'off\' asc, "title_watches"."created_at" desc, "title_watches"."updated_at" desc',
+		);
+		expect(params).toContain("tmdb:tv:1399");
 	});
 });

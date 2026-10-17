@@ -1,4 +1,5 @@
 import type { WatchlistSettings } from "../settings/watchlist-settings";
+import { logger } from "../utils/logger";
 import { type PickTarget, pickRelease } from "./release-pick";
 import type {
 	TaggedQbTorrent,
@@ -47,6 +48,8 @@ type CheckOutcome =
 	| { kind: "merged"; record: TitleWatchRecord }
 	| { kind: "waiting"; record: TitleWatchRecord }
 	| { kind: "failed"; record: TitleWatchRecord }
+	/** The release's topic is already watched for another Title; still waiting. */
+	| { kind: "conflict"; record: TitleWatchRecord }
 	/** The row was removed or left `waiting` while we were working on it. */
 	| { kind: "skipped"; record: null };
 
@@ -78,6 +81,8 @@ function describeOutcome(outcome: CheckOutcome): string {
 			return "merged into existing watch";
 		case "skipped":
 			return "skipped (no longer waiting)";
+		case "conflict":
+			return `still waiting: ${outcome.record.lastError}`;
 		case "waiting":
 		case "failed": {
 			const { waitingOutcome, waitingOutcomeDetail, lastError } =
@@ -97,8 +102,12 @@ export function createWaitingSearch(deps: WaitingSearchDeps) {
 	async function tryRecordEvent(event: RecordWatchEventInput): Promise<void> {
 		try {
 			await deps.recordEvent(event);
-		} catch {
+		} catch (error) {
 			// best-effort; feed recording must not break the search flow
+			logger.warn(
+				{ err: errorMessage(error), kind: event.kind, titleId: event.titleId },
+				"watchlist: failed to record watch event",
+			);
 		}
 	}
 
@@ -141,11 +150,28 @@ export function createWaitingSearch(deps: WaitingSearchDeps) {
 		return { kind: "failed", record };
 	}
 
-	/** The topic is already watched by another row: hand it the Title and drop this one. */
+	/**
+	 * The topic is already watched by another row: hand it the Title and drop
+	 * this one — unless that row belongs to another Title (mirrors
+	 * `attachTopicToWaiting`): then neither row is touched beyond noting why
+	 * this one keeps waiting.
+	 */
 	async function mergeIntoOwner(
 		watch: TitleWatchRecord,
 		owner: TitleWatchRecord,
+		checkedAt: string,
 	): Promise<CheckOutcome> {
+		if (owner.titleId !== null && owner.titleId !== watch.titleId) {
+			const conflict: TitleWatchRecord = {
+				...watch,
+				waitingOutcome: null,
+				waitingOutcomeDetail: null,
+				lastCheckedAt: checkedAt,
+				lastError: `Найденная раздача уже отслеживается для другого тайтла (${owner.titleName ?? owner.titleId})`,
+			};
+			await deps.saveWatch(conflict);
+			return { kind: "conflict", record: conflict };
+		}
 		const record: TitleWatchRecord = {
 			...owner,
 			titleId: watch.titleId,
@@ -167,7 +193,7 @@ export function createWaitingSearch(deps: WaitingSearchDeps) {
 	): Promise<CheckOutcome> {
 		const owner = await deps.loadWatchByTopicUrl(release.topicUrl);
 		if (owner && owner.id !== watch.id) {
-			return mergeIntoOwner(watch, owner);
+			return mergeIntoOwner(watch, owner, checkedAt);
 		}
 
 		try {
@@ -296,9 +322,20 @@ export function createWaitingSearch(deps: WaitingSearchDeps) {
 					const watch = await reloadWaiting(listed.id);
 					outcome = watch ? await check(watch, rules) : SKIPPED;
 				} catch (error) {
+					const message = errorMessage(error);
 					run.checked += 1;
 					run.failed += 1;
-					log?.(`${name}: error: ${errorMessage(error)}`);
+					log?.(`${name}: error: ${message}`);
+					// Leave a trace on the row, like a failed search.
+					try {
+						const current = await reloadWaiting(listed.id);
+						if (current) await markFailed(current, message, deps.now());
+					} catch (markError) {
+						logger.warn(
+							{ err: errorMessage(markError), watchId: listed.id },
+							"watchlist: failed to mark a failed check",
+						);
+					}
 					continue;
 				}
 				if (outcome.kind !== "skipped") run.checked += 1;

@@ -88,19 +88,27 @@ export async function loadWatchByTopicUrl(
 	return row ? fromWatchRow(row) : null;
 }
 
-/** The Title's watch: an active one (`watch <> 'off'`) first, then the newest. */
-export async function loadWatchByTitleId(
-	titleId: string,
-): Promise<TitleWatchRecord | null> {
-	const rows = await db
+/**
+ * The Title's watch: an active one (`watch <> 'off'`) first, then the newest;
+ * rows migrated together share `created_at`, so the last updated one breaks the tie.
+ */
+export function titleWatchByTitleIdQuery(titleId: string) {
+	return db
 		.select()
 		.from(titleWatches)
 		.where(eq(titleWatches.titleId, titleId))
 		.orderBy(
 			asc(sql`${titleWatches.watch} = 'off'`),
 			desc(titleWatches.createdAt),
+			desc(titleWatches.updatedAt),
 		)
 		.limit(1);
+}
+
+export async function loadWatchByTitleId(
+	titleId: string,
+): Promise<TitleWatchRecord | null> {
+	const rows = await titleWatchByTitleIdQuery(titleId);
 	const row = rows[0];
 	return row ? fromWatchRow(row) : null;
 }

@@ -1,8 +1,9 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import {
 	DEFAULT_WATCHLIST_SETTINGS,
 	type WatchlistSettings,
 } from "../settings/watchlist-settings";
+import { logger } from "../utils/logger";
 import type {
 	TaggedQbTorrent,
 	TitleKind,
@@ -365,6 +366,49 @@ describe("createWaitingSearch.checkOne", () => {
 		expect(updated).toEqual(merged ?? null);
 	});
 
+	test("topic owned by a row of another Title -> no merge, no add, stays waiting with lastError", async () => {
+		const release = candidate();
+		const owner = watchRecord({
+			id: "w-other",
+			topicUrl: release.topicUrl,
+			titleId: "tmdb:films:999",
+			watch: "downloading",
+			titleName: "Другой фильм",
+			size: 7e9,
+		});
+		const fake = makeFake({ rows: [owner, watchRecord()] });
+
+		const updated = await createWaitingSearch(fake.deps).checkOne("w1");
+
+		expect(fake.adds).toEqual([]);
+		expect(fake.rows.get("w-other")).toEqual(owner);
+		expect(fake.rows.get("w1")).toMatchObject({
+			watch: "waiting",
+			topicUrl: null,
+			titleId: "tmdb:films:1",
+			waitingOutcome: null,
+			lastCheckedAt: NOW,
+		});
+		expect(fake.rows.get("w1")?.lastError).toContain("другого тайтла");
+		expect(updated).toEqual(fake.rows.get("w1") ?? null);
+	});
+
+	test("topic owned by a row of the same Title -> merged", async () => {
+		const release = candidate();
+		const owner = watchRecord({
+			id: "w-same",
+			topicUrl: release.topicUrl,
+			titleId: "tmdb:films:1",
+			watch: "downloading",
+		});
+		const fake = makeFake({ rows: [owner, watchRecord()] });
+
+		await createWaitingSearch(fake.deps).checkOne("w1");
+
+		expect(fake.rows.has("w1")).toBe(false);
+		expect(fake.rows.get("w-same")?.titleId).toBe("tmdb:films:1");
+	});
+
 	test("queries passed to searchTracker are exactly target.queries; results deduped by torrentId", async () => {
 		const first = candidate({
 			title: "Одиссея / The Odyssey / 2026 / ДБ / WEB-DL (720p)",
@@ -388,17 +432,27 @@ describe("createWaitingSearch.checkOne", () => {
 		expect(updated?.waitingOutcome).toBe("below-resolution");
 	});
 
-	test("event recording failure does not break the flow", async () => {
-		const fake = makeFake({
-			rows: [watchRecord()],
-			recordEvent: async () => {
-				throw new Error("feed down");
-			},
-		});
+	test("event recording failure does not break the flow, and is logged", async () => {
+		const warn = spyOn(logger, "warn").mockImplementation(() => {});
+		try {
+			const fake = makeFake({
+				rows: [watchRecord()],
+				recordEvent: async () => {
+					throw new Error("feed down");
+				},
+			});
 
-		const updated = await createWaitingSearch(fake.deps).checkOne("w1");
+			const updated = await createWaitingSearch(fake.deps).checkOne("w1");
 
-		expect(updated?.watch).toBe("downloading");
+			expect(updated?.watch).toBe("downloading");
+			expect(warn).toHaveBeenCalledTimes(1);
+			expect(warn.mock.calls[0]?.[0]).toMatchObject({
+				kind: "download-started",
+				titleId: "tmdb:films:1",
+			});
+		} finally {
+			warn.mockRestore();
+		}
 	});
 
 	test("returns null for a missing id or a row that isn't waiting", async () => {
@@ -414,6 +468,36 @@ describe("createWaitingSearch.checkOne", () => {
 });
 
 describe("createWaitingSearch.runAll", () => {
+	test("an unexpected throw marks that row search-failed and the run goes on", async () => {
+		const fake = makeFake({
+			rows: [
+				watchRecord({ id: "w1", titleName: "Сломанный" }),
+				watchRecord({ id: "w2", titleId: "tmdb:films:2" }),
+			],
+		});
+		const loadTarget = fake.deps.loadTarget;
+		fake.deps.loadTarget = async (watch) => {
+			if (watch.id === "w1") throw new Error("TMDB exploded");
+			return loadTarget(watch);
+		};
+		const lines: string[] = [];
+
+		const run = await createWaitingSearch(fake.deps).runAll((line) =>
+			lines.push(line),
+		);
+
+		expect(run).toEqual({ checked: 2, started: 1, failed: 1 });
+		expect(fake.rows.get("w1")).toMatchObject({
+			watch: "waiting",
+			waitingOutcome: "search-failed",
+			lastCheckedAt: NOW,
+			lastError: "TMDB exploded",
+		});
+		expect(fake.rows.get("w2")?.watch).toBe("downloading");
+		expect(lines[0]).toContain("Сломанный");
+		expect(lines[0]).toContain("TMDB exploded");
+	});
+
 	test("keeps going after one title's search throws; second title still started", async () => {
 		const fake = makeFake({
 			rows: [
