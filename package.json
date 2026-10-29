@@ -5,6 +5,9 @@
 	"scripts": {
 		"build": "turbo run build",
 		"dev": "turbo run dev",
+		"lint": "bun lint --no-script",
+		"format": "bun fmt",
+		"check": "bun check",
 		"test": "bun run --cwd apps/backend test && bun run --cwd packages/rutracker-ts test",
 		"release": "bun scripts/release.ts"
 	},
