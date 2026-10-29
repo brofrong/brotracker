@@ -15,6 +15,7 @@ import { KINOZAL_MIRRORS } from "@brotracker/rutracker-ts/tracker/search-engine/
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { SecretInput, type StatusMessage } from "./settings-shared";
 import {
 	TrackerDiagnostics,
@@ -22,8 +23,8 @@ import {
 } from "./tracker-diagnostics";
 import {
 	type TrackerEntry,
-	type TrackerSettingsData,
 	trackerSettingsApi,
+	type TrackerSettingsData,
 } from "./tracker-registry";
 
 export function TrackerForm({ tracker }: { tracker: TrackerEntry }) {

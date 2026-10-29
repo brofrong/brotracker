@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { TitleHero } from "#/features/title/title-hero";
 import { TitleTorrentsList } from "#/features/title/title-torrents";
 import { canWaitFor } from "#/features/title/wait-state";

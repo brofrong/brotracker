@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
+
 import { err, ok } from "neverthrow";
+
 import { sharedResult } from "../../src/tracker/single-flight";
 
 describe("sharedResult", () => {

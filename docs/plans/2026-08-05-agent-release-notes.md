@@ -15,6 +15,7 @@
 ### Task 1: Scaffold `changes/` + note helpers (tests first)
 
 **Files:**
+
 - Create: `changes/unreleased/.gitkeep`
 - Create: `scripts/release-notes.ts`
 - Create: `scripts/release-notes.test.ts`
@@ -25,11 +26,12 @@ Create `scripts/release-notes.test.ts`:
 
 ```ts
 import { describe, expect, test } from "bun:test";
+
 import {
-	parseNoteFile,
-	suggestBump,
-	renderReleaseNotes,
 	type ParsedNote,
+	parseNoteFile,
+	renderReleaseNotes,
+	suggestBump,
 } from "./release-notes";
 
 describe("parseNoteFile", () => {
@@ -109,7 +111,13 @@ Expected: module / exports missing.
 **Step 3: Implement minimal `scripts/release-notes.ts`**
 
 ```ts
-import { readdirSync, readFileSync, mkdirSync, renameSync, existsSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	renameSync,
+} from "node:fs";
 import { join } from "node:path";
 
 export type NoteType = "feature" | "fix" | "breaking";
@@ -121,12 +129,15 @@ export type ParsedNote = {
 	body: string;
 };
 
-const TYPE_RE = /^---\s*\ntype:\s*(feature|fix|breaking)\s*\n---\s*\n([\s\S]*)$/;
+const TYPE_RE =
+	/^---\s*\ntype:\s*(feature|fix|breaking)\s*\n---\s*\n([\s\S]*)$/;
 
 export function parseNoteFile(file: string, raw: string): ParsedNote {
 	const m = raw.trim().match(TYPE_RE);
 	if (!m) {
-		throw new Error(`Invalid note frontmatter in ${file} (expected type: feature|fix|breaking)`);
+		throw new Error(
+			`Invalid note frontmatter in ${file} (expected type: feature|fix|breaking)`,
+		);
 	}
 	const type = m[1] as NoteType;
 	const body = m[2].trim();
@@ -211,6 +222,7 @@ EOF
 ### Task 2: Wire notes into `scripts/release.ts`
 
 **Files:**
+
 - Modify: `scripts/release.ts`
 - Modify: `README.md` (release section only)
 - Test: extend `scripts/release-notes.test.ts` if needed; manual dry-run for orchestration
@@ -308,6 +320,7 @@ EOF
 ### Task 3: Agent docs — `docs/agents/release-notes.md` + AGENTS pointer
 
 **Files:**
+
 - Create: `docs/agents/release-notes.md`
 - Modify: `AGENTS.md`
 
@@ -348,6 +361,7 @@ EOF
 ### Task 4: Release skill
 
 **Files:**
+
 - Create: `.agents/skills/release/SKILL.md`
 
 **Step 1: Write skill**
@@ -384,6 +398,7 @@ EOF
 ### Task 5: Thin Cursor rule
 
 **Files:**
+
 - Create: `.cursor/rules/release-notes.mdc`
 
 **Step 1: Write rule** (`alwaysApply: true` or globs on app code — prefer `alwaysApply: true` but keep body short)

@@ -2,8 +2,9 @@ import axios, { type AxiosResponse } from "axios";
 import iconv from "iconv-lite";
 import { err, ok, type Result } from "neverthrow";
 import parse from "node-html-parser";
-import type { KinozalOptions } from "../../tracker-interface";
+
 import { parseTorrentId } from "../../torrent-id";
+import type { KinozalOptions } from "../../tracker-interface";
 import { acquireKinozalCfClearance } from "./cf";
 import { isKinozalSiteHostname, resolveKinozalMirror } from "./hosts";
 import {

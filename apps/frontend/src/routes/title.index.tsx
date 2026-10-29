@@ -2,6 +2,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import z from "zod";
+
 import { TitleBrowsePage } from "#/features/title/title-browse-page";
 
 const titleSearchSchema = z.object({

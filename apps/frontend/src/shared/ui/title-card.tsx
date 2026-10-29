@@ -10,6 +10,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ImageOff, Star } from "lucide-react";
 import type { SVGProps } from "react";
 import { useTranslation } from "react-i18next";
+
 import { useLocale } from "#/shared/i18n/locale-provider";
 
 export type TitleCardData = {

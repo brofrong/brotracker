@@ -2,10 +2,12 @@ import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
 import axios from "axios";
 import iconv from "iconv-lite";
-import { isRutrackerLoggedOutPage } from "../../src/tracker/search-engine/rutracker/login";
+
 import { rutrackerGetTorrent } from "../../src/tracker/search-engine/rutracker/get-torrent";
+import { isRutrackerLoggedOutPage } from "../../src/tracker/search-engine/rutracker/login";
 import { rutrackerSearch } from "../../src/tracker/search-engine/rutracker/search";
 import { createFileStore } from "../../src/tracker/storage/file-store";
 import type { RutrackerOptions } from "../../src/tracker/tracker-interface";

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { isAllowedMediaKey } from "./s3";
 
 describe("isAllowedMediaKey", () => {

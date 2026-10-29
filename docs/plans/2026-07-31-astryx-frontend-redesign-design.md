@@ -9,13 +9,13 @@ Replace the entire BroTracker frontend visual layer with [Astryx](https://astryx
 
 ## Decisions
 
-| Topic | Choice |
-|---|---|
-| Theme | `@astryxdesign/theme-stone` |
-| Migration depth | Full replacement of HeroUI + local `components/ui/*` |
-| Navigation | Keep sidebar pattern via `AppShell` + `SideNav` |
-| Styling | Component props first; token-backed Tailwind via Astryx bridge only |
-| Scope | Visual/UI only — no new product features |
+| Topic           | Choice                                                              |
+| --------------- | ------------------------------------------------------------------- |
+| Theme           | `@astryxdesign/theme-stone`                                         |
+| Migration depth | Full replacement of HeroUI + local `components/ui/*`                |
+| Navigation      | Keep sidebar pattern via `AppShell` + `SideNav`                     |
+| Styling         | Component props first; token-backed Tailwind via Astryx bridge only |
+| Scope           | Visual/UI only — no new product features                            |
 
 ## Architecture
 
@@ -27,18 +27,18 @@ Replace the entire BroTracker frontend visual layer with [Astryx](https://astryx
 
 ## Component Mapping
 
-| Current | Astryx |
-|---|---|
+| Current                            | Astryx                                                                   |
+| ---------------------------------- | ------------------------------------------------------------------------ |
 | HeroUI Surface / custom Navigation | `AppShell`, `SideNav`, `SideNavHeading`, `SideNavSection`, `SideNavItem` |
-| ThemeToggle | `Theme` mode (`light` / `dark` / `system`) |
-| SearchBar / Input | `TextInput` |
-| HeroUI Table / raw `<table>` | `Table` |
-| Radix Progress | `ProgressBar` |
-| Custom Badge | `Badge` (exception states only) or `Text` / `StatusDot` |
-| Connection indicator | `StatusDot` + `Text` |
-| HeroUI Button | `Button` / `IconButton` |
-| Loading text | `Spinner` / `Skeleton` |
-| Empty rows | `EmptyState` |
+| ThemeToggle                        | `Theme` mode (`light` / `dark` / `system`)                               |
+| SearchBar / Input                  | `TextInput`                                                              |
+| HeroUI Table / raw `<table>`       | `Table`                                                                  |
+| Radix Progress                     | `ProgressBar`                                                            |
+| Custom Badge                       | `Badge` (exception states only) or `Text` / `StatusDot`                  |
+| Connection indicator               | `StatusDot` + `Text`                                                     |
+| HeroUI Button                      | `Button` / `IconButton`                                                  |
+| Loading text                       | `Spinner` / `Skeleton`                                                   |
+| Empty rows                         | `EmptyState`                                                             |
 
 ## Remove After Migration
 

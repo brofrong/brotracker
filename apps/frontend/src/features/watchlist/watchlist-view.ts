@@ -7,10 +7,7 @@ export type WatchlistItem =
 export type WaitingOutcome = NonNullable<WatchlistItem["waitingOutcome"]>;
 
 export type WatchlistStage =
-	| "waiting"
-	| "downloading"
-	| "tracking"
-	| "completed";
+	"waiting" | "downloading" | "tracking" | "completed";
 
 /** Order of the groups on the page: Качается → Жду → Слежу → Готово. */
 export const STAGE_ORDER: readonly WatchlistStage[] = [

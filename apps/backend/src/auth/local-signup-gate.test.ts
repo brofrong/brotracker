@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { assertLocalSignUpAllowed } from "./auth-mode";
 
 describe("assertLocalSignUpAllowed", () => {

@@ -9,15 +9,15 @@ Protect BroTracker so unauthenticated users cannot use the UI or API. Dev stack 
 
 ## Decisions
 
-| Topic | Choice |
-|--------|--------|
-| Integration style | OIDC in the app (not reverse-proxy / outpost) |
-| Who may access | Any Authentik user with a valid login |
-| Session layer | Better Auth + Generic OAuth plugin (`providerId: "authentik"`) |
-| Unauthenticated UX | Hard gate: any visit triggers OIDC sign-in, then return to original URL |
-| Auth DB | BroTracker Postgres (Better Auth tables via Drizzle) |
-| Authentik DB | Separate Postgres service in compose (not shared with app) |
-| Prod Authentik | Out of scope for v1 compose; same env vars for an external issuer later |
+| Topic                | Choice                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| Integration style    | OIDC in the app (not reverse-proxy / outpost)                                         |
+| Who may access       | Any Authentik user with a valid login                                                 |
+| Session layer        | Better Auth + Generic OAuth plugin (`providerId: "authentik"`)                        |
+| Unauthenticated UX   | Hard gate: any visit triggers OIDC sign-in, then return to original URL               |
+| Auth DB              | BroTracker Postgres (Better Auth tables via Drizzle)                                  |
+| Authentik DB         | Separate Postgres service in compose (not shared with app)                            |
+| Prod Authentik       | Out of scope for v1 compose; same env vars for an external issuer later               |
 | Legacy `users` table | Drop / replace with Better Auth schema (`user`, `session`, `account`, `verification`) |
 
 ## Architecture
@@ -79,14 +79,14 @@ Frontend: auth client `baseURL` = backend origin (`VITE_BACKEND_URL` or equivale
 
 ## Code touchpoints
 
-| Area | Change |
-|------|--------|
-| `apps/backend/src/auth/auth.ts` | `betterAuth` + drizzle adapter + `genericOAuth` |
-| `apps/backend/src/index.ts` | Mount `/api/auth` via `toNodeHandler(auth)` before static/tRPC |
-| `apps/backend/src/trpc.ts` | Context with session; `protectedProcedure` |
-| Routers | Switch business procedures to `protectedProcedure` |
-| Drizzle | Generate Better Auth schema; drop unused `users` |
-| Frontend | `auth-client.ts`, hard gate on root route, optional logout in nav |
+| Area                            | Change                                                            |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `apps/backend/src/auth/auth.ts` | `betterAuth` + drizzle adapter + `genericOAuth`                   |
+| `apps/backend/src/index.ts`     | Mount `/api/auth` via `toNodeHandler(auth)` before static/tRPC    |
+| `apps/backend/src/trpc.ts`      | Context with session; `protectedProcedure`                        |
+| Routers                         | Switch business procedures to `protectedProcedure`                |
+| Drizzle                         | Generate Better Auth schema; drop unused `users`                  |
+| Frontend                        | `auth-client.ts`, hard gate on root route, optional logout in nav |
 
 ## Errors & edges
 

@@ -1,4 +1,5 @@
 import type { TrackerSource } from "@brotracker/rutracker-ts/tracker/torrent-id";
+
 import { classifyTrackerError, type TrackerErrorCode } from "./tracker-error";
 
 export type DiagnosticStepId = "egress" | "tracker" | "login";

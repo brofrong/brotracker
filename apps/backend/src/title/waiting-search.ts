@@ -1,6 +1,6 @@
 import type { WatchlistSettings } from "../settings/watchlist-settings";
 import { logger } from "../utils/logger";
-import { type PickTarget, pickRelease } from "./release-pick";
+import { pickRelease, type PickTarget } from "./release-pick";
 import type {
 	TaggedQbTorrent,
 	TitleKind,

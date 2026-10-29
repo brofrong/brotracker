@@ -1,6 +1,7 @@
 import { join } from "node:path";
-import { createTracker } from "../../src/tracker/tracker";
+
 import { createFileStore } from "../../src/tracker/storage/file-store";
+import { createTracker } from "../../src/tracker/tracker";
 import { env } from "../../src/utils/env";
 
 const tracker = await createTracker("Rutracker", {

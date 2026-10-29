@@ -8,12 +8,7 @@ import {
 } from "./torrent-fingerprint";
 
 export type WatchState =
-	| "waiting"
-	| "downloading"
-	| "tracking"
-	| "paused"
-	| "completed"
-	| "off";
+	"waiting" | "downloading" | "tracking" | "paused" | "completed" | "off";
 
 /** Why the last waiting search didn't pick a release. */
 export type WaitingOutcome =

@@ -132,9 +132,7 @@ export type TitleWatchFeed = {
 };
 
 export type WidgetEnvelope<T> =
-	| { status: "ok"; data: T }
-	| { status: "unavailable" }
-	| { status: "empty" };
+	{ status: "ok"; data: T } | { status: "unavailable" } | { status: "empty" };
 
 export type ComposeWidgetRequest = {
 	key: string;

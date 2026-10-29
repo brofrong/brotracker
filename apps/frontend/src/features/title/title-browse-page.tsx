@@ -14,6 +14,7 @@ import { skipToken, useInfiniteQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
+
 import { trpc } from "#/shared/lib/trpc";
 import { SearchBar } from "#/shared/ui/search-bar";
 import { TitleCard, type TitleCardData } from "#/shared/ui/title-card";

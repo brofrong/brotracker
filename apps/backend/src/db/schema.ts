@@ -1,9 +1,4 @@
-export {
-	account,
-	session,
-	user,
-	verification,
-} from "./auth/auth.schema";
+export { account, session, user, verification } from "./auth/auth.schema";
 export { kinozalStore } from "./kinozal-store/kinozal-store.schema";
 export { rutrackerStore } from "./rutracker-store/rutracker-store.schema";
 export { appSettings } from "./settings/app-settings.schema";

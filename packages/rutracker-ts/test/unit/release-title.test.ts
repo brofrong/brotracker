@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+
 import { parseReleaseTitle } from "../../src/tracker/release-title";
 
 describe("parseReleaseTitle: names and year", () => {

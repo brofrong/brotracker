@@ -1,5 +1,6 @@
 import { ok, type Result } from "neverthrow";
 import parse, { type HTMLElement } from "node-html-parser";
+
 import { formatTorrentId } from "../../torrent-id";
 import type { SearchPage, SearchResult } from "../../tracker-interface";
 import { RUTOR_URL } from "./constants";

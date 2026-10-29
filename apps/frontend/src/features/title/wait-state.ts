@@ -1,10 +1,5 @@
 export type TitleWatchState =
-	| "waiting"
-	| "downloading"
-	| "tracking"
-	| "paused"
-	| "completed"
-	| "off";
+	"waiting" | "downloading" | "tracking" | "paused" | "completed" | "off";
 
 export type WatchlistSettings = {
 	checkIntervalHours: number;
@@ -16,9 +11,7 @@ export type WatchlistSettings = {
 export type WaitStage = "downloading" | "tracking" | "completed";
 
 export type WaitButtonState =
-	| { kind: "add" }
-	| { kind: "waiting" }
-	| { kind: "stage"; stage: WaitStage };
+	{ kind: "add" } | { kind: "waiting" } | { kind: "stage"; stage: WaitStage };
 
 export function waitButtonState(
 	watch: { watch: TitleWatchState } | null,

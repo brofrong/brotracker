@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, inArray, isNotNull, ne, sql } from "drizzle-orm";
+
 import { db } from "../../db/db";
 import { titleWatches } from "../../db/title/title-watch.schema";
 import type { TitleWatchRecord, WatchState } from "./check-topic-now";

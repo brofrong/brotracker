@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { normalizeTitleName, releaseMatchesTitle } from "./release-match";
 
 describe("normalizeTitleName", () => {

@@ -9,7 +9,9 @@ import {
 	useSyncExternalStore,
 } from "react";
 import { I18nextProvider } from "react-i18next";
+
 import { queryClient } from "#/shared/lib/trpc";
+
 import i18n from "./index";
 import {
 	type AppLocale,

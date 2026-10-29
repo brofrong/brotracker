@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { parseAppLocale, toTmdbLanguage } from "./locale";
 
 describe("parseAppLocale", () => {

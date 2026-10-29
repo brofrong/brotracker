@@ -6,13 +6,15 @@ import { useEntryAnimation } from "@astryxdesign/core/hooks";
 import { Icon } from "@astryxdesign/core/Icon";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { useToast } from "@astryxdesign/core/Toast";
 import { useTheme } from "@astryxdesign/core/theme";
+import { useToast } from "@astryxdesign/core/Toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Hourglass, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { trpc } from "#/shared/lib/trpc";
+
 import {
 	confettiColors,
 	nextAction,
@@ -20,8 +22,8 @@ import {
 	rulesSummary,
 	type TitleWatchState,
 	type WaitButtonState,
-	type WaitStage,
 	waitButtonState,
+	type WaitStage,
 } from "./wait-state";
 
 const CONFETTI_COLOR_TOKENS = [

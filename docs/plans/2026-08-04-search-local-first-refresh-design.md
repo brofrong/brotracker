@@ -11,16 +11,16 @@ Supersedes the explicit **Локально** / **Трекер** source toggle an
 
 ## Decisions
 
-| Topic | Choice |
-|--------|--------|
-| Result update | Full replace when refresh returns (no row merge) |
-| Source toggle | Remove; one search action only |
-| API shape | Two procedures: local + refresh |
-| Transport | Two frontend requests (React Query), not SSE/polling |
-| Empty local + refresh in flight | Empty list + non-blocking tracker indicator |
-| Tracker indicator | Always visible while refresh is in flight |
-| Tracker failure | Keep local results; toast error; hide indicator |
-| Tracker empty (ok) | Replace with empty; not an error |
+| Topic                           | Choice                                               |
+| ------------------------------- | ---------------------------------------------------- |
+| Result update                   | Full replace when refresh returns (no row merge)     |
+| Source toggle                   | Remove; one search action only                       |
+| API shape                       | Two procedures: local + refresh                      |
+| Transport                       | Two frontend requests (React Query), not SSE/polling |
+| Empty local + refresh in flight | Empty list + non-blocking tracker indicator          |
+| Tracker indicator               | Always visible while refresh is in flight            |
+| Tracker failure                 | Keep local results; toast error; hide indicator      |
+| Tracker empty (ok)              | Replace with empty; not an error                     |
 
 ## Request flow
 
@@ -58,14 +58,14 @@ Remove `source` from the public search contract. Call sites that still pass `sou
 
 ## Frontend
 
-| Area | Change |
-|------|--------|
-| `search-bar.tsx` | Single submit control; remove Локально / Трекер |
-| `search.tsx` URL schema | Drop `source`; keep `search` |
-| Data | `useQuery` for `torrent.search` + `useQuery` for `torrent.searchRefresh` |
-| Display data | Prefer refresh data when settled successfully; else local |
-| Indicator | Bound to refresh `isFetching` / pending |
-| Toast | On refresh `isError` for the active query (once per failure) |
+| Area                    | Change                                                                   |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `search-bar.tsx`        | Single submit control; remove Локально / Трекер                          |
+| `search.tsx` URL schema | Drop `source`; keep `search`                                             |
+| Data                    | `useQuery` for `torrent.search` + `useQuery` for `torrent.searchRefresh` |
+| Display data            | Prefer refresh data when settled successfully; else local                |
+| Indicator               | Bound to refresh `isFetching` / pending                                  |
+| Toast                   | On refresh `isError` for the active query (once per failure)             |
 
 ## Out of scope
 

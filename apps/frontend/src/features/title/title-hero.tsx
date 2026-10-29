@@ -20,9 +20,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ImageOff, Star } from "lucide-react";
 import { type SVGProps, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import type { AppLocale } from "#/shared/i18n/locale";
 import { useLocale } from "#/shared/i18n/locale-provider";
 import { trpc } from "#/shared/lib/trpc";
+
 import { WaitButton } from "./wait-button";
 import { showsWatchPanel, type TitleWatchState } from "./wait-state";
 

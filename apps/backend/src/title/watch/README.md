@@ -6,12 +6,12 @@ manual check-now. Composition lives in `index.ts`; core interface is
 
 ## Who calls what
 
-| Caller | Entry | Notes |
-|---|---|---|
-| App (`src/index.ts`) | `nightlyWorker` (re-exported from `title/`) | Hourly tick → sync → enqueue → drain |
+| Caller                             | Entry                                               | Notes                                                                 |
+| ---------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------- |
+| App (`src/index.ts`)               | `nightlyWorker` (re-exported from `title/`)         | Hourly tick → sync → enqueue → drain                                  |
 | Title router / `createTitleModule` | `watch.processTask`, store load/save, `enqueueTask` | `setWatch` / `checkNow` stay on Title; they enqueue + drain via Watch |
-| Home | `getTitleWatchFeed` (re-exported from `title/`) | Read-model of recent TitleWatchEvents |
-| Explicit / future UI | `watch.syncFromQb` | Not called from `Title.get` (read path stays free of qb write sync) |
+| Home                               | `getTitleWatchFeed` (re-exported from `title/`)     | Read-model of recent TitleWatchEvents                                 |
+| Explicit / future UI               | `watch.syncFromQb`                                  | Not called from `Title.get` (read path stays free of qb write sync)   |
 
 ## Internal flow
 

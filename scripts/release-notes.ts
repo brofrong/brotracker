@@ -1,4 +1,10 @@
-import { readdirSync, readFileSync, mkdirSync, renameSync, existsSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	renameSync,
+} from "node:fs";
 import { join } from "node:path";
 
 export type NoteType = "feature" | "fix" | "breaking";
@@ -10,12 +16,15 @@ export type ParsedNote = {
 	body: string;
 };
 
-const TYPE_RE = /^---\s*\ntype:\s*(feature|fix|breaking)\s*\n---\s*\n([\s\S]*)$/;
+const TYPE_RE =
+	/^---\s*\ntype:\s*(feature|fix|breaking)\s*\n---\s*\n([\s\S]*)$/;
 
 export function parseNoteFile(file: string, raw: string): ParsedNote {
 	const m = raw.trim().match(TYPE_RE);
 	if (!m) {
-		throw new Error(`Invalid note frontmatter in ${file} (expected type: feature|fix|breaking)`);
+		throw new Error(
+			`Invalid note frontmatter in ${file} (expected type: feature|fix|breaking)`,
+		);
 	}
 	const type = m[1] as NoteType;
 	const body = m[2].trim();

@@ -9,13 +9,13 @@ Store application-level settings in a dedicated Postgres table. Remove `BETTER_A
 
 ## Decisions
 
-| Topic | Choice |
-|--------|--------|
-| Table shape | Key–value: `app_settings(key, value, updated_at)` |
-| Secret key | `better_auth_secret` |
-| Generation | `crypto.randomBytes(32).toString("base64url")` if missing |
-| Concurrency | `INSERT … ON CONFLICT DO NOTHING`, then re-read |
-| Auth init | `initAuth(secret)` after migrations; no env secret |
+| Topic       | Choice                                                    |
+| ----------- | --------------------------------------------------------- |
+| Table shape | Key–value: `app_settings(key, value, updated_at)`         |
+| Secret key  | `better_auth_secret`                                      |
+| Generation  | `crypto.randomBytes(32).toString("base64url")` if missing |
+| Concurrency | `INSERT … ON CONFLICT DO NOTHING`, then re-read           |
+| Auth init   | `initAuth(secret)` after migrations; no env secret        |
 
 ## Flow
 

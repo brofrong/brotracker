@@ -13,20 +13,16 @@
  *   bun run release patch --notes-file path/to/notes.md
  */
 
-import {
-	existsSync,
-	readFileSync,
-	unlinkSync,
-	writeFileSync,
-} from "node:fs";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import * as readline from "node:readline/promises";
+
 import {
 	archiveNotes,
+	type BumpKind,
 	loadUnreleasedNotes,
 	renderReleaseNotes,
-	type BumpKind,
 } from "./release-notes";
 
 const ROOT = resolve(import.meta.dir, "..");
@@ -57,7 +53,12 @@ function parseArgs(argv: string[]) {
 		if (arg === "--notes-file") {
 			notesFile = argv[++i];
 			if (!notesFile) usage();
-		} else if (arg === "--dry-run" || arg === "-n" || arg === "--yes" || arg === "-y") {
+		} else if (
+			arg === "--dry-run" ||
+			arg === "-n" ||
+			arg === "--yes" ||
+			arg === "-y"
+		) {
 			continue;
 		} else if (arg.startsWith("-")) {
 			console.error(`Unknown flag: ${arg}`);
@@ -189,7 +190,8 @@ async function main() {
 	}
 
 	const tag = `v${next}`;
-	const { body: releaseNotes, fromUnreleased } = assembleReleaseNotes(notesFile);
+	const { body: releaseNotes, fromUnreleased } =
+		assembleReleaseNotes(notesFile);
 	const notesMissing = !releaseNotes;
 
 	if (notesMissing && !dryRun) {
@@ -295,13 +297,20 @@ async function main() {
 	const archived = archiveNotes(UNRELEASED_DIR, archiveDir);
 	if (archived.length > 0) {
 		await run(["git", "add", "changes"]);
-		await run(["git", "commit", "-m", `chore: archive release notes for ${tag}`]);
+		await run([
+			"git",
+			"commit",
+			"-m",
+			`chore: archive release notes for ${tag}`,
+		]);
 		await run(["git", "push", "origin", "HEAD"]);
 	}
 
 	console.log("");
 	console.log(`Released ${tag}`);
-	console.log("GitHub Release created; CI will build and push Docker image for this tag.");
+	console.log(
+		"GitHub Release created; CI will build and push Docker image for this tag.",
+	);
 	console.log(`  https://hub.docker.com/r/brofrong/brotracker`);
 }
 

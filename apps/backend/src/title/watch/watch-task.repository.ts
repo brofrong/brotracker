@@ -1,4 +1,5 @@
 import { and, eq, isNotNull } from "drizzle-orm";
+
 import { db } from "../../db/db";
 import { titleWatches } from "../../db/title/title-watch.schema";
 import { watchTasks } from "../../db/title/watch-task.schema";

@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import z from "zod";
+
 import { toTmdbLanguage } from "../i18n/locale";
 import {
 	AddFromTrackerGatewayError,
@@ -10,11 +11,11 @@ import { protectedProcedure, router } from "../trpc";
 import {
 	TitleAddError,
 	TitleLinkError,
-	TitleWatchError,
 	titleModule,
+	TitleWatchError,
 	tmdbBrowse,
-	WatchlistError,
 	watchlist,
+	WatchlistError,
 } from "./index";
 
 function browseOrThrow(outcome: BrowseOutcome) {

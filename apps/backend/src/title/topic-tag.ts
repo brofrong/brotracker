@@ -125,7 +125,9 @@ export function extractTopicIdFromTags(tags: string): string | null {
 		try {
 			parseTorrentId(suffix);
 			return suffix;
-		} catch {}
+		} catch {
+			// Ignore invalid ID formats
+		}
 	}
 	return null;
 }

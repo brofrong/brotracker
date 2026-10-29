@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
+
 import {
 	formatRelativeTime,
 	groupByStage,
 	hasActiveDownload,
 	STAGE_ORDER,
 	stageOf,
-	type WatchlistItem,
 	waitingStatus,
 	waitingStatusDisplay,
+	type WatchlistItem,
 } from "./watchlist-view";
 
 type Watch = WatchlistItem["watch"];

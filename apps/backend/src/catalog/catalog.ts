@@ -6,6 +6,7 @@ import type {
 	SearchOptions,
 	SearchResult,
 } from "@brotracker/rutracker-ts/tracker/tracker-interface";
+
 import { compareTorrentQuality } from "../torrent/quality-score";
 import type { LocalCatalogHit } from "../torrent/torrent.types";
 import type { TrackerFailure } from "../torrent/tracker-error";

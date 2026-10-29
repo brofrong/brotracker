@@ -9,6 +9,7 @@ import type {
 	TrackerInterface,
 } from "@brotracker/rutracker-ts/tracker/tracker-interface";
 import { eq } from "drizzle-orm";
+
 import { db } from "../db/db";
 import { kinozalStore } from "../db/kinozal-store/kinozal-store.schema";
 import { rutrackerStore } from "../db/rutracker-store/rutracker-store.schema";

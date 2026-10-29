@@ -9,18 +9,18 @@ Add [Kinozal.me](https://kinozal.me/) as a second torrent Provider with full par
 
 ## Decisions
 
-| Topic | Choice |
-|--------|--------|
-| Search sources | Multi-select in **settings** (`enabled` per tracker); search always uses enabled sources |
-| Scope (v1) | Full parity: settings + search + download + covers + TitleWatch/workers |
-| Package layout | New adapter under `packages/rutracker-ts/.../search-engine/kinozal/` (rename package later) |
-| Identity | Namespaced `torrentId`: `rutracker:<id>` / `kinozal:<id>` |
-| Legacy IDs | Bare digits treated as `rutracker`; one-shot DB migration prefixes existing rows |
-| Partial failure | Merge successful trackers; log errors; throw only if all fail / unavailable |
-| Session storage | Separate cookie store per tracker (`rutracker_store` + `kinozal_store`) |
-| CF solver | Shared `BYPARR_URL`; use when Kinozal returns CF challenge |
-| Passwords at rest | Unchanged (plaintext in `provider_settings`, same as RuTracker) |
-| Out of scope | Browse pagination; package rename; encrypting credentials |
+| Topic             | Choice                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------- |
+| Search sources    | Multi-select in **settings** (`enabled` per tracker); search always uses enabled sources    |
+| Scope (v1)        | Full parity: settings + search + download + covers + TitleWatch/workers                     |
+| Package layout    | New adapter under `packages/rutracker-ts/.../search-engine/kinozal/` (rename package later) |
+| Identity          | Namespaced `torrentId`: `rutracker:<id>` / `kinozal:<id>`                                   |
+| Legacy IDs        | Bare digits treated as `rutracker`; one-shot DB migration prefixes existing rows            |
+| Partial failure   | Merge successful trackers; log errors; throw only if all fail / unavailable                 |
+| Session storage   | Separate cookie store per tracker (`rutracker_store` + `kinozal_store`)                     |
+| CF solver         | Shared `BYPARR_URL`; use when Kinozal returns CF challenge                                  |
+| Passwords at rest | Unchanged (plaintext in `provider_settings`, same as RuTracker)                             |
+| Out of scope      | Browse pagination; package rename; encrypting credentials                                   |
 
 ## Architecture
 
@@ -47,11 +47,11 @@ Import DAG unchanged: Catalog owns search orchestration; tracker clients stay ad
 
 Per tracker provider config (`rutracker` / `kinozal`):
 
-| Field | Notes |
-|--------|--------|
-| `login` / `password` | Required for live search/download |
-| `proxyUrl?` | Optional HTTP(S) proxy |
-| `enabled` | Include in Catalog / TitleWatch / cover routing |
+| Field                | Notes                                           |
+| -------------------- | ----------------------------------------------- |
+| `login` / `password` | Required for live search/download               |
+| `proxyUrl?`          | Optional HTTP(S) proxy                          |
+| `enabled`            | Include in Catalog / TitleWatch / cover routing |
 
 Behavior:
 
@@ -75,13 +75,13 @@ Behavior:
 
 Live site facts (2026-08-05):
 
-| Step | Endpoint |
-|------|----------|
-| Login | `POST /takelogin.php` — `username`, `password`, `returnto` |
-| Search | `GET /browse.php?s=…&c=…` (+ sort/format params as needed) |
-| Topic | `GET /details.php?id={id}` |
+| Step     | Endpoint                                                                    |
+| -------- | --------------------------------------------------------------------------- |
+| Login    | `POST /takelogin.php` — `username`, `password`, `returnto`                  |
+| Search   | `GET /browse.php?s=…&c=…` (+ sort/format params as needed)                  |
+| Topic    | `GET /details.php?id={id}`                                                  |
 | Download | Authenticated `.torrent` bytes (exact URL confirmed after successful login) |
-| Cover | From details HTML (`/i/poster/…` or external image host) |
+| Cover    | From details HTML (`/i/poster/…` or external image host)                    |
 
 Details:
 

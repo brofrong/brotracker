@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { processWatchTask, type WatchTask } from "./process-watch-task";
 
 function task(partial: Partial<WatchTask> = {}): WatchTask {

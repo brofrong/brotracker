@@ -6,6 +6,7 @@ import {
 } from "@astryxdesign/core/SegmentedControl";
 import { Moon, Sun, SunMoon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+
 import { type StoredThemeMode, useThemeMode } from "#/shared/ui/theme-provider";
 
 export function ThemeToggle() {

@@ -1,14 +1,15 @@
 import axios from "axios";
 import { err, ok, type Result } from "neverthrow";
+
 import type { KinozalOptions } from "../../tracker-interface";
 import { isTorrentPayload } from "../rutracker/get-torrent";
 import { acquireKinozalCfClearance } from "./cf";
+import { kinozalDownloadRequestUrl } from "./hosts";
 import {
 	axiosAgentConfig,
 	cloudflareBypassFailedError,
 	isCloudflareChallenge,
 } from "./http";
-import { kinozalDownloadRequestUrl } from "./hosts";
 import { kinozalGetCookies } from "./login";
 
 export { isTorrentPayload };

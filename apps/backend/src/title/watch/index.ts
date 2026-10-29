@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+
 import { db } from "../../db/db";
 import { torrents } from "../../db/torrent/torrent.schema";
 import {
@@ -14,6 +15,10 @@ import { isCompletePack } from "./episode-progress";
 import { createNightlyWorker } from "./nightly-worker";
 import { createReplaceTorrentInQb } from "./replace-torrent-in-qb";
 import {
+	appendWatchEvent,
+	listRecentWatchEvents,
+} from "./title-watch-event.repository";
+import {
 	deleteWatch,
 	listWatchesByState,
 	listWatchlistRecords,
@@ -22,10 +27,6 @@ import {
 	loadWatchByTopicUrl,
 	saveWatch,
 } from "./title-watch.repository";
-import {
-	appendWatchEvent,
-	listRecentWatchEvents,
-} from "./title-watch-event.repository";
 import { createWatch } from "./watch";
 import {
 	createWatchTask,

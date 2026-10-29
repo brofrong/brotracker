@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync } from "node:fs";
+
 import { getTableColumns } from "drizzle-orm";
+
 import { account } from "../db/auth/auth.schema";
 
 const DRIZZLE_DIR = `${import.meta.dir}/../../drizzle`;

@@ -91,10 +91,7 @@ export type KinopoiskRatingStub = {
 };
 
 export type TitleRating =
-	| TmdbRating
-	| TmdbRatingUnavailable
-	| ImdbRatingStub
-	| KinopoiskRatingStub;
+	TmdbRating | TmdbRatingUnavailable | ImdbRatingStub | KinopoiskRatingStub;
 
 export type TitleWatchState = WatchState;
 

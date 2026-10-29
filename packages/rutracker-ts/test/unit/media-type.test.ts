@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+
 import { detectMediaType } from "../../src/tracker/search-engine/rutracker/media-type";
 
 test("detectMediaType: film-only forum", () => {

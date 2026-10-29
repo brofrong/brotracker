@@ -1,6 +1,6 @@
 import type { CreateTracker, SearchOptions } from "../../tracker-interface";
-import { rutrackerGetTorrent } from "./get-torrent";
 import { rutrackerGetImage } from "./get-image";
+import { rutrackerGetTorrent } from "./get-torrent";
 import { parseResponse } from "./parse";
 import { makeSearchRequest, rutrackerSearch } from "./search";
 

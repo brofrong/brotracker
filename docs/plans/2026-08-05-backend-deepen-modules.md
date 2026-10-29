@@ -16,13 +16,13 @@
 
 ## PR map (do in order)
 
-| PR | Slice | Risk | Why first/next |
-|---|---|---|---|
-| 1 | Type seam: `LocalCatalogHit` ownership | Low | Unblocks Catalog evolution; no behaviour change |
-| 2 | Infra: `proxy-agent` → `http/` | Low | Fixes upward import; touches few call sites |
-| 3 | Home DAG: watch feed + TMDB via ports / shared adapter | Medium | Stops Home → Title implementation imports |
-| 4 | Title search through Catalog | Medium | Deletes duplicate tracker path; real leverage |
-| 5 | `title/watch/` + `createWatch` | High | Biggest locality win; largest move |
+| PR  | Slice                                                  | Risk   | Why first/next                                  |
+| --- | ------------------------------------------------------ | ------ | ----------------------------------------------- |
+| 1   | Type seam: `LocalCatalogHit` ownership                 | Low    | Unblocks Catalog evolution; no behaviour change |
+| 2   | Infra: `proxy-agent` → `http/`                         | Low    | Fixes upward import; touches few call sites     |
+| 3   | Home DAG: watch feed + TMDB via ports / shared adapter | Medium | Stops Home → Title implementation imports       |
+| 4   | Title search through Catalog                           | Medium | Deletes duplicate tracker path; real leverage   |
+| 5   | `title/watch/` + `createWatch`                         | High   | Biggest locality win; largest move              |
 
 Each PR ends with: `bun test` in `apps/backend`, commit, mergeable alone.
 
@@ -31,6 +31,7 @@ Each PR ends with: `bun test` in `apps/backend`, commit, mergeable alone.
 ### Task 1: Move `LocalCatalogHit` to the data owner
 
 **Files:**
+
 - Create: `apps/backend/src/torrent/torrent.types.ts` (or `cached-torrent.ts` — pick one name, prefer `torrent.types.ts`)
 - Modify: `apps/backend/src/torrent/torrent.repository.ts`
 - Modify: `apps/backend/src/catalog/catalog.ts`
@@ -102,6 +103,7 @@ EOF
 ### Task 2: Lift `proxy-agent` into `http/`
 
 **Files:**
+
 - Move: `apps/backend/src/torrent/proxy-agent.ts` → `apps/backend/src/http/proxy-agent.ts`
 - Modify: `apps/backend/src/http/fetch-with-proxy.ts`
 - Modify: `apps/backend/src/torrent/torrent.tracker.ts`
@@ -135,11 +137,13 @@ EOF
 ### Task 3: Home stops importing Title implementations
 
 **Problem today**
+
 - `home/index.ts` imports `listRecentWatchEvents` from `../title/title-watch-event.repository`
 - `home/tmdb-discover.ts` imports `createTmdbBrowse` / `mapBrowseItem` from `../title/tmdb-browse`
 - `home/home.ts` imports event types from `../title/title-watch-event`
 
 **Target**
+
 - Home only sees ports on `HomeDeps` (already mostly true for events)
 - Wire `getTitleWatchEvents` from **app composition** or a thin re-export owned by Title’s public surface — not from Home importing a repository
 - TMDB browse: either (A) move shared TMDB client helpers to `apps/backend/src/tmdb/` (adapter), or (B) inject `fetchDiscoverFeed` fully from Title/`index` composition without Home importing Title files
@@ -147,11 +151,13 @@ EOF
 **Recommended approach: B for feed wiring + A-lite for browse**
 
 Prefer minimal churn:
+
 1. Keep event **types** in `title/title-watch-event.ts` for this PR (type-only import is the milder smell); document as follow-up to extract a read-model DTO if Home needs independence.
 2. Stop Home `index.ts` from importing the repository: export a bound function from `title/index.ts` (e.g. `listTitleWatchFeed(limit)`) and import **that** from Home — still a cross-feature import, but of Title’s composition surface, not persistence. Better: wire in `apps/backend/src/index.ts` if Home is constructed there later; for now Title public export is acceptable.
 3. For discover: extract `tmdb-browse.ts` (+ parsers used by both) to `apps/backend/src/tmdb/browse.ts` (adapter). Title and Home both import from `tmdb/`, not from each other.
 
 **Files:**
+
 - Create: `apps/backend/src/tmdb/browse.ts` (move from `title/tmdb-browse.ts`; keep tests as `tmdb/browse.test.ts`)
 - Modify: `apps/backend/src/title/index.ts` — import browse from `../tmdb/browse`; export `getTitleWatchFeed` helper wrapping `listRecentWatchEvents`
 - Modify: `apps/backend/src/home/index.ts` — use Title public helper or inject; remove repository import
@@ -171,7 +177,7 @@ In `title/index.ts`:
 
 ```ts
 export function getTitleWatchFeed(limit: number) {
-  return listRecentWatchEvents(limit);
+	return listRecentWatchEvents(limit);
 }
 ```
 
@@ -210,10 +216,12 @@ EOF
 ### Task 4: Title torrents search goes through Catalog
 
 **Problem today**
+
 - `title/index.ts` duplicates tracker search + `upsertFromTracker` (`searchTrackerForTitle`, `searchLocalForTitle`)
 - Catalog already owns local/tracker/upsert/cover orchestration
 
 **Target**
+
 - Add a Catalog method (or narrow port) that Title can call for “candidates for this title query”
 - TitleDeps collapses `searchLocal` + `searchTracker` into one port, e.g. `searchTorrents(query): Promise<TitleTorrentsSearch>` — **or** keep two ports but both wired from Catalog, not from raw tracker
 
@@ -222,10 +230,19 @@ EOF
 Prefer **one port** on Title:
 
 ```ts
-searchTorrents: (query: string) => Promise<
-  | { status: "ok"; local: TitleTorrentCandidate[]; tracker: TitleTorrentCandidate[] }
-  | { status: "degraded"; local: TitleTorrentCandidate[]; trackerError: "unavailable" | "error" }
->;
+searchTorrents: (query: string) =>
+	Promise<
+		| {
+				status: "ok";
+				local: TitleTorrentCandidate[];
+				tracker: TitleTorrentCandidate[];
+		  }
+		| {
+				status: "degraded";
+				local: TitleTorrentCandidate[];
+				trackerError: "unavailable" | "error";
+		  }
+	>;
 ```
 
 Wire in `title/index.ts` by calling `catalog.search` + `catalog.searchRefresh` (or whatever the live API is — read `catalog.ts` before implementing; do not invent a third search path).
@@ -233,6 +250,7 @@ Wire in `title/index.ts` by calling `catalog.search` + `catalog.searchRefresh` (
 Map `CatalogSearchResult` → `TitleTorrentCandidate` in the composition layer only.
 
 **Files:**
+
 - Modify: `apps/backend/src/catalog/catalog.ts` — only if Title needs a method Catalog lacks (prefer reuse `search` + `searchRefresh`)
 - Modify: `apps/backend/src/title/title.types.ts` — shrink deps
 - Modify: `apps/backend/src/title/title.ts` — call the new/combined port
@@ -278,24 +296,25 @@ EOF
 
 **Move under `apps/backend/src/title/watch/` (keep tests next to files):**
 
-| From `title/` | To `title/watch/` |
-|---|---|
-| `check-topic-now.ts` (+ test) | same names |
-| `process-watch-task.ts` (+ test) | |
-| `enqueue-nightly-tasks.ts` (+ test) | |
-| `nightly-worker.ts` (+ test) | |
-| `sync-watches-from-qb.ts` (+ test) | |
-| `replace-torrent-in-qb.ts` (+ test) | |
-| `title-watch.repository.ts` | `watch.repository.ts` or keep name |
-| `title-watch-event.ts` (+ test) | |
-| `title-watch-event.repository.ts` | |
-| `watch-task.repository.ts` | |
-| `episode-progress.ts` (+ test) | if only used by watch; else stay at title root |
-| `torrent-fingerprint.ts` (+ test) | if watch-only |
+| From `title/`                       | To `title/watch/`                              |
+| ----------------------------------- | ---------------------------------------------- |
+| `check-topic-now.ts` (+ test)       | same names                                     |
+| `process-watch-task.ts` (+ test)    |                                                |
+| `enqueue-nightly-tasks.ts` (+ test) |                                                |
+| `nightly-worker.ts` (+ test)        |                                                |
+| `sync-watches-from-qb.ts` (+ test)  |                                                |
+| `replace-torrent-in-qb.ts` (+ test) |                                                |
+| `title-watch.repository.ts`         | `watch.repository.ts` or keep name             |
+| `title-watch-event.ts` (+ test)     |                                                |
+| `title-watch-event.repository.ts`   |                                                |
+| `watch-task.repository.ts`          |                                                |
+| `episode-progress.ts` (+ test)      | if only used by watch; else stay at title root |
+| `torrent-fingerprint.ts` (+ test)   | if watch-only                                  |
 
 Leave at `title/` root: `title.ts`, `title.types.ts`, `title.router.ts`, `index.ts`, `tmdb-meta.ts`, topic-tag helpers used by Title UI path, ratings (or delete ratings port if still single-adapter — optional cleanup in this PR).
 
 **New files:**
+
 - `apps/backend/src/title/watch/watch.ts` — `createWatch(deps)`
 - `apps/backend/src/title/watch/watch.types.ts` — ports + public types
 - `apps/backend/src/title/watch/index.ts` — composition (nightly worker, processTask, sync) — **thin**
@@ -344,12 +363,14 @@ export type WatchDeps = {
 Tune to existing function signatures; do not change DB schema in this PR.
 
 **Title changes:**
+
 - `TitleDeps` drops watch-task/process/replace/listQb/fetchBytes/etc. if only Watch needs them
 - Title may depend on a narrow `WatchViewPort`: `loadWatchByTitleId` / `loadWatchByTopicUrl` for read model only
 - **`get()` must not call `syncWatchesFromQb`** — move sync to nightly worker only (already runs there) + optional explicit `watch.syncFromQb` if UI needs a button later
 - `setWatch` / `checkNow` on Title module either delegate to `Watch` or move to watch router procedures — prefer Title router still exposes same tRPC API by calling `watch.*` so FE does not break
 
 **Composition:**
+
 - `title/watch/index.ts` wires repos + qb + tracker (logic moved out of mega `title/index.ts`)
 - `title/index.ts` shrinks: Title module + re-export `nightlyWorker` from watch
 - App `index.ts` keeps importing `nightlyWorker` from title public surface
@@ -401,17 +422,17 @@ EOF
 
 ## Done when
 
-1. `torrent.repository` does not import Catalog  
-2. `proxy-agent` lives under `http/`  
-3. `home/` does not import Title `*.repository`  
-4. Title does not duplicate tracker search/upsert  
-5. `title/watch/` exists with `createWatch` + README; `get()` is read-only w.r.t. qb sync  
-6. Phase C items 3–4 in architecture-rules plan can be checked off  
+1. `torrent.repository` does not import Catalog
+2. `proxy-agent` lives under `http/`
+3. `home/` does not import Title `*.repository`
+4. Title does not duplicate tracker search/upsert
+5. `title/watch/` exists with `createWatch` + README; `get()` is read-only w.r.t. qb sync
+6. Phase C items 3–4 in architecture-rules plan can be checked off
 
 ## Follow-ups (not this plan)
 
-- Rename `qbittorent` → `qbittorrent`  
-- `createTransfers` wrapping qb client  
-- Drop `ratings-port` until second rating source exists  
-- Move quality-score to shared domain util if both Catalog and Title cores need it without importing `torrent/`  
-- Home type-only dependency on `title-watch-event` → shared read-model type  
+- Rename `qbittorent` → `qbittorrent`
+- `createTransfers` wrapping qb client
+- Drop `ratings-port` until second rating source exists
+- Move quality-score to shared domain util if both Catalog and Title cores need it without importing `torrent/`
+- Home type-only dependency on `title-watch-event` → shared read-model type

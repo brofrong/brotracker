@@ -6,7 +6,7 @@ Status: draft (awaiting approval)
 ## Intent
 
 The user wants to mark a film or series as «жду» (waiting for it) and forget about it: when a release
-in *good enough* quality shows up on a tracker, brotracker should start downloading it in qBittorrent
+in _good enough_ quality shows up on a tracker, brotracker should start downloading it in qBittorrent
 on its own and tell the user it started. "Good enough" is the user's own rule, set in Settings.
 
 This only works if brotracker reliably knows which releases belong to which Title. Today it doesn't:
@@ -94,7 +94,7 @@ Parse each tracker release title into: list of names, year, and flags. Typical s
 - RuTracker: `Одиссея / The Odyssey (Кристофер Нолан) [2026, США, WEB-DL 2160p, HDR, Dub]`
 - Kinozal / RuTor: `Одиссея / The Odyssey / 2026 / ДБ / WEB-DL (1080p)`
 
-Output per release: `names: string[]` (split on ` / `, director parentheses and bracket tail
+Output per release: `names: string[]` (split on `/`, director parentheses and bracket tail
 removed), `year: number | null`, plus new flags:
 
 - `isCamrip`: CAMRip, CamRip, TS, TeleSync, TC, TeleCine, «экранка» and common spellings.
@@ -176,12 +176,12 @@ replaces it in qBittorrent and records a `torrent-updated` TitleWatchEvent. Full
 
 Unify films and series into one TitleWatch with a lifecycle:
 
-| Stage | Meaning | Films | Series |
-|---|---|---|---|
-| **Жду** (new) | no release yet; searched periodically | ✅ | ✅ |
-| **Качается** | release found and added to qBittorrent | ✅ | ✅ |
-| **Слежу за обновлениями** | existing nightly topic-update tracking | — | ✅ |
-| **Готово** | film downloaded / series pack complete | ✅ | ✅ |
+| Stage                     | Meaning                                | Films | Series |
+| ------------------------- | -------------------------------------- | ----- | ------ |
+| **Жду** (new)             | no release yet; searched periodically  | ✅    | ✅     |
+| **Качается**              | release found and added to qBittorrent | ✅    | ✅     |
+| **Слежу за обновлениями** | existing nightly topic-update tracking | —     | ✅     |
+| **Готово**                | film downloaded / series pack complete | ✅    | ✅     |
 
 - A watch is anchored to the **Title**; the topic is attached once found. This needs a migration of
   `title_watches` (today `topic_url` is the primary key). Existing rows must be preserved and keep

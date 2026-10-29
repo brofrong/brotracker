@@ -11,15 +11,15 @@ Status: accepted
 
 ## Decisions
 
-| Topic | Choice |
-|---|---|
-| Storage | Per-change files under `changes/unreleased/` |
-| When to write | After any meaningful user-facing work that will land on main |
-| Content | User-facing only (features, UX fixes, breaking behavior) |
-| Language | English |
-| Bump | Release agent proposes (breaking→major, feature→minor, else patch); human confirms |
-| Implementation | Release skill + extend `scripts/release.ts` + thin Cursor rule + `docs/agents/` |
-| Git commits | Two: `chore: release vX.Y.Z`, then archive notes |
+| Topic          | Choice                                                                             |
+| -------------- | ---------------------------------------------------------------------------------- |
+| Storage        | Per-change files under `changes/unreleased/`                                       |
+| When to write  | After any meaningful user-facing work that will land on main                       |
+| Content        | User-facing only (features, UX fixes, breaking behavior)                           |
+| Language       | English                                                                            |
+| Bump           | Release agent proposes (breaking→major, feature→minor, else patch); human confirms |
+| Implementation | Release skill + extend `scripts/release.ts` + thin Cursor rule + `docs/agents/`    |
+| Git commits    | Two: `chore: release vX.Y.Z`, then archive notes                                   |
 
 ## Rejected alternatives
 
@@ -71,22 +71,22 @@ Extend `scripts/release.ts` (source of truth for git/tag/`gh`):
 
 ## Failure handling
 
-| Case | Behavior |
-|---|---|
-| No unreleased notes | Abort; do not invent changelog |
-| Dirty tree | Abort (existing behavior) |
-| `gh` fails after tag push | Do not delete tag; report and suggest manual `gh release create` with the same notes file |
-| Notes edited at confirm | Edit draft only (temp / `.release-notes.md`); do not rewrite unreleased files after the fact |
-| Parallel agents | Distinct timestamp filenames; rare merge conflicts |
+| Case                      | Behavior                                                                                     |
+| ------------------------- | -------------------------------------------------------------------------------------------- |
+| No unreleased notes       | Abort; do not invent changelog                                                               |
+| Dirty tree                | Abort (existing behavior)                                                                    |
+| `gh` fails after tag push | Do not delete tag; report and suggest manual `gh release create` with the same notes file    |
+| Notes edited at confirm   | Edit draft only (temp / `.release-notes.md`); do not rewrite unreleased files after the fact |
+| Parallel agents           | Distinct timestamp filenames; rare merge conflicts                                           |
 
 ## Agent documentation surface
 
-| Artifact | Role |
-|---|---|
-| `.agents/skills/release/SKILL.md` | Full release checklist |
-| `docs/agents/release-notes.md` | When/how to write notes; format |
+| Artifact                          | Role                                                                                     |
+| --------------------------------- | ---------------------------------------------------------------------------------------- |
+| `.agents/skills/release/SKILL.md` | Full release checklist                                                                   |
+| `docs/agents/release-notes.md`    | When/how to write notes; format                                                          |
 | `.cursor/rules/release-notes.mdc` | Thin always-on reminder: write note after user-facing work; use release skill on release |
-| `AGENTS.md` | Pointer to `docs/agents/release-notes.md` |
+| `AGENTS.md`                       | Pointer to `docs/agents/release-notes.md`                                                |
 
 ## Out of scope
 

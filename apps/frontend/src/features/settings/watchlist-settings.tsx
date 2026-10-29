@@ -12,7 +12,9 @@ import { Text } from "@astryxdesign/core/Text";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { trpc } from "#/shared/lib/trpc";
+
 import type { StatusMessage } from "./settings-shared";
 
 const CHECK_INTERVAL_HOURS = [1, 2, 4, 6, 12, 24] as const;

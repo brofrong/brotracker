@@ -10,6 +10,7 @@ import {
 	useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+
 import { LocaleProvider } from "#/shared/i18n/locale-provider";
 import { queryClient } from "#/shared/lib/trpc";
 import { AuthGate } from "#/shared/ui/AuthGate";
@@ -17,6 +18,7 @@ import Navigation, {
 	MobileNavigation,
 } from "#/shared/ui/navigation/navigation";
 import { ThemeProvider } from "#/shared/ui/theme-provider";
+
 import appCss from "../styles.css?url";
 import "#/shared/i18n";
 

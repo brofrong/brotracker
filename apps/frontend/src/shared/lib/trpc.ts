@@ -2,7 +2,9 @@ import type { AppRouter } from "@brotracker/backend/appRouter";
 import { QueryClient } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
+
 import { readStoredLocale } from "#/shared/i18n/locale";
+
 import { env } from "./env";
 import { unauthorizedRedirect } from "./unauthorized-redirect";
 

@@ -1,4 +1,5 @@
 import type { Result } from "neverthrow";
+
 import type { ProxyAgent } from "./search-engine/rutracker/http";
 import type { FileStore } from "./storage/file-store";
 

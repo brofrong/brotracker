@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+
 import { oidcSocialSignIn } from "./auth-client";
 
 describe("oidcSocialSignIn", () => {

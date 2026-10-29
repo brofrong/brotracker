@@ -4,6 +4,7 @@ import {
 } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/constants";
 import { RUTOR_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutor/constants";
 import { RUTRACKER_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/constants";
+
 import { fetchWithProxy } from "../http/fetch-with-proxy";
 import {
 	loadKinozalConfig,

@@ -25,11 +25,9 @@
 		"start": "bun run src/index.ts",
 		"build": "tsdown",
 		"test": "bun test test/unit",
-		"test:e2e": "bun test test/integration",
-		"lint": "biome check ."
+		"test:e2e": "bun test test/integration"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.4.14",
 		"@types/bun": "latest",
 		"tsdown": "^0.23.0",
 		"typescript": "^7.0.2"

@@ -1,9 +1,10 @@
 import { ok, type Result } from "neverthrow";
 import parse, { type HTMLElement } from "node-html-parser";
-import type { SearchPage, SearchResult } from "../../tracker-interface";
+
 import { formatTorrentId } from "../../torrent-id";
-import { checkHDR, checkResolution, formatDate, formatSize } from "./format";
+import type { SearchPage, SearchResult } from "../../tracker-interface";
 import { RUTRACKER_URL } from "./constants";
+import { checkHDR, checkResolution, formatDate, formatSize } from "./format";
 
 const FORUM_BASE = `${RUTRACKER_URL}/forum/`;
 

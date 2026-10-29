@@ -1,10 +1,12 @@
 import { existsSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
+
 import { createHTTPServer } from "@trpc/server/adapters/standalone";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import { toNodeHandler } from "better-auth/node";
 import { WebSocketServer } from "ws";
+
 import { appRouter } from "./appRouter";
 import { auth, countUsers, getAuthMode, initAuth } from "./auth/auth";
 import { buildAuthModeResponse } from "./auth/auth-mode";

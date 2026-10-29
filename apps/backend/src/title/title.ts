@@ -1,4 +1,5 @@
 import { parseReleaseTitle } from "@brotracker/rutracker-ts/tracker/release-title";
+
 import { scoreTorrentQuality } from "../torrent/quality-score";
 import { type MatchTarget, releaseMatchesTitle } from "./release-match";
 import type {

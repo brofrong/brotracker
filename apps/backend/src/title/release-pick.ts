@@ -2,6 +2,7 @@ import {
 	type ParsedReleaseTitle,
 	parseReleaseTitle,
 } from "@brotracker/rutracker-ts/tracker/release-title";
+
 import type { WatchlistSettings } from "../settings/watchlist-settings";
 import { scoreTorrentQuality } from "../torrent/quality-score";
 import { type MatchTarget, releaseNamesMatch } from "./release-match";

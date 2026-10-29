@@ -4,7 +4,9 @@ import type {
 	UseMutationOptions,
 	UseQueryOptions,
 } from "@tanstack/react-query";
+
 import { trpc } from "#/shared/lib/trpc";
+
 import type { TrackerDiagnosticsResult } from "./tracker-diagnostics";
 
 export type TrackerEntry = {

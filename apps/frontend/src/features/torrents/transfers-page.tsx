@@ -62,6 +62,7 @@ import {
 	useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+
 import { useLocale } from "#/shared/i18n/locale-provider";
 import {
 	formatAddedOn,
@@ -86,6 +87,7 @@ import {
 	subscribeToTransferUpdates,
 } from "#/shared/lib/trpc-subscription";
 import { TransferProgressBar } from "#/shared/ui/transfer-progress-bar";
+
 import { LinkTitleDialog, type LinkTitleTarget } from "./link-title-dialog";
 
 type SortKey =
@@ -922,7 +924,6 @@ export function TransfersPage() {
 		Math.floor(viewportWidth - FIXED_COLUMNS_WIDTH - CELL_BORDERS_SLACK),
 	);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: sortKey/sortDirection drive header icons; action handlers stay current via closure
 	const columns = useMemo((): TableColumn<TransferRow>[] => {
 		const sortableHeader = (key: SortKey) => (
 			<Button

@@ -1,4 +1,5 @@
 import { createAuthClient } from "better-auth/client";
+
 import { fetchAuthMode } from "./auth-mode";
 import { env } from "./env";
 

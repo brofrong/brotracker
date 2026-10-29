@@ -10,11 +10,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+
 import {
-	TRACKERS,
 	type TrackerEntry,
-	type TrackerSettingsData,
+	TRACKERS,
 	trackerSettingsApi,
+	type TrackerSettingsData,
 } from "./tracker-registry";
 
 type TrackerStatus = "enabled" | "disabled" | "notConfigured";

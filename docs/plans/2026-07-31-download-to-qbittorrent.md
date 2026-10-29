@@ -15,6 +15,7 @@
 ### Task 1: Media type detection helper
 
 **Files:**
+
 - Modify: `packages/rutracker-ts/src/tracker/search-engine/rutracker/search-options.ts`
 - Create: `packages/rutracker-ts/src/tracker/search-engine/rutracker/media-type.ts`
 - Create: `packages/rutracker-ts/test/unit/media-type.test.ts`
@@ -23,6 +24,7 @@
 
 ```ts
 import { expect, test } from "bun:test";
+
 import { detectMediaType } from "../../src/tracker/search-engine/rutracker/media-type";
 
 test("detectMediaType: film-only forum", () => {
@@ -77,6 +79,7 @@ Expected: PASS
 ### Task 2: Implement `getTorrent` (download `.torrent` bytes)
 
 **Files:**
+
 - Modify: `packages/rutracker-ts/src/tracker/tracker-interface.ts` — change return type to `Result<Uint8Array, Error>`
 - Create: `packages/rutracker-ts/src/tracker/search-engine/rutracker/get-torrent.ts`
 - Modify: `packages/rutracker-ts/src/tracker/search-engine/rutracker/index.ts`
@@ -110,6 +113,7 @@ Run: `cd packages/rutracker-ts && bun test test/unit`
 ### Task 3: qBittorrent client accepts torrent bytes
 
 **Files:**
+
 - Modify: `apps/backend/src/qbittorent/qbittorent.client.ts`
 - Modify: `apps/backend/src/qbittorent/qbittorent.types.ts`
 - Modify: `apps/backend/src/qbittorent/qbittorent.service.ts`
@@ -145,6 +149,7 @@ export async function addTorrent(
 ### Task 4: `qbittorent.add` tRPC mutation
 
 **Files:**
+
 - Modify: `apps/backend/src/qbittorent/qbittorent.router.ts`
 - Modify: `apps/backend/src/qbittorent/qbittorent.service.ts` (optional thin `addFromTracker` wrapper)
 - Use: `apps/backend/src/torrent/torrent.tracker.ts` (`getTracker`)
@@ -184,6 +189,7 @@ Run: `cd apps/backend && bunx tsc --noEmit` (or project’s usual check)
 ### Task 5: Download confirm dialog component
 
 **Files:**
+
 - Create: `apps/frontend/src/components/search/download-torrent-dialog.tsx`
 - Reference: `bunx astryx template DialogFormDialog`, `bunx astryx component Dialog`, SegmentedControl, useToast
 
@@ -219,6 +225,7 @@ type DownloadTorrentDialogProps = {
 ### Task 6: Wire search page (table + cards)
 
 **Files:**
+
 - Modify: `apps/frontend/src/routes/index.tsx`
 - Modify: `apps/frontend/src/components/search/search-results-cards.tsx`
 

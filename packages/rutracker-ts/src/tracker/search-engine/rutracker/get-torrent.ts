@@ -1,6 +1,7 @@
 import axios from "axios";
 import iconv from "iconv-lite";
 import { err, ok, type Result } from "neverthrow";
+
 import type { RutrackerOptions } from "../../tracker-interface";
 import { acquireCfClearance } from "./cf";
 import {

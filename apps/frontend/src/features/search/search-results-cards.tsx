@@ -11,6 +11,7 @@ import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { ImageOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
+
 import { TrackerSourceBadge } from "#/shared/ui/tracker-source-badge";
 
 export type SearchCardItem = {

@@ -30,19 +30,21 @@ import {
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { useLocale } from "#/shared/i18n/locale-provider";
 import { formatEta, formatProgress, formatSpeed } from "#/shared/lib/format";
 import { trpc } from "#/shared/lib/trpc";
+
 import {
 	formatRelativeTime,
 	groupByStage,
 	hasActiveDownload,
 	STAGE_ORDER,
 	stageOf,
-	type WatchlistItem,
-	type WatchlistStage,
 	waitingStatus,
 	waitingStatusDisplay,
+	type WatchlistItem,
+	type WatchlistStage,
 } from "./watchlist-view";
 
 type StageFilter = "all" | WatchlistStage;

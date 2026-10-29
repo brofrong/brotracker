@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
+
 import type { SearchResult } from "@brotracker/rutracker-ts/tracker/tracker-interface";
+
 import { type CatalogDeps, createCatalog, TrackerSearchError } from "./catalog";
 
 const hit = (overrides: Partial<SearchResult> = {}): SearchResult => ({

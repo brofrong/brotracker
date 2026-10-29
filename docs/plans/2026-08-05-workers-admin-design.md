@@ -9,17 +9,17 @@ Admin page to list background workers, inspect durable run history with leveled 
 
 ## Decisions
 
-| Topic | Choice |
-|--------|--------|
-| Scope (v1) | Only `nightly-torrent-check`; multi-worker list UI ready |
-| Persistence | Postgres `worker_runs` (survives process restart) |
-| Logs | `jsonb` array of `{ ts, level, message }`; levels `info` \| `warn` \| `error` |
-| Manual run while busy | Disable Run; core rejects second concurrent run |
-| Empty scheduled ticks | No run row when nightly window / once-per-day gate skips work |
-| Failed WatchTasks | Log warn/error per task; overall run can still `succeeded` with summary |
-| Live updates | Poll while status is `running` (no websocket in v1) |
-| Retention | Keep last 50 runs per worker; prune on new run |
-| Routes | `/workers`, `/workers/$id` (run log on detail page) |
+| Topic                 | Choice                                                                        |
+| --------------------- | ----------------------------------------------------------------------------- |
+| Scope (v1)            | Only `nightly-torrent-check`; multi-worker list UI ready                      |
+| Persistence           | Postgres `worker_runs` (survives process restart)                             |
+| Logs                  | `jsonb` array of `{ ts, level, message }`; levels `info` \| `warn` \| `error` |
+| Manual run while busy | Disable Run; core rejects second concurrent run                               |
+| Empty scheduled ticks | No run row when nightly window / once-per-day gate skips work                 |
+| Failed WatchTasks     | Log warn/error per task; overall run can still `succeeded` with summary       |
+| Live updates          | Poll while status is `running` (no websocket in v1)                           |
+| Retention             | Keep last 50 runs per worker; prune on new run                                |
+| Routes                | `/workers`, `/workers/$id` (run log on detail page)                           |
 
 ## Architecture
 
@@ -39,17 +39,17 @@ Scheduler still starts from `apps/backend/src/index.ts`, but tick outcome with `
 
 ### `worker_runs`
 
-| Column | Type | Notes |
-|--------|------|--------|
-| `id` | text PK | uuid |
-| `worker_id` | text | e.g. `nightly-torrent-check` |
-| `trigger` | text | `scheduled` \| `manual` |
-| `status` | text | `running` \| `succeeded` \| `failed` |
-| `started_at` | timestamptz | |
-| `finished_at` | timestamptz nullable | |
-| `summary` | text nullable | short outcome |
-| `error` | text nullable | top-level failure |
-| `log` | jsonb | `WorkerLogLine[]` |
+| Column        | Type                 | Notes                                |
+| ------------- | -------------------- | ------------------------------------ |
+| `id`          | text PK              | uuid                                 |
+| `worker_id`   | text                 | e.g. `nightly-torrent-check`         |
+| `trigger`     | text                 | `scheduled` \| `manual`              |
+| `status`      | text                 | `running` \| `succeeded` \| `failed` |
+| `started_at`  | timestamptz          |                                      |
+| `finished_at` | timestamptz nullable |                                      |
+| `summary`     | text nullable        | short outcome                        |
+| `error`       | text nullable        | top-level failure                    |
+| `log`         | jsonb                | `WorkerLogLine[]`                    |
 
 Partial unique index: at most one row with `status = 'running'` per `worker_id`.
 
@@ -66,11 +66,11 @@ type WorkerLogLine = { ts: string; level: WorkerLogLevel; message: string };
 
 Auth: `protectedProcedure`.
 
-- `list` → workers with derived status + last run summary  
-- `get({ id })` → one worker + last run  
-- `listRuns({ workerId, limit? })` → newest first  
-- `getRun({ runId })` → full run including `log`  
-- `run({ workerId })` → start manual run; error if unknown id or already running  
+- `list` → workers with derived status + last run summary
+- `get({ id })` → one worker + last run
+- `listRuns({ workerId, limit? })` → newest first
+- `getRun({ runId })` → full run including `log`
+- `run({ workerId })` → start manual run; error if unknown id or already running
 
 ## Frontend
 
@@ -90,8 +90,8 @@ Add **Worker** (registered background process) and **WorkerRun** (one persisted 
 
 ## Out of scope (v1)
 
-- Cover queue / transfer snapshot as workers  
-- Websocket log streaming  
-- Cancel / stop mid-run  
-- Separate log-lines table  
-- Admin role beyond existing auth  
+- Cover queue / transfer snapshot as workers
+- Websocket log streaming
+- Cancel / stop mid-run
+- Separate log-lines table
+- Admin role beyond existing auth

@@ -18,8 +18,8 @@ import {
 	TitleLinkError,
 	TitleWatchError,
 } from "./title";
-import type { TitleTorrentCandidate, TitleTorrentsSearch } from "./title.types";
 import { loadAllLinks, upsertLink } from "./title-link.repository";
+import type { TitleTorrentCandidate, TitleTorrentsSearch } from "./title.types";
 import { createWaitingSearch } from "./waiting-search";
 import { buildWaitingTarget } from "./waiting-target";
 import {

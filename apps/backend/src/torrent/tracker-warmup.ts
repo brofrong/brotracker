@@ -1,4 +1,5 @@
 import type { TrackerSource } from "@brotracker/rutracker-ts/tracker/torrent-id";
+
 import { logger } from "../utils/logger";
 import { getTracker, listEnabledTrackers } from "./torrent.tracker";
 import { errorMessage } from "./tracker-error";

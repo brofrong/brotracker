@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import type { TitleWatchRecord } from "./check-topic-now";
 import {
 	fromWatchRow,

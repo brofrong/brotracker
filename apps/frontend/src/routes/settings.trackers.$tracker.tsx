@@ -6,6 +6,7 @@ import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
+
 import { TrackerForm } from "#/features/settings/tracker-form";
 import { findTracker } from "#/features/settings/tracker-registry";
 

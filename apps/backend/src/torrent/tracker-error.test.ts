@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { classifyNetworkError, classifyTrackerError } from "./tracker-error";
 
 describe("classifyTrackerError", () => {

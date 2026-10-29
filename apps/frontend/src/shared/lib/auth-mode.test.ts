@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
+
 import { fetchAuthMode } from "./auth-mode";
 
 describe("fetchAuthMode", () => {

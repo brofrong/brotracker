@@ -5,6 +5,7 @@ import type {
 	SearchResult,
 } from "@brotracker/rutracker-ts/tracker/tracker-interface";
 import { inArray } from "drizzle-orm";
+
 import { db } from "../db/db";
 import { torrents } from "../db/torrent/torrent.schema";
 import { publicUrl } from "../storage/s3";

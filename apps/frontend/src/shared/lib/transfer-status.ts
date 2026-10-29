@@ -15,11 +15,7 @@ import {
 import type { ComponentType, SVGProps } from "react";
 
 export type TransferStatusIconColor =
-	| "success"
-	| "warning"
-	| "error"
-	| "accent"
-	| "tertiary";
+	"success" | "warning" | "error" | "accent" | "tertiary";
 
 type TransferStateVisual = {
 	icon: ComponentType<SVGProps<SVGSVGElement>>;
@@ -83,11 +79,7 @@ export function getTransferBucket(stateKind: string): TransferBucket {
 }
 
 export type TransferStatusDotVariant =
-	| "success"
-	| "warning"
-	| "error"
-	| "accent"
-	| "neutral";
+	"success" | "warning" | "error" | "accent" | "neutral";
 
 const statusDotVariants: Record<string, TransferStatusDotVariant> = {
 	error: "error",

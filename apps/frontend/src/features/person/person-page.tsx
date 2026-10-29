@@ -13,6 +13,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { useQuery } from "@tanstack/react-query";
 import { ImageOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
+
 import { useLocale } from "#/shared/i18n/locale-provider";
 import { trpc } from "#/shared/lib/trpc";
 import { TitleCard } from "#/shared/ui/title-card";

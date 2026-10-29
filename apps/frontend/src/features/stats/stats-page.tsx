@@ -28,6 +28,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+
 import { useLocale } from "#/shared/i18n/locale-provider";
 import { formatSpeed } from "#/shared/lib/format";
 import { trpc } from "#/shared/lib/trpc";

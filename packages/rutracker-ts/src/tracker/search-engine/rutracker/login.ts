@@ -1,20 +1,21 @@
 import axios, { type AxiosResponse } from "axios";
 import { err, ok, type Result } from "neverthrow";
-import type { RutrackerOptions } from "../../tracker-interface";
-import type { ProxyAgent } from "./http";
-import {
-	axiosAgentConfig,
-	cloudflareBypassFailedError,
-	isCloudflareChallenge,
-} from "./http";
-import { acquireCfClearance } from "./cf";
-import { RUTRACKER_URL } from "./constants";
+
 import { sharedResult } from "../../single-flight";
 import {
 	cookiesToHeader,
 	type FileStore,
 	type StoredCookie,
 } from "../../storage/file-store";
+import type { RutrackerOptions } from "../../tracker-interface";
+import { acquireCfClearance } from "./cf";
+import { RUTRACKER_URL } from "./constants";
+import type { ProxyAgent } from "./http";
+import {
+	axiosAgentConfig,
+	cloudflareBypassFailedError,
+	isCloudflareChallenge,
+} from "./http";
 
 const DEFAULT_UA =
 	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";

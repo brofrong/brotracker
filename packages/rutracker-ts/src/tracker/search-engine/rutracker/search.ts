@@ -1,18 +1,20 @@
 import axios from "axios";
 import iconv from "iconv-lite";
 import { err, ok, type Result } from "neverthrow";
+
 import type {
 	RutrackerOptions,
 	SearchOptions,
 	SearchPage,
 } from "../../tracker-interface";
+import { toWindows1251Query } from "../../windows-1251-query";
 import { acquireCfClearance } from "./cf";
+import { RUTRACKER_URL } from "./constants";
 import {
 	axiosAgentConfig,
 	cloudflareBypassFailedError,
 	isCloudflareChallenge,
 } from "./http";
-import { RUTRACKER_URL } from "./constants";
 import {
 	isRutrackerLoggedOutPage,
 	rutrackerGetCookies,
@@ -20,7 +22,6 @@ import {
 } from "./login";
 import { parseResponse } from "./parse";
 import { createSearchOptions } from "./search-options";
-import { toWindows1251Query } from "../../windows-1251-query";
 
 async function doSearchRequest(
 	query: string,

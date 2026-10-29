@@ -1,10 +1,12 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
+
 import { HttpsProxyAgent } from "https-proxy-agent";
+
+import type { ProxyAgent } from "../../src/tracker/search-engine/rutracker/http";
+import { createFileStore } from "../../src/tracker/storage/file-store";
 import { parseTorrentId } from "../../src/tracker/torrent-id";
 import { createTracker } from "../../src/tracker/tracker";
-import { createFileStore } from "../../src/tracker/storage/file-store";
-import type { ProxyAgent } from "../../src/tracker/search-engine/rutracker/http";
 import type {
 	SearchOptions,
 	SearchPage,

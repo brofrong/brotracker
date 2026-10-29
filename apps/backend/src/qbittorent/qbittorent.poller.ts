@@ -1,4 +1,5 @@
 import EventEmitter, { on } from "node:events";
+
 import { getTorrents } from "./qbittorent.client";
 import type { QbittorentTorrent } from "./qbittorent.types";
 

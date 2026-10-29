@@ -28,8 +28,7 @@ export type NightlyWorkerDeps = {
 };
 
 export type NightlyTickResult =
-	| { ran: false }
-	| { ran: true; enqueued: number; processed: number };
+	{ ran: false } | { ran: true; enqueued: number; processed: number };
 
 export type NightlyRunNowResult = {
 	enqueued: number;

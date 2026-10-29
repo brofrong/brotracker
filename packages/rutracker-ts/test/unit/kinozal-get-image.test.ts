@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
+
 import iconv from "iconv-lite";
+
 import { parseImageUrl } from "../../src/tracker/search-engine/kinozal/get-image";
 
 const htmlDir = join(import.meta.dir, "../fixtures/html/kinozal");

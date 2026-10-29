@@ -22,8 +22,10 @@ import {
 	useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+
 import { useLocale } from "#/shared/i18n/locale-provider";
 import { trpc } from "#/shared/lib/trpc";
+
 import { RunLogPanel } from "./run-log";
 
 type WorkerLiveStatus = "running" | "idle";
@@ -205,7 +207,7 @@ export function WorkerDetailPage({ id }: WorkerDetailPageProps) {
 		if (runs[0]) {
 			setSelectedRunId(runs[0].id);
 		}
-	}, [runs, selectedRunId]);
+	}, [runsQuery.data, selectedRunId]);
 
 	const selectedRun = runQuery.data ?? selectedListRun;
 	const isWorkerRunning = worker?.status === "running";

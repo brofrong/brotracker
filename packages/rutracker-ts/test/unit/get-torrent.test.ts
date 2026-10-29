@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+
 import { isTorrentPayload } from "../../src/tracker/search-engine/rutracker/get-torrent";
 
 test("isTorrentPayload: starts with d → true", () => {

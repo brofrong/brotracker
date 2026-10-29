@@ -9,23 +9,23 @@ Make Authentik optional for test/dev (and any deploy without an IdP). When `AUTH
 
 ## Decisions
 
-| Topic | Choice |
-|--------|--------|
-| Mode switch | Non-empty `AUTHENTIK_CLIENT_ID` → `authentik`; otherwise → `local` |
-| Local credentials | Email + password (Better Auth `emailAndPassword`) |
-| Registration | Open only while `user` table is empty; then login-only |
-| Authentik mode UX | Unchanged: hard redirect to OAuth |
-| Local mode UX | `/login` page; AuthGate / 401 → navigate there |
-| How frontend learns mode | Public API (runtime), not a Vite bake-in |
-| Email verification / reset | Out of scope |
-| Local ↔ Authentik migration | Out of scope |
+| Topic                       | Choice                                                             |
+| --------------------------- | ------------------------------------------------------------------ |
+| Mode switch                 | Non-empty `AUTHENTIK_CLIENT_ID` → `authentik`; otherwise → `local` |
+| Local credentials           | Email + password (Better Auth `emailAndPassword`)                  |
+| Registration                | Open only while `user` table is empty; then login-only             |
+| Authentik mode UX           | Unchanged: hard redirect to OAuth                                  |
+| Local mode UX               | `/login` page; AuthGate / 401 → navigate there                     |
+| How frontend learns mode    | Public API (runtime), not a Vite bake-in                           |
+| Email verification / reset  | Out of scope                                                       |
+| Local ↔ Authentik migration | Out of scope                                                       |
 
 ## Mode selection
 
-| `AUTHENTIK_CLIENT_ID` | Mode | Sign-in |
-|------------------------|------|---------|
+| `AUTHENTIK_CLIENT_ID`      | Mode        | Sign-in             |
+| -------------------------- | ----------- | ------------------- |
 | Set (non-empty after trim) | `authentik` | OAuth via Authentik |
-| Unset / empty / whitespace | `local` | Email + password |
+| Unset / empty / whitespace | `local`     | Email + password    |
 
 If `AUTHENTIK_CLIENT_ID` is set, `AUTHENTIK_CLIENT_SECRET` is required (fail startup if missing). Discovery URL keeps its default.
 

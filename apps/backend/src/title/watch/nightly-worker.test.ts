@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { createNightlyWorker } from "./nightly-worker";
 
 function nightlyDeps(

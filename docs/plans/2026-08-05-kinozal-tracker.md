@@ -11,6 +11,7 @@
 **Design:** `docs/plans/2026-08-05-kinozal-tracker-design.md`
 
 **Verified live (do not commit secrets):**
+
 - Login `POST /takelogin.php` → cookies `uid`, `pass` on `.kinozal.me`
 - Search `GET /browse.php?s=…&c=…`
 - Topic `GET /details.php?id=`
@@ -18,6 +19,7 @@
 - Encoding windows-1251; Cloudflare present
 
 **Fixtures (already in tree):**
+
 - `packages/rutracker-ts/test/fixtures/html/kinozal/browse-matrix.html`
 - `packages/rutracker-ts/test/fixtures/html/kinozal/details-guest.html`
 - `packages/rutracker-ts/test/fixtures/html/kinozal/details-authed.html`
@@ -31,11 +33,13 @@
 ### Task 1: Torrent id helpers (TDD)
 
 **Files:**
+
 - Create: `packages/rutracker-ts/src/tracker/torrent-id.ts`
 - Create: `packages/rutracker-ts/test/unit/torrent-id.test.ts`
 - Modify: `packages/rutracker-ts/src/index.ts` (re-export)
 
 **API:**
+
 ```ts
 type TrackerSource = "rutracker" | "kinozal";
 formatTorrentId(source, rawId): string  // "rutracker:123"
@@ -50,6 +54,7 @@ parseTorrentId(id): { source: TrackerSource; rawId: string }
 ### Task 2: RuTracker emits namespaced ids
 
 **Files:**
+
 - Modify: `packages/rutracker-ts/src/tracker/search-engine/rutracker/parse.ts` — `torrentId: formatTorrentId("rutracker", id)`
 - Modify: `packages/rutracker-ts/src/tracker/search-engine/rutracker/get-image.ts` — accept namespaced or raw; strip via `parseTorrentId`
 - Modify unit parse/media-type/get-image tests + fixtures expectations
@@ -61,6 +66,7 @@ parseTorrentId(id): { source: TrackerSource; rawId: string }
 ### Task 3: Kinozal parse (TDD)
 
 **Files:**
+
 - Create: `packages/rutracker-ts/src/tracker/search-engine/kinozal/constants.ts` — `KINOZAL_URL`, `KINOZAL_DL_URL`
 - Create: `packages/rutracker-ts/src/tracker/search-engine/kinozal/format.ts` (size/date; reuse HDR/resolution from rutracker/format or shared)
 - Create: `packages/rutracker-ts/src/tracker/search-engine/kinozal/parse.ts`
@@ -68,6 +74,7 @@ parseTorrentId(id): { source: TrackerSource; rawId: string }
 - Create: `packages/rutracker-ts/test/unit/kinozal-parse.test.ts`
 
 **Parse rules:**
+
 - Rows: `table.t_peer tr` with `a[href*="details.php?id="]`
 - Cells: comments, size, seeds (`sl_s`), peers (`sl_p`), date, author (`userdetails.php?id=`)
 - Category from `img[onclick^=cat(]` or `/pic/cat/N.gif`
@@ -83,6 +90,7 @@ parseTorrentId(id): { source: TrackerSource; rawId: string }
 ### Task 4: Kinozal login / http / search / getTorrent / getImage
 
 **Files:**
+
 - Create: `kinozal/http.ts` (reuse CF helpers from rutracker/http + cf if possible via import)
 - Create: `kinozal/login.ts` — session valid if `uid`+`pass` cookies; POST takelogin; optional CF
 - Create: `kinozal/search.ts` — browse.php + windows-1251
@@ -100,6 +108,7 @@ parseTorrentId(id): { source: TrackerSource; rawId: string }
 ### Task 5: Register tracker + generalize options
 
 **Files:**
+
 - Modify: `tracker-interface.ts` — `Tracker = "Rutracker" | "Kinozal"`; rename options to shared `TrackerAuthOptions` (or alias `KinozalOptions = RutrackerOptions`)
 - Modify: `tracker.ts` — register `Kinozal: createKinozal`
 - Export from package index
@@ -111,6 +120,7 @@ parseTorrentId(id): { source: TrackerSource; rawId: string }
 ### Task 6: DB identity migration + kinozal_store
 
 **Files:**
+
 - Create: `apps/backend/src/db/kinozal-store/kinozal-store.schema.ts`
 - Modify: `apps/backend/src/db/schema.ts`
 - Migration SQL:
@@ -128,6 +138,7 @@ parseTorrentId(id): { source: TrackerSource; rawId: string }
 ### Task 7: Multi-provider settings
 
 **Files:**
+
 - Create: `apps/backend/src/settings/kinozal-config.ts` (mirror rutracker + `enabled`)
 - Modify: `rutracker-config` / provider schema types — add `enabled?: boolean` (default true for rutracker back-compat)
 - Modify: `provider-config.ts`, `provider-settings.schema.ts`, `settings.router.ts`
@@ -140,6 +151,7 @@ parseTorrentId(id): { source: TrackerSource; rawId: string }
 ### Task 8: Catalog fan-out + tracker clients
 
 **Files:**
+
 - Modify: `torrent.tracker.ts` — `getTracker(source)`, `getEnabledTrackers()`, invalidate per-source
 - Modify: `catalog/index.ts` + `catalog.ts` — parallel search, merge, partial success
 - Modify: `cover.queue.ts`, `add-from-tracker.ts` — route by id + allowlist `https://dl.kinozal.me/download.php?id=\d+`
@@ -152,6 +164,7 @@ parseTorrentId(id): { source: TrackerSource; rawId: string }
 ### Task 9: FE source badge + Title/search wiring
 
 **Files:**
+
 - Search/title UI: badge from `parseTorrentId`
 - Replace RuTracker-only URL assumptions
 - i18n
@@ -163,6 +176,7 @@ parseTorrentId(id): { source: TrackerSource; rawId: string }
 ### Task 10: Docs + release note + verify
 
 **Files:**
+
 - `CONTEXT.md`, short ADR `docs/adr/0003-multi-tracker.md` (or next number)
 - `changes/unreleased/YYYYMMDD-HHMMSS-kinozal-tracker.md`
 - Run: `bun test` in package + backend; fix failures

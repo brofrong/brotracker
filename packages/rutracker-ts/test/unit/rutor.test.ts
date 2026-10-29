@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { join } from "node:path";
+
 import axios from "axios";
+
 import { detectTorrentMediaType } from "../../src/tracker/media-type";
 import {
 	formatDate,

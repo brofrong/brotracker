@@ -1,4 +1,5 @@
 import { basename } from "node:path";
+
 import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
 import type { AddTorrentOptions, QbittorentTorrent } from "./qbittorent.types";
 

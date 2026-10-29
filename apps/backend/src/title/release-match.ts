@@ -1,4 +1,5 @@
 import type { ParsedReleaseTitle } from "@brotracker/rutracker-ts/tracker/release-title";
+
 import type { TitleKind } from "./title.types";
 
 const NON_ALNUM_RUN = /[^\p{L}\p{N}]+/gu;

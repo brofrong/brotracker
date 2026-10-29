@@ -14,11 +14,11 @@ Self-hosted torrent search and download helper. Search RuTracker, cache results 
 
 ## Stack
 
-| Layer | Tech |
-|--------|------|
-| Monorepo | Bun workspaces + Turborepo |
-| Backend | Bun, tRPC, Drizzle ORM, Postgres, MinIO |
-| Frontend | React 19, TanStack Router/Query, Vite, Astryx |
+| Layer          | Tech                                           |
+| -------------- | ---------------------------------------------- |
+| Monorepo       | Bun workspaces + Turborepo                     |
+| Backend        | Bun, tRPC, Drizzle ORM, Postgres, MinIO        |
+| Frontend       | React 19, TanStack Router/Query, Vite, Astryx  |
 | Tracker client | `@brotracker/rutracker-ts` (workspace package) |
 
 ## Repository layout
@@ -55,11 +55,11 @@ docker compose -f docker/docker-compose.dev.yml up -d
 
 This starts:
 
-| Service | Port |
-|---------|------|
-| Postgres | `5432` |
-| MinIO | `9000` (API), `9001` (console) |
-| Byparr | `8191` |
+| Service  | Port                           |
+| -------- | ------------------------------ |
+| Postgres | `5432`                         |
+| MinIO    | `9000` (API), `9001` (console) |
+| Byparr   | `8191`                         |
 
 ### 3. Environment
 
@@ -78,8 +78,8 @@ Defaults match the compose file (local Postgres / MinIO / Byparr).
 bun run dev
 ```
 
-- Frontend: http://localhost:3100  
-- Backend (tRPC): http://localhost:3101/trpc  
+- Frontend: http://localhost:3100
+- Backend (tRPC): http://localhost:3101/trpc
 
 Open **Settings** in the UI and configure RuTracker + qBittorrent, then use **Test** before searching.
 
@@ -93,7 +93,7 @@ Build and run the full stack (app + Postgres + MinIO + Byparr):
 docker compose -f docker/docker-compose.yml up --build
 ```
 
-App: http://localhost:3101  
+App: http://localhost:3101
 
 Compose uses demo credentials (`brotracker` / `minioadmin`). Change them before any networked deployment.
 
@@ -101,47 +101,47 @@ Compose uses demo credentials (`brotracker` / `minioadmin`). Change them before 
 
 ### Backend (`apps/backend`)
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DATABASE_URL` | `postgresql://brotracker:brotracker@localhost:5432/brotracker` | Postgres connection |
-| `PORT` | `3101` | HTTP / WS port |
-| `CORS_ORIGIN` | `http://localhost:3100` | Allowed browser origin |
-| `S3_ENDPOINT` | `http://localhost:9000` | MinIO / S3 endpoint |
-| `S3_ACCESS_KEY` | `minioadmin` | S3 access key |
-| `S3_SECRET_KEY` | `minioadmin` | S3 secret key |
-| `S3_BUCKET` | `brotracker` | Cover bucket |
-| `BYPARR_URL` | `http://localhost:8191/v1` | Cloudflare solver API |
-| `STATIC_DIR` | _(unset)_ | SPA assets dir (set in Docker) |
-| `BETTER_AUTH_URL` | `http://localhost:3101` | Public backend URL for auth callbacks |
-| `OIDC_CLIENT_ID` | _(optional)_ | When set, enables generic OIDC; when unset, local email/password |
-| `OIDC_CLIENT_SECRET` | _(optional)_ | Required together with `OIDC_CLIENT_ID` |
-| `OIDC_DISCOVERY_URL` | _(required with OIDC)_ | OpenID Connect discovery URL (`…/.well-known/openid-configuration`) |
+| Variable             | Default                                                        | Description                                                         |
+| -------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `DATABASE_URL`       | `postgresql://brotracker:brotracker@localhost:5432/brotracker` | Postgres connection                                                 |
+| `PORT`               | `3101`                                                         | HTTP / WS port                                                      |
+| `CORS_ORIGIN`        | `http://localhost:3100`                                        | Allowed browser origin                                              |
+| `S3_ENDPOINT`        | `http://localhost:9000`                                        | MinIO / S3 endpoint                                                 |
+| `S3_ACCESS_KEY`      | `minioadmin`                                                   | S3 access key                                                       |
+| `S3_SECRET_KEY`      | `minioadmin`                                                   | S3 secret key                                                       |
+| `S3_BUCKET`          | `brotracker`                                                   | Cover bucket                                                        |
+| `BYPARR_URL`         | `http://localhost:8191/v1`                                     | Cloudflare solver API                                               |
+| `STATIC_DIR`         | _(unset)_                                                      | SPA assets dir (set in Docker)                                      |
+| `BETTER_AUTH_URL`    | `http://localhost:3101`                                        | Public backend URL for auth callbacks                               |
+| `OIDC_CLIENT_ID`     | _(optional)_                                                   | When set, enables generic OIDC; when unset, local email/password    |
+| `OIDC_CLIENT_SECRET` | _(optional)_                                                   | Required together with `OIDC_CLIENT_ID`                             |
+| `OIDC_DISCOVERY_URL` | _(required with OIDC)_                                         | OpenID Connect discovery URL (`…/.well-known/openid-configuration`) |
 
 RuTracker and qBittorrent credentials are stored in the database via the Settings UI, not via env. The Better Auth signing secret is auto-generated into `app_settings` on first boot. Example IdP setup (Authentik): [docker/AUTHENTIK.md](docker/AUTHENTIK.md).
 
 ### Frontend (`apps/frontend`)
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VITE_BACKEND_URL` | `""` | Backend host for tRPC/WS. Empty = same origin (production). Dev: `http://localhost:3101` |
+| Variable           | Default | Description                                                                              |
+| ------------------ | ------- | ---------------------------------------------------------------------------------------- |
+| `VITE_BACKEND_URL` | `""`    | Backend host for tRPC/WS. Empty = same origin (production). Dev: `http://localhost:3101` |
 
 ## CI / Docker Hub
 
 GitHub Actions (`.github/workflows/ci.yml`):
 
-| Event | What runs |
-|-------|-----------|
-| PR / push to `main` | Unit tests + Docker image **build** (no push) |
-| Tag `v*` (e.g. `v1.0.0`) | Unit tests + build + **push** to Docker Hub |
+| Event                    | What runs                                     |
+| ------------------------ | --------------------------------------------- |
+| PR / push to `main`      | Unit tests + Docker image **build** (no push) |
+| Tag `v*` (e.g. `v1.0.0`) | Unit tests + build + **push** to Docker Hub   |
 
 Image: `brofrong/brotracker` (`:1.0.0`, `:1.0`, `:1`, `:latest`).
 
 Add repository secrets:
 
-| Secret | Value |
-|--------|-------|
-| `DOCKERHUB_USERNAME` | Docker Hub username |
-| `DOCKERHUB_TOKEN` | Docker Hub [access token](https://hub.docker.com/settings/security) |
+| Secret               | Value                                                               |
+| -------------------- | ------------------------------------------------------------------- |
+| `DOCKERHUB_USERNAME` | Docker Hub username                                                 |
+| `DOCKERHUB_TOKEN`    | Docker Hub [access token](https://hub.docker.com/settings/security) |
 
 ### Release
 
@@ -173,14 +173,14 @@ The script requires release notes (from `changes/unreleased/` or `--notes-file`)
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `bun run dev` | Start all apps in watch mode |
-| `bun run build` | Build all packages/apps |
-| `bun run test` | Backend + rutracker-ts unit tests |
-| `bun run release` | Bump version, tag, and push a release |
-| `bun run lint` | Lint via Turbo |
-| `bun run check-types` | Typecheck via Turbo |
+| Command               | Description                           |
+| --------------------- | ------------------------------------- |
+| `bun run dev`         | Start all apps in watch mode          |
+| `bun run build`       | Build all packages/apps               |
+| `bun run test`        | Backend + rutracker-ts unit tests     |
+| `bun run release`     | Bump version, tag, and push a release |
+| `bun run lint`        | Lint via Turbo                        |
+| `bun run check-types` | Typecheck via Turbo                   |
 
 Backend DB helpers (from `apps/backend`):
 

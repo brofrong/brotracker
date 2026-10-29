@@ -17,6 +17,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { SearchCardTags } from "#/features/search/search-results-cards";
 import { trpc } from "#/shared/lib/trpc";
 

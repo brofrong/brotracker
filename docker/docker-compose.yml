@@ -63,7 +63,7 @@ services:
     shm_size: 1gb
     networks:
       - brotracker
-  
+
 volumes:
   postgres_data:
   minio_data:

@@ -1,6 +1,7 @@
 "use client";
 
 import { createFileRoute } from "@tanstack/react-router";
+
 import { PersonPage } from "#/features/person/person-page";
 
 export const Route = createFileRoute("/person/$id")({

@@ -3,14 +3,15 @@ import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { genericOAuth } from "better-auth/plugins";
 import { count } from "drizzle-orm";
+
 import * as authSchema from "../db/auth/auth.schema";
 import { user } from "../db/auth/auth.schema";
 import { db } from "../db/db";
 import { env } from "../utils/env";
 import { OIDC_ACCOUNT_OPTIONS } from "./account-linking";
 import {
-	type AuthMode,
 	assertLocalSignUpAllowed,
+	type AuthMode,
 	resolveAuthMode,
 } from "./auth-mode";
 import { OIDC_PROVIDER_ID } from "./oidc-provider";

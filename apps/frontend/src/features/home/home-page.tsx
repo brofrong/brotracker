@@ -14,6 +14,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+
 import {
 	type TransferStatsData,
 	TransferStatsWidget,

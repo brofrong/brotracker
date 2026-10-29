@@ -10,9 +10,7 @@ export type RunScheduledNightlyOnceDeps = {
 };
 
 export type ScheduledNightlyOutcome =
-	| "skipped-running"
-	| "skipped-gates"
-	| "ran";
+	"skipped-running" | "skipped-gates" | "ran";
 
 /**
  * Two-phase scheduled nightly: peek gates without a WorkerRun row, then

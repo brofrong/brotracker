@@ -9,18 +9,18 @@ Dedicated Stats page with a year-scale chart of daily active Transfer speeds (up
 
 ## Decisions
 
-| Topic | Choice |
-|--------|--------|
-| Scope (v1) | Speed chart only (+ period controls); no traffic / summary cards |
-| Aggregation | Per UTC day; min / avg / max from samples with speed > 0 only |
-| Chart | Avg upload + avg download lines; min–max as translucent bands |
-| Period | Default 1 year; presets 30d / 90d / 1y; custom from–to (max span 3 years) |
-| Storage | New `transfer_daily_speed_stats` rollup table (approach A) |
-| Raw samples | Keep ~30d prune for Home live chart |
-| Rollup retention | No prune in v1 |
-| Home widget | Unchanged |
-| Route | `/stats`; nav label Stats / Статистика |
-| Backfill | One-shot from existing raw samples (≤30d) on deploy |
+| Topic            | Choice                                                                    |
+| ---------------- | ------------------------------------------------------------------------- |
+| Scope (v1)       | Speed chart only (+ period controls); no traffic / summary cards          |
+| Aggregation      | Per UTC day; min / avg / max from samples with speed > 0 only             |
+| Chart            | Avg upload + avg download lines; min–max as translucent bands             |
+| Period           | Default 1 year; presets 30d / 90d / 1y; custom from–to (max span 3 years) |
+| Storage          | New `transfer_daily_speed_stats` rollup table (approach A)                |
+| Raw samples      | Keep ~30d prune for Home live chart                                       |
+| Rollup retention | No prune in v1                                                            |
+| Home widget      | Unchanged                                                                 |
+| Route            | `/stats`; nav label Stats / Статистика                                    |
+| Backfill         | One-shot from existing raw samples (≤30d) on deploy                       |
 
 ## Architecture
 
@@ -36,18 +36,18 @@ Import DAG unchanged: router → home core / transfer-history → db.
 
 ### `transfer_daily_speed_stats`
 
-| Column | Type | Notes |
-|--------|------|--------|
-| `day` | date PK | UTC YYYY-MM-DD |
-| `min_download_speed` | bigint nullable | B/s; null if no active down samples |
-| `max_download_speed` | bigint nullable | |
-| `sum_download_speed` | bigint | running sum for avg |
-| `active_download_samples` | integer | count of samples with downloadSpeed > 0 |
-| `min_upload_speed` | bigint nullable | |
-| `max_upload_speed` | bigint nullable | |
-| `sum_upload_speed` | bigint | |
-| `active_upload_samples` | integer | |
-| `updated_at` | timestamptz | |
+| Column                    | Type            | Notes                                   |
+| ------------------------- | --------------- | --------------------------------------- |
+| `day`                     | date PK         | UTC YYYY-MM-DD                          |
+| `min_download_speed`      | bigint nullable | B/s; null if no active down samples     |
+| `max_download_speed`      | bigint nullable |                                         |
+| `sum_download_speed`      | bigint          | running sum for avg                     |
+| `active_download_samples` | integer         | count of samples with downloadSpeed > 0 |
+| `min_upload_speed`        | bigint nullable |                                         |
+| `max_upload_speed`        | bigint nullable |                                         |
+| `sum_upload_speed`        | bigint          |                                         |
+| `active_upload_samples`   | integer         |                                         |
+| `updated_at`              | timestamptz     |                                         |
 
 API avg = `round(sum / count)` when count > 0; else direction is `null`.
 

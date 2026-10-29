@@ -13,8 +13,10 @@ import { useToast } from "@astryxdesign/core/Toast";
 import { skipToken, useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { queryClient, trpc } from "#/shared/lib/trpc";
 import type { TitleCardData } from "#/shared/ui/title-card";
+
 import { guessTitleQuery } from "./guess-title-query";
 
 const SEARCH_DEBOUNCE_MS = 350;

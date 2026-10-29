@@ -1,8 +1,8 @@
 import type { CreateTracker, SearchOptions } from "../../tracker-interface";
-import { kinozalGetTorrent } from "./get-torrent";
 import { kinozalGetImage } from "./get-image";
+import { kinozalGetTorrent } from "./get-torrent";
 import { parseResponse } from "./parse";
-import { makeSearchRequest, kinozalSearch } from "./search";
+import { kinozalSearch, makeSearchRequest } from "./search";
 
 export {
 	KINOZAL_DL_URL,

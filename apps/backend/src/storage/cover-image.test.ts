@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { optimizeCover } from "./cover-image";
 
 const PIXEL_PNG = Buffer.from(

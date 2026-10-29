@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { createTitleModule, type TitleDeps } from "./title";
 import type { TitleRating, TitleTorrentCandidate } from "./title.types";
 import { topicTag } from "./topic-tag";

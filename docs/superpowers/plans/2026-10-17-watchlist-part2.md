@@ -43,10 +43,12 @@
 ### Task 1: Parser — season, RuTor P1/P2, `×` resolutions
 
 **Files:**
+
 - Modify: `packages/rutracker-ts/src/tracker/release-title.ts`
 - Test: `packages/rutracker-ts/test/unit/release-title.test.ts`
 
 **Interfaces:**
+
 - Produces: `ParsedReleaseTitle.season: number | null` (single season only; ranges/multi-season packs → `null`).
 
 - [ ] **Step 1: Write the failing tests** (new `describe("season")` table + flag rows; all existing rows keep passing)
@@ -63,6 +65,7 @@
 ### Task 2: Unified watch schema, record and repository
 
 **Files:**
+
 - Modify: `apps/backend/src/db/title/title-watch.schema.ts`, `apps/backend/src/db/title/title-watch-event.schema.ts`
 - Create: `apps/backend/drizzle/<generated>_watchlist/migration.sql` (via `bun run db:generate`, then hand-edit)
 - Modify: `apps/backend/src/title/watch/check-topic-now.ts` (`TitleWatchRecord`, `WatchState`, `RecordWatchEventInput`), `title-watch-event.ts` (kinds), `title-watch.repository.ts`, `title-watch-event.repository.ts`, `sync-watches-from-qb.ts`, `watch.types.ts`, `index.ts`
@@ -71,26 +74,53 @@
 - Test: existing `apps/backend/src/title/**/*.test.ts` fixtures updated; new `apps/backend/src/title/watch/title-watch.repository.test.ts` for the row mapping helpers
 
 **Interfaces:**
+
 - Produces:
+
   ```ts
-  export type WatchState = "waiting" | "downloading" | "tracking" | "paused" | "completed" | "off";
-  export type WaitingOutcome = "no-releases" | "only-camrip" | "below-resolution" | "no-hdr" | "no-voice" | "search-failed";
+  export type WatchState =
+  	"waiting" | "downloading" | "tracking" | "paused" | "completed" | "off";
+  export type WaitingOutcome =
+  	| "no-releases"
+  	| "only-camrip"
+  	| "below-resolution"
+  	| "no-hdr"
+  	| "no-voice"
+  	| "search-failed";
   export type TitleWatchRecord = {
-    id: string; topicUrl: string | null; titleId: string | null; kind: TitleKind | null;
-    watch: WatchState; source: "auto-qb" | "manual";
-    season: number | null; titleName: string | null; poster: string | null; year: number | null;
-    size: number | null; registeredAt: string | null; contentHash: string | null; qbHash: string | null;
-    lastCheckedAt: string | null; lastChangedAt: string | null; lastError: string | null;
-    waitingOutcome: WaitingOutcome | null; waitingOutcomeDetail: string | null; createdAt: string;
+  	id: string;
+  	topicUrl: string | null;
+  	titleId: string | null;
+  	kind: TitleKind | null;
+  	watch: WatchState;
+  	source: "auto-qb" | "manual";
+  	season: number | null;
+  	titleName: string | null;
+  	poster: string | null;
+  	year: number | null;
+  	size: number | null;
+  	registeredAt: string | null;
+  	contentHash: string | null;
+  	qbHash: string | null;
+  	lastCheckedAt: string | null;
+  	lastChangedAt: string | null;
+  	lastError: string | null;
+  	waitingOutcome: WaitingOutcome | null;
+  	waitingOutcomeDetail: string | null;
+  	createdAt: string;
   };
   // TitleWatchEventKind adds: "download-started" | "downloaded" | "add-failed"; event topicUrl: string | null
   // repository (title-watch.repository.ts), all exported and wired into WatchStore:
   export function loadWatchById(id: string): Promise<TitleWatchRecord | null>;
   export function deleteWatch(id: string): Promise<void>;
-  export function listWatchesByState(states: WatchState[]): Promise<TitleWatchRecord[]>;
+  export function listWatchesByState(
+  	states: WatchState[],
+  ): Promise<TitleWatchRecord[]>;
   export function listWatchlistRecords(): Promise<TitleWatchRecord[]>; // titleId not null AND watch <> 'off', newest first
-  export function toWatchRow(record: TitleWatchRecord): TitleWatchRow; export function fromWatchRow(row: TitleWatchRow): TitleWatchRecord; // exported for tests
+  export function toWatchRow(record: TitleWatchRecord): TitleWatchRow;
+  export function fromWatchRow(row: TitleWatchRow): TitleWatchRecord; // exported for tests
   ```
+
   `saveWatch` upserts on `id`. Every code path that creates a record sets `id: crypto.randomUUID()` and `createdAt` (sync-from-qb rows: `kind: "tv"`).
 
 - [ ] **Step 1: Write the failing mapping test** — `fromWatchRow(toWatchRow(record))` round-trips a `waiting` record with `topicUrl: null`, `season: 5`, `waitingOutcome: "below-resolution"`, `waitingOutcomeDetail: "720p"`, ISO dates.
@@ -106,19 +136,30 @@
 ### Task 3: Watchlist settings (backend)
 
 **Files:**
+
 - Create: `apps/backend/src/settings/watchlist-settings.ts`, `apps/backend/src/settings/watchlist-settings.test.ts`
 - Modify: `apps/backend/src/settings/settings.router.ts`
 
 **Interfaces:**
+
 - Produces:
+
   ```ts
-  export type WatchlistSettings = { checkIntervalHours: 1|2|4|6|12|24; minResolution: "720p"|"1080p"|"4K"; hdrOnly: boolean; requireRussianVoice: boolean };
+  export type WatchlistSettings = {
+  	checkIntervalHours: 1 | 2 | 4 | 6 | 12 | 24;
+  	minResolution: "720p" | "1080p" | "4K";
+  	hdrOnly: boolean;
+  	requireRussianVoice: boolean;
+  };
   export const DEFAULT_WATCHLIST_SETTINGS: WatchlistSettings; // {24, "1080p", false, true}
   export const watchlistSettingsSchema: z.ZodType<WatchlistSettings>;
   export function parseWatchlistSettings(raw: string | null): WatchlistSettings; // null/invalid JSON/invalid shape → defaults; partial → merged over defaults
   export function loadWatchlistSettings(): Promise<WatchlistSettings>;
-  export function saveWatchlistSettings(input: WatchlistSettings): Promise<WatchlistSettings>;
+  export function saveWatchlistSettings(
+  	input: WatchlistSettings,
+  ): Promise<WatchlistSettings>;
   ```
+
   tRPC: `settings.watchlist.get` (query) and `settings.watchlist.set` (mutation, input `watchlistSettingsSchema`).
 
 - [ ] **Step 1: Failing tests** for `parseWatchlistSettings`: `null` → defaults; `"not json"` → defaults; `'{"minResolution":"4K"}'` → defaults with `minResolution:"4K"`; `'{"checkIntervalHours":3}'` → defaults (3 not allowed).
@@ -132,17 +173,28 @@
 ### Task 4: Release pick
 
 **Files:**
+
 - Create: `apps/backend/src/title/release-pick.ts`, `apps/backend/src/title/release-pick.test.ts`
 
 **Interfaces:**
+
 - Consumes: `parseReleaseTitle` (Task 1, with `season`), `releaseMatchesTitle`/`MatchTarget` (part 1), `scoreTorrentQuality` (`apps/backend/src/torrent/quality-score.ts`), `WatchlistSettings` (Task 3), `TitleTorrentCandidate` (`title.types.ts`), `WaitingOutcome` (Task 2).
 - Produces:
+
   ```ts
   export type PickTarget = MatchTarget & { season: number | null };
   export type PickResult =
-    | { status: "found"; candidate: TitleTorrentCandidate }
-    | { status: "none"; outcome: Exclude<WaitingOutcome, "search-failed">; detail: string | null };
-  export function pickRelease(candidates: TitleTorrentCandidate[], target: PickTarget, rules: WatchlistSettings): PickResult;
+  	| { status: "found"; candidate: TitleTorrentCandidate }
+  	| {
+  			status: "none";
+  			outcome: Exclude<WaitingOutcome, "search-failed">;
+  			detail: string | null;
+  	  };
+  export function pickRelease(
+  	candidates: TitleTorrentCandidate[],
+  	target: PickTarget,
+  	rules: WatchlistSettings,
+  ): PickResult;
   ```
 
 - [ ] **Step 1: Failing tests** (target films «Одиссея»/«The Odyssey» 2026, rules defaults):
@@ -164,35 +216,47 @@
 ### Task 5: Waiting search and film completion
 
 **Files:**
+
 - Create: `apps/backend/src/title/waiting-search.ts`, `apps/backend/src/title/waiting-search.test.ts`
 
 **Interfaces:**
+
 - Consumes: `pickRelease`/`PickTarget` (Task 4), `TitleWatchRecord` and store functions (Task 2), `topicTag`, `extractTopicId`, `findTransferForTopic` (`apps/backend/src/title/topic-tag.ts`), `TaggedQbTorrent`.
 - Produces:
+
   ```ts
   export type WaitingTarget = PickTarget & { queries: string[] };
   export type WaitingSearchDeps = {
-    listWaiting: () => Promise<TitleWatchRecord[]>;
-    listDownloading: () => Promise<TitleWatchRecord[]>;
-    loadWatchById: (id: string) => Promise<TitleWatchRecord | null>;
-    loadWatchByTopicUrl: (topicUrl: string) => Promise<TitleWatchRecord | null>;
-    saveWatch: (r: TitleWatchRecord) => Promise<void>;
-    deleteWatch: (id: string) => Promise<void>;
-    loadTarget: (watch: TitleWatchRecord) => Promise<WaitingTarget | null>;
-    searchTracker: (query: string) => Promise<TitleTorrentCandidate[]>; // throws when trackers unavailable
-    loadRules: () => Promise<WatchlistSettings>;
-    addToQb: (torrentFileUrl: string, kind: TitleKind, tags: string[]) => Promise<void>;
-    listTaggedTorrents: () => Promise<TaggedQbTorrent[]>;
-    recordEvent: (e: RecordWatchEventInput) => Promise<void>;
-    now: () => string;
+  	listWaiting: () => Promise<TitleWatchRecord[]>;
+  	listDownloading: () => Promise<TitleWatchRecord[]>;
+  	loadWatchById: (id: string) => Promise<TitleWatchRecord | null>;
+  	loadWatchByTopicUrl: (topicUrl: string) => Promise<TitleWatchRecord | null>;
+  	saveWatch: (r: TitleWatchRecord) => Promise<void>;
+  	deleteWatch: (id: string) => Promise<void>;
+  	loadTarget: (watch: TitleWatchRecord) => Promise<WaitingTarget | null>;
+  	searchTracker: (query: string) => Promise<TitleTorrentCandidate[]>; // throws when trackers unavailable
+  	loadRules: () => Promise<WatchlistSettings>;
+  	addToQb: (
+  		torrentFileUrl: string,
+  		kind: TitleKind,
+  		tags: string[],
+  	) => Promise<void>;
+  	listTaggedTorrents: () => Promise<TaggedQbTorrent[]>;
+  	recordEvent: (e: RecordWatchEventInput) => Promise<void>;
+  	now: () => string;
   };
-  export type WaitingSearchRun = { checked: number; started: number; failed: number };
+  export type WaitingSearchRun = {
+  	checked: number;
+  	started: number;
+  	failed: number;
+  };
   export function createWaitingSearch(deps: WaitingSearchDeps): {
-    runAll(log?: (line: string) => void): Promise<WaitingSearchRun>;
-    checkOne(watchId: string): Promise<TitleWatchRecord | null>;
-    syncDownloads(): Promise<{ completed: number }>;
+  	runAll(log?: (line: string) => void): Promise<WaitingSearchRun>;
+  	checkOne(watchId: string): Promise<TitleWatchRecord | null>;
+  	syncDownloads(): Promise<{ completed: number }>;
   };
   ```
+
   Found → `addToQb(url, kind, [topicTag(topicId)])`; films → `watch:"downloading"`, series → `watch:"tracking"`, `source:"manual"`; set `topicUrl`, `size`, `lastChangedAt`, clear outcome; event `download-started` (`message` = release title, `newSize` = size). Not found → keep `waiting`, set `waitingOutcome`/`Detail`, `lastCheckedAt`. Search throws → outcome `search-failed`, `lastError`. `addToQb` throws → stays `waiting`, `lastError`, event `add-failed` (message = error). Topic already owned by another row → that row gets `titleId`/`kind`/`titleName`/`poster`/`year` (keep its state), waiting row deleted, no add. `syncDownloads`: for each `downloading` film, transfer found by topic tag with `progress >= 1` → `completed` + event `downloaded`; no transfer → unchanged.
 
 - [ ] **Step 1: Failing tests** with in-memory fakes, one per behaviour above, plus: `runAll` keeps going after one title's search throws (second title still started); queries passed to `searchTracker` are exactly `target.queries`, results deduped by `torrentId`.
@@ -206,40 +270,57 @@
 ### Task 6: Title watchlist API and composition
 
 **Files:**
+
 - Create: `apps/backend/src/title/watchlist.ts`, `apps/backend/src/title/watchlist.test.ts`
 - Modify: `apps/backend/src/title/index.ts` (compose `createWaitingSearch` + `createWatchlist`; export `waitingSearch`), `title.ts` (`get` returns `watch` for films too — load by `titleId` for any facet, auto-link stays tv-only; backfill `titleName/poster/year` on a loaded watch when null), `title.types.ts`, `title.router.ts`
 
 **Interfaces:**
+
 - Consumes: Tasks 2, 3, 5; `module.get({ id, language: "ru-RU" })` for `loadTarget` (the original name counts only if it contains a Latin or Cyrillic letter — mirror part 1's frontend `searchableOriginalName` in a small backend helper) (names = `[meta.name, meta.originalName, ...meta.alternativeNames]`, queries per Global Constraints); tracker search = `catalog.searchRefresh(query, {})` results mapped like `toCandidate` in `title/index.ts`, throwing on `status !== "ok"`.
 - Produces:
+
   ```ts
   export type WatchlistItem = {
-    id: string; titleId: string; kind: TitleKind | null; name: string | null; poster: string | null; year: number | null;
-    season: number | null; watch: TitleWatchState; topicUrl: string | null;
-    lastCheckedAt: string | null; lastChangedAt: string | null; lastError: string | null;
-    waitingOutcome: WaitingOutcome | null; waitingOutcomeDetail: string | null;
-    episodes: EpisodeProgress | null; transfer: TitleTorrentTransfer | null; createdAt: string;
+  	id: string;
+  	titleId: string;
+  	kind: TitleKind | null;
+  	name: string | null;
+  	poster: string | null;
+  	year: number | null;
+  	season: number | null;
+  	watch: TitleWatchState;
+  	topicUrl: string | null;
+  	lastCheckedAt: string | null;
+  	lastChangedAt: string | null;
+  	lastError: string | null;
+  	waitingOutcome: WaitingOutcome | null;
+  	waitingOutcomeDetail: string | null;
+  	episodes: EpisodeProgress | null;
+  	transfer: TitleTorrentTransfer | null;
+  	createdAt: string;
   };
   export type WatchlistDeps = {
-    getTitle: (titleId: string) => Promise<Title>;                       // module.get({ id, language: "ru-RU" })
-    loadWatchByTitleId: (titleId: string) => Promise<TitleWatchRecord | null>;
-    loadWatchById: (id: string) => Promise<TitleWatchRecord | null>;
-    listWatchlistRecords: () => Promise<TitleWatchRecord[]>;
-    saveWatch: (r: TitleWatchRecord) => Promise<void>;
-    deleteWatch: (id: string) => Promise<void>;
-    listTaggedTorrents: () => Promise<TaggedQbTorrent[]>;
-    listQbTorrents: () => Promise<SyncQbTorrent[]>;                       // for episode progress (parseEpisodeProgress)
-    checkWaiting: (watchId: string) => Promise<TitleWatchRecord | null>;  // waitingSearch.checkOne
-    checkTracking: (titleId: string) => Promise<unknown>;                 // existing module.checkNow({ id })
-    now: () => string; newId: () => string;
+  	getTitle: (titleId: string) => Promise<Title>; // module.get({ id, language: "ru-RU" })
+  	loadWatchByTitleId: (titleId: string) => Promise<TitleWatchRecord | null>;
+  	loadWatchById: (id: string) => Promise<TitleWatchRecord | null>;
+  	listWatchlistRecords: () => Promise<TitleWatchRecord[]>;
+  	saveWatch: (r: TitleWatchRecord) => Promise<void>;
+  	deleteWatch: (id: string) => Promise<void>;
+  	listTaggedTorrents: () => Promise<TaggedQbTorrent[]>;
+  	listQbTorrents: () => Promise<SyncQbTorrent[]>; // for episode progress (parseEpisodeProgress)
+  	checkWaiting: (watchId: string) => Promise<TitleWatchRecord | null>; // waitingSearch.checkOne
+  	checkTracking: (titleId: string) => Promise<unknown>; // existing module.checkNow({ id })
+  	now: () => string;
+  	newId: () => string;
   };
   export function createWatchlist(deps: WatchlistDeps): {
-    wait(input: { titleId: string }): Promise<TitleWatchView>;     // existing watch (not "off") → returned unchanged; "off" or none → waiting row (kind = facet, season = meta.seasons for tv, name/poster/year from meta)
-    remove(input: { id: string }): Promise<void>;                   // rule in Global Constraints
-    list(): Promise<WatchlistItem[]>;                               // listWatchlistRecords + qB transfers/episodes
-    checkNow(input: { id: string }): Promise<WatchlistItem | null>; // waiting → waitingSearch.checkOne; tracking/paused → existing checkNow path
+  	wait(input: { titleId: string }): Promise<TitleWatchView>; // existing watch (not "off") → returned unchanged; "off" or none → waiting row (kind = facet, season = meta.seasons for tv, name/poster/year from meta)
+  	remove(input: { id: string }): Promise<void>; // rule in Global Constraints
+  	list(): Promise<WatchlistItem[]>; // listWatchlistRecords + qB transfers/episodes
+  	checkNow(input: { id: string }): Promise<WatchlistItem | null>; // waiting → waitingSearch.checkOne; tracking/paused → existing checkNow path
   };
   ```
+
   tRPC (all `protectedProcedure`, thin): `title.wait({ id })`, `title.watchlist()`, `title.watchlistRemove({ id })`, `title.watchlistCheck({ id })`. `wait` on a non-`tmdb:` id → `PRECONDITION_FAILED`.
 
 - [ ] **Step 1: Failing tests** (fakes): `wait` creates a `waiting` film row with name/poster/year; `wait` for tv stores `season = meta.seasons`; `wait` when a `tracking` watch exists returns it and creates nothing; `remove` deletes a waiting row, sets `off` for a tv row with a topic; `list` attaches `transfer` from the topic tag and excludes `off`; `title.get` for a film with a waiting watch returns `watch.watch === "waiting"`.
@@ -253,17 +334,28 @@
 ### Task 7: «Поиск ожидаемых» worker and scheduler
 
 **Files:**
+
 - Create: `apps/backend/src/workers/watchlist-schedule.ts`, `apps/backend/src/workers/watchlist-schedule.test.ts`
 - Modify: `apps/backend/src/workers/index.ts`
 
 **Interfaces:**
+
 - Consumes: `waitingSearch` export from `title/index.ts` (Task 6), `loadWatchlistSettings` (Task 3), `workers.get/run`.
 - Produces:
+
   ```ts
   export const WATCHLIST_SEARCH_ID = "watchlist-search";
-  export function isWatchlistSearchDue(input: { lastStartedAt: string | null; intervalHours: number; now: Date }): boolean;
-  export function startWatchlistScheduler(deps: { tickMs: number; tick: () => Promise<void> }): () => void;
+  export function isWatchlistSearchDue(input: {
+  	lastStartedAt: string | null;
+  	intervalHours: number;
+  	now: Date;
+  }): boolean;
+  export function startWatchlistScheduler(deps: {
+  	tickMs: number;
+  	tick: () => Promise<void>;
+  }): () => void;
   ```
+
   Definition `execute` → `waitingSearch.runAll(log)`, summary `проверено N · начато M · ошибок K`. Tick every **5 min**: `waitingSearch.syncDownloads()`; then if not running and `isWatchlistSearchDue({ lastStartedAt: lastRun?.startedAt ?? null, intervalHours: settings.checkIntervalHours, now })` → `workers.run(WATCHLIST_SEARCH_ID, { trigger: "scheduled" })`. Errors are logged, never thrown out of the tick. Started from `startWorkers()`.
 
 - [ ] **Step 1: Failing tests** for `isWatchlistSearchDue`: no last run → true; last run 23 h ago with 24 → false; 24 h ago → true; interval 2, 2 h 1 min ago → true.
@@ -277,10 +369,12 @@
 ### Task 8: Settings → «Жду» section (frontend)
 
 **Files:**
+
 - Create: `apps/frontend/src/features/settings/watchlist-settings.tsx`, `apps/frontend/src/routes/settings.watchlist.tsx`
 - Modify: `apps/frontend/src/features/settings/settings-layout.tsx` (SECTIONS gains `{ id: "watchlist", to: "/settings/watchlist" }` after downloads), `apps/frontend/src/shared/i18n/locales/{ru,en}.json`
 
 **Interfaces:**
+
 - Consumes: `trpc.settings.watchlist.get/set` (Task 3).
 
 - [ ] **Step 1: Build the section** following `downloads-settings.tsx`: `Selector` for interval (1/2/4/6/12/24, hour copy) and min resolution; switches for HDR only and Russian voice; supporting text `camripNote`; save button + toast like downloads.
@@ -292,16 +386,27 @@
 ### Task 9: «Жду» button with animation (title page)
 
 **Files:**
+
 - Create: `apps/frontend/src/features/title/wait-button.tsx`, `apps/frontend/src/features/title/wait-state.ts`, `apps/frontend/src/features/title/wait-state.test.ts`
 - Modify: `apps/frontend/src/features/title/title-hero.tsx`, `apps/frontend/package.json` (add `canvas-confetti` + `@types/canvas-confetti`), i18n files
 
 **Interfaces:**
+
 - Consumes: `title.get` → `watch: TitleWatchView | null` (Task 2/6), `trpc.title.wait`, `trpc.settings.watchlist.get`.
 - Produces (`wait-state.ts`):
+
   ```ts
-  export type WaitButtonState = { kind: "add" } | { kind: "waiting" } | { kind: "stage"; stage: "downloading" | "tracking" | "completed" };
-  export function waitButtonState(watch: { watch: TitleWatchState } | null): WaitButtonState; // null/"off" → add; waiting → waiting; downloading → stage downloading; tracking|paused → stage tracking; completed → stage completed
-  export function rulesSummary(s: WatchlistSettings, t: (key: string, o?: object) => string): string; // e.g. "1080p+ · с озвучкой"; "4K+ · HDR · с озвучкой"
+  export type WaitButtonState =
+  	| { kind: "add" }
+  	| { kind: "waiting" }
+  	| { kind: "stage"; stage: "downloading" | "tracking" | "completed" };
+  export function waitButtonState(
+  	watch: { watch: TitleWatchState } | null,
+  ): WaitButtonState; // null/"off" → add; waiting → waiting; downloading → stage downloading; tracking|paused → stage tracking; completed → stage completed
+  export function rulesSummary(
+  	s: WatchlistSettings,
+  	t: (key: string, o?: object) => string,
+  ): string; // e.g. "1080p+ · с озвучкой"; "4K+ · HDR · с озвучкой"
   ```
 
 - [ ] **Step 1: Failing vitest** for `waitButtonState` (all six states + null) and `rulesSummary` (defaults → `"1080p+ · с озвучкой"`; `{4K, hdr, no voice}` → `"4K+ · HDR"`).
@@ -316,16 +421,24 @@
 ### Task 10: «Жду» page, nav item, feed events
 
 **Files:**
+
 - Create: `apps/frontend/src/features/watchlist/watchlist-page.tsx`, `apps/frontend/src/features/watchlist/watchlist-view.ts`, `apps/frontend/src/features/watchlist/watchlist-view.test.ts`, `apps/frontend/src/routes/watchlist.tsx`
 - Modify: `apps/frontend/src/shared/ui/navigation/navigation.tsx` (item «Жду», lucide `Hourglass`, `/watchlist`, after Films), `apps/frontend/src/features/home/home-page.tsx` (`TITLE_WATCH_EVENT_KEYS` + variants for the 3 new kinds: `add-failed` → error, others → success), i18n files
 
 **Interfaces:**
+
 - Consumes: `trpc.title.watchlist`, `title.watchlistRemove`, `title.watchlistCheck`, `title.setWatch` (pause/resume), `WatchlistItem` (Task 6).
 - Produces (`watchlist-view.ts`):
+
   ```ts
-  export type WatchlistStage = "waiting" | "downloading" | "tracking" | "completed";
-  export function stageOf(item: Pick<WatchlistItem, "watch" | "transfer">): WatchlistStage; // waiting→waiting; downloading→downloading; tracking|paused with transfer.progress<1→downloading; tracking|paused→tracking; completed→completed
-  export function groupByStage<T extends Pick<WatchlistItem, "watch" | "transfer">>(items: T[]): Record<WatchlistStage, T[]>; // order inside a group preserved
+  export type WatchlistStage =
+  	"waiting" | "downloading" | "tracking" | "completed";
+  export function stageOf(
+  	item: Pick<WatchlistItem, "watch" | "transfer">,
+  ): WatchlistStage; // waiting→waiting; downloading→downloading; tracking|paused with transfer.progress<1→downloading; tracking|paused→tracking; completed→completed
+  export function groupByStage<
+  	T extends Pick<WatchlistItem, "watch" | "transfer">,
+  >(items: T[]): Record<WatchlistStage, T[]>; // order inside a group preserved
   ```
 
 - [ ] **Step 1: Failing vitest** for `stageOf` (each mapping incl. tracking with progress 0.4 → downloading) and `groupByStage`.
@@ -340,6 +453,7 @@
 ### Task 11: Release notes and full verification
 
 **Files:**
+
 - Create: `changes/unreleased/<YYYYMMDD-HHMMSS>-watchlist.md` (`type: feature`): "Mark a film or series «Жду»: brotracker searches the trackers on a schedule, downloads the first release that matches your quality rules (Settings → Watchlist), and shows everything on the new Watchlist page."
 
 - [ ] **Step 1: Write the note** (format `docs/agents/release-notes.md`).

@@ -9,13 +9,13 @@ Cache RuTracker search results in local Postgres and serve them first. Persist t
 
 ## Decisions
 
-| Topic | Choice |
-|--------|--------|
-| Cache hit policy | Strict local-first: any local matches → return only DB; tracker only on miss or force |
-| Force search | Return tracker results only (no merge with local rows for that response) |
-| Cover fetch | Background after response; prefer MinIO URL when already stored |
-| Local search | `pg_trgm` on normalized `title_norm` (+ light translit/normalization) |
-| Cover refresh API | Not in v1 (re-search / reload picks up new `imageUrl`) |
+| Topic             | Choice                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------- |
+| Cache hit policy  | Strict local-first: any local matches → return only DB; tracker only on miss or force |
+| Force search      | Return tracker results only (no merge with local rows for that response)              |
+| Cover fetch       | Background after response; prefer MinIO URL when already stored                       |
+| Local search      | `pg_trgm` on normalized `title_norm` (+ light translit/normalization)                 |
+| Cover refresh API | Not in v1 (re-search / reload picks up new `imageUrl`)                                |
 
 ## Request flow
 
@@ -37,23 +37,23 @@ Empty `search` → empty results (unchanged).
 
 ### Table `torrents`
 
-| Column | Type | Notes |
-|--------|------|--------|
-| `torrent_id` | text PK | RuTracker topic id |
-| `title` | text | Original title |
-| `title_norm` | text | Normalized for search |
-| `category` | text | |
-| `forum_id` | text | |
-| `author_id` | text | |
-| `size` | bigint | bytes |
-| `seeds` / `leeches` / `downloads` | int | |
-| `registered_at` | timestamptz | tracker date |
-| `torrent_file_url` | text | |
-| `topic_url` | text | |
-| `hdr` | text null | `HDR` / `SDR` |
-| `resolution` | text null | `4K` / `1080p` / … |
-| `image_key` | text null | MinIO object key, e.g. `covers/{torrent_id}.jpg` |
-| `last_seen_at` | timestamptz | bumped on upsert |
+| Column                            | Type        | Notes                                            |
+| --------------------------------- | ----------- | ------------------------------------------------ |
+| `torrent_id`                      | text PK     | RuTracker topic id                               |
+| `title`                           | text        | Original title                                   |
+| `title_norm`                      | text        | Normalized for search                            |
+| `category`                        | text        |                                                  |
+| `forum_id`                        | text        |                                                  |
+| `author_id`                       | text        |                                                  |
+| `size`                            | bigint      | bytes                                            |
+| `seeds` / `leeches` / `downloads` | int         |                                                  |
+| `registered_at`                   | timestamptz | tracker date                                     |
+| `torrent_file_url`                | text        |                                                  |
+| `topic_url`                       | text        |                                                  |
+| `hdr`                             | text null   | `HDR` / `SDR`                                    |
+| `resolution`                      | text null   | `4K` / `1080p` / …                               |
+| `image_key`                       | text null   | MinIO object key, e.g. `covers/{torrent_id}.jpg` |
+| `last_seen_at`                    | timestamptz | bumped on upsert                                 |
 
 - Extension: `CREATE EXTENSION IF NOT EXISTS pg_trgm`
 - Index: GIN trigram on `title_norm`
@@ -109,12 +109,12 @@ In-process queue on the backend (no Redis in v1):
 
 ## Error / resilience
 
-| Failure | Behavior |
-|---------|----------|
-| Postgres down | App should not start (migrate/connect fail) |
-| MinIO down | Search works; `imageUrl` stays null |
-| Single cover fetch fail | Log; leave `image_key` null |
-| RuTracker fail on miss/force | Empty results + log |
+| Failure                      | Behavior                                    |
+| ---------------------------- | ------------------------------------------- |
+| Postgres down                | App should not start (migrate/connect fail) |
+| MinIO down                   | Search works; `imageUrl` stays null         |
+| Single cover fetch fail      | Log; leave `image_key` null                 |
+| RuTracker fail on miss/force | Empty results + log                         |
 
 ## Out of scope (v1)
 

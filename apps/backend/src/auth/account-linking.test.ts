@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { OIDC_ACCOUNT_OPTIONS } from "./account-linking";
 
 describe("OIDC account linking", () => {

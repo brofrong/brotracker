@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { parseMovieDetails, parseTvDetails } from "./tmdb-meta";
 
 const credits = () => ({ cast: [], crew: [] });

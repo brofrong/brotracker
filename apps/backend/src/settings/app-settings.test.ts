@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { BETTER_AUTH_SECRET_KEY } from "./app-settings";
 
 describe("app settings", () => {

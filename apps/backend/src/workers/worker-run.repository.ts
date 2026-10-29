@@ -1,4 +1,5 @@
 import { and, desc, eq, notInArray, sql } from "drizzle-orm";
+
 import { db } from "../db/db";
 import {
 	type WorkerLogLine,
@@ -65,6 +66,7 @@ export function createWorkerRunStore(database: typeof db = db): WorkerRunStore {
 				if (running) {
 					throw new Error(
 						`Worker ${input.workerId} already running (run ${running.id})`,
+						{ cause: err },
 					);
 				}
 				throw err;

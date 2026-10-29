@@ -1,19 +1,20 @@
 import axios from "axios";
 import { err, ok, type Result } from "neverthrow";
-import type { ProxyAgent } from "./http";
-import {
-	axiosAgentConfig,
-	cloudflareBypassFailedError,
-	isCloudflareChallenge,
-} from "./http";
-import { acquireKinozalCfClearance } from "./cf";
-import { resolveKinozalMirror } from "./hosts";
+
 import { sharedResult } from "../../single-flight";
 import {
 	cookiesToHeader,
 	type FileStore,
 	type StoredCookie,
 } from "../../storage/file-store";
+import { acquireKinozalCfClearance } from "./cf";
+import { resolveKinozalMirror } from "./hosts";
+import type { ProxyAgent } from "./http";
+import {
+	axiosAgentConfig,
+	cloudflareBypassFailedError,
+	isCloudflareChallenge,
+} from "./http";
 
 const DEFAULT_UA =
 	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";

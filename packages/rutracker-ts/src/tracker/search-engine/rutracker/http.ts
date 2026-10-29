@@ -1,4 +1,5 @@
 import type { Agent } from "node:https";
+
 import type { AxiosRequestConfig, AxiosResponse } from "axios";
 
 export type ProxyAgent = Agent | null;

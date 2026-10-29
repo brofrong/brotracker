@@ -15,6 +15,7 @@
 ### Task 1: Catalog — split `search` / `searchRefresh` (TDD)
 
 **Files:**
+
 - Modify: `apps/backend/src/catalog/catalog.ts`
 - Modify: `apps/backend/src/catalog/catalog.test.ts`
 
@@ -24,8 +25,10 @@ Replace `catalog.test.ts` so it targets two methods and drops `source` from the 
 
 ```ts
 import { describe, expect, test } from "bun:test";
+
 import type { SearchResult } from "@brotracker/rutracker-ts/tracker/tracker-interface";
-import { createCatalog, type CatalogDeps } from "./catalog";
+
+import { type CatalogDeps, createCatalog } from "./catalog";
 
 const hit = (overrides: Partial<SearchResult> = {}): SearchResult => ({
 	torrentId: "100",
@@ -47,10 +50,7 @@ const hit = (overrides: Partial<SearchResult> = {}): SearchResult => ({
 
 function unusedTrackerDeps(): Pick<
 	CatalogDeps,
-	| "searchTracker"
-	| "upsertFromTracker"
-	| "loadImageKeys"
-	| "enqueueCoverFetch"
+	"searchTracker" | "upsertFromTracker" | "loadImageKeys" | "enqueueCoverFetch"
 > {
 	return {
 		searchTracker: async () => {
@@ -162,9 +162,7 @@ describe("catalog.searchRefresh", () => {
 			},
 		});
 
-		await expect(catalog.searchRefresh("film", {})).rejects.toThrow(
-			/tracker/i,
-		);
+		await expect(catalog.searchRefresh("film", {})).rejects.toThrow(/tracker/i);
 	});
 
 	test("throws when tracker returns error", async () => {
@@ -292,12 +290,14 @@ git commit -m "refactor(catalog): split local search and tracker refresh"
 ### Task 2: tRPC — `torrent.search` + `torrent.searchRefresh`
 
 **Files:**
+
 - Modify: `apps/backend/src/torrent/torrent.router.ts`
 
 **Step 1: Update router**
 
 ```ts
 import z from "zod";
+
 import { catalog } from "../catalog";
 import { protectedProcedure, router } from "../trpc";
 
@@ -367,6 +367,7 @@ git commit -m "feat(torrent): expose search and searchRefresh procedures"
 ### Task 3: SearchBar — single submit
 
 **Files:**
+
 - Modify: `apps/frontend/src/components/search/search-bar.tsx`
 
 **Step 1: Simplify props and UI**
@@ -377,7 +378,7 @@ git commit -m "feat(torrent): expose search and searchRefresh procedures"
 import { Button } from "@astryxdesign/core/Button";
 import { HStack, StackItem } from "@astryxdesign/core/Stack";
 import { TextInput } from "@astryxdesign/core/TextInput";
-import { useEffect, useState, type FormEvent } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 type SearchBarProps = {
 	initialQuery?: string;
@@ -437,6 +438,7 @@ export const SearchBar = ({
 ```
 
 Notes:
+
 - Do **not** disable the whole bar while tracker refresh runs — `isSearching` here should mean **local** initial load only (parent will pass that). User must keep using UI during refresh.
 - Remove exported `SearchSource` type (update imports in `search.tsx`).
 
@@ -452,6 +454,7 @@ git commit -m "feat(search): single submit search bar"
 ### Task 4: Search page — dual query, indicator, toast
 
 **Files:**
+
 - Modify: `apps/frontend/src/routes/search.tsx`
 
 **Step 1: Wire dual queries + UX**
@@ -463,21 +466,21 @@ Key behavior (implement fully in file):
 3. Local query:
    ```ts
    const localQuery = useQuery({
-     ...trpc.torrent.search.queryOptions({ search }),
-     enabled: hasActiveSearch,
-     refetchOnWindowFocus: false,
+   	...trpc.torrent.search.queryOptions({ search }),
+   	enabled: hasActiveSearch,
+   	refetchOnWindowFocus: false,
    });
    ```
 4. Refresh query:
    ```ts
    const refreshQuery = useQuery({
-     ...trpc.torrent.searchRefresh.queryOptions({
-       search,
-       options: { sortType: "leechesCount", sortOrder: "descending" },
-     }),
-     enabled: hasActiveSearch,
-     refetchOnWindowFocus: false,
-     retry: false,
+   	...trpc.torrent.searchRefresh.queryOptions({
+   		search,
+   		options: { sortType: "leechesCount", sortOrder: "descending" },
+   	}),
+   	enabled: hasActiveSearch,
+   	refetchOnWindowFocus: false,
+   	retry: false,
    });
    ```
 5. Display data:
@@ -494,11 +497,11 @@ Key behavior (implement fully in file):
 const toast = useToast();
 
 useEffect(() => {
-  if (!refreshQuery.isError) return;
-  toast({
-    type: "error",
-    body: refreshQuery.error.message || "Не удалось получить данные с трекера",
-  });
+	if (!refreshQuery.isError) return;
+	toast({
+		type: "error",
+		body: refreshQuery.error.message || "Не удалось получить данные с трекера",
+	});
 }, [refreshQuery.isError, refreshQuery.error, toast]);
 ```
 
@@ -507,6 +510,7 @@ Guard against toast spam if React Strict Mode double-fires: acceptable if toast 
 10. Empty state: show «Ничего не найдено» only when local settled (or refresh settled) with zero rows — if local empty but refresh still fetching, show empty list + indicator, **not** final empty title alone without indicator. Prefer: if rows.length === 0 && !localQuery.isLoading && !refreshQuery.isFetching → EmptyState; if rows.length === 0 && refresh still fetching → indicator only (or EmptyState + indicator).
 
 11. `handleSearch`:
+
     ```ts
     void navigate({ search: { search: query }, replace: true });
     ```

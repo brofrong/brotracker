@@ -9,13 +9,13 @@ When `/search` opens with no query, show the 50 most recent torrents from the lo
 
 ## Decisions
 
-| Topic | Choice |
-|--------|--------|
-| Source | Local Postgres only |
-| Order | `registered_at DESC` |
-| Limit | 50 |
-| Tracker refresh on empty page | No |
-| Empty cache | EmptyState explaining search will fill the cache |
+| Topic                         | Choice                                           |
+| ----------------------------- | ------------------------------------------------ |
+| Source                        | Local Postgres only                              |
+| Order                         | `registered_at DESC`                             |
+| Limit                         | 50                                               |
+| Tracker refresh on empty page | No                                               |
+| Empty cache                   | EmptyState explaining search will fill the cache |
 
 ## API
 

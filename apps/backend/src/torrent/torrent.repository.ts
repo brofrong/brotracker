@@ -1,5 +1,6 @@
 import type { SearchResult } from "@brotracker/rutracker-ts/tracker/tracker-interface";
 import { desc, sql } from "drizzle-orm";
+
 import { db } from "../db/db";
 import { torrents } from "../db/torrent/torrent.schema";
 import { compareTorrentQuality } from "./quality-score";

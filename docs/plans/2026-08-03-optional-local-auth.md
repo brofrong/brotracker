@@ -17,6 +17,7 @@
 ### Task 1: Auth mode helpers + env schema
 
 **Files:**
+
 - Create: `apps/backend/src/auth/auth-mode.ts`
 - Create: `apps/backend/src/auth/auth-mode.test.ts`
 - Create: `apps/backend/src/utils/env.test.ts` (or extend if exists)
@@ -27,17 +28,18 @@
 ```ts
 // auth-mode.test.ts
 import { describe, expect, test } from "bun:test";
+
 import { resolveAuthMode } from "./auth-mode";
 
 describe("resolveAuthMode", () => {
-  test("empty / whitespace / undefined → local", () => {
-    expect(resolveAuthMode({ AUTHENTIK_CLIENT_ID: undefined })).toBe("local");
-    expect(resolveAuthMode({ AUTHENTIK_CLIENT_ID: "" })).toBe("local");
-    expect(resolveAuthMode({ AUTHENTIK_CLIENT_ID: "  " })).toBe("local");
-  });
-  test("non-empty → authentik", () => {
-    expect(resolveAuthMode({ AUTHENTIK_CLIENT_ID: "cid" })).toBe("authentik");
-  });
+	test("empty / whitespace / undefined → local", () => {
+		expect(resolveAuthMode({ AUTHENTIK_CLIENT_ID: undefined })).toBe("local");
+		expect(resolveAuthMode({ AUTHENTIK_CLIENT_ID: "" })).toBe("local");
+		expect(resolveAuthMode({ AUTHENTIK_CLIENT_ID: "  " })).toBe("local");
+	});
+	test("non-empty → authentik", () => {
+		expect(resolveAuthMode({ AUTHENTIK_CLIENT_ID: "cid" })).toBe("authentik");
+	});
 });
 ```
 
@@ -58,6 +60,7 @@ Export `authMode` from env or auth-mode using parsed env.
 ### Task 2: registrationOpen + mode HTTP handler
 
 **Files:**
+
 - Modify: `apps/backend/src/auth/auth-mode.ts`
 - Create: `apps/backend/src/auth/auth-mode-http.ts` (or keep in auth-mode)
 - Modify: `apps/backend/src/auth/auth-mode.test.ts`
@@ -72,24 +75,24 @@ Export `authMode` from env or auth-mode using parsed env.
 
 ```ts
 export function buildAuthModeResponse(input: {
-  mode: "local" | "authentik";
-  userCount: number;
+	mode: "local" | "authentik";
+	userCount: number;
 }) {
-  return {
-    mode: input.mode,
-    registrationOpen: input.mode === "local" && input.userCount === 0,
-  };
+	return {
+		mode: input.mode,
+		registrationOpen: input.mode === "local" && input.userCount === 0,
+	};
 }
 ```
 
-`countUsers`: `db.select({ c: count() }).from(user)` 
+`countUsers`: `db.select({ c: count() }).from(user)`
 
 In `index.ts` middleware, before `authHandler`:
 
 ```ts
 if (url.split("?")[0] === "/api/auth/mode" && req.method === "GET") {
-  // write JSON via buildAuthModeResponse
-  return;
+	// write JSON via buildAuthModeResponse
+	return;
 }
 ```
 
@@ -100,6 +103,7 @@ if (url.split("?")[0] === "/api/auth/mode" && req.method === "GET") {
 ### Task 3: Conditional Better Auth + signup gate
 
 **Files:**
+
 - Modify: `apps/backend/src/auth/auth.ts`
 - Create: `apps/backend/src/auth/local-signup-gate.test.ts`
 
@@ -124,6 +128,7 @@ export function assertLocalSignUpAllowed(userCount: number): void {
 ### Task 4: Docker / env examples
 
 **Files:**
+
 - Modify: `docker/.env.example`
 - Modify: `docker/docker-compose.yml`
 - Modify: `apps/backend/.env.example`
@@ -138,12 +143,14 @@ Remove `change-me` defaults; comment Authentik vars as optional. Compose: only p
 ### Task 5: Frontend auth client + redirect policy
 
 **Files:**
+
 - Modify: `apps/frontend/src/utils/auth-client.ts`
 - Modify: `apps/frontend/src/utils/unauthorized-redirect.ts`
 - Modify: `apps/frontend/src/utils/unauthorized-redirect.test.ts`
 - Create: `apps/frontend/src/utils/auth-mode.ts` (fetch mode)
 
 **Behavior:**
+
 - `fetchAuthMode()` → GET `{base}/api/auth/mode`
 - `redirectToSignIn()`: if authentik → oauth; if local → `window.location.assign("/login")` (or router navigate)
 - `signOutAndRedirect`: signOut then `redirectToSignIn`
@@ -157,6 +164,7 @@ Update default unauthorized redirect to use `redirectToSignIn`.
 ### Task 6: AuthGate + `/login` page
 
 **Files:**
+
 - Modify: `apps/frontend/src/components/AuthGate.tsx`
 - Create: `apps/frontend/src/routes/login.tsx`
 - Modify: `apps/frontend/src/routes/__root.tsx` if AuthGate must skip `/login`
@@ -172,6 +180,7 @@ Update default unauthorized redirect to use `redirectToSignIn`.
 ### Task 7: Verify
 
 Run:
+
 - `cd apps/backend && bun test src/auth src/utils/env.test.ts`
 - `cd apps/frontend && bun run test` (or vitest for unauthorized-redirect)
 

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { err, ok, type Result } from "neverthrow";
+
 import type {
 	SearchOptions,
 	SearchPage,

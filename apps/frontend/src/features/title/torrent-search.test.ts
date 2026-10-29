@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
+
 import {
 	buildTitleSearchQuery,
 	hasDistinctNames,
 	loadSearchBy,
-	SEARCH_BY_STORAGE_KEY,
 	saveSearchBy,
+	SEARCH_BY_STORAGE_KEY,
 	searchNameFor,
 	splitByMatch,
 } from "./torrent-search";

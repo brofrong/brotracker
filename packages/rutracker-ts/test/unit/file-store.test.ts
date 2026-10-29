@@ -2,11 +2,12 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
 import {
 	cookiesToHeader,
 	createFileStore,
-	fileStoreSchema,
 	type FileStoreData,
+	fileStoreSchema,
 	type StoredCookie,
 } from "../../src/tracker/storage/file-store";
 

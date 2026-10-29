@@ -2,6 +2,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import z from "zod";
+
 import { SearchPage } from "#/features/search/search-page";
 
 const searchSchema = z.object({

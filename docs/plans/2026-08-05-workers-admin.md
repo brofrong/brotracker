@@ -15,6 +15,7 @@
 ### Task 1: Schema + migration for `worker_runs`
 
 **Files:**
+
 - Create: `apps/backend/src/db/workers/worker-run.schema.ts`
 - Modify: `apps/backend/src/db/schema.ts`
 - Create: migration under `apps/backend/drizzle/` via `bun run db:generate` (from `apps/backend`)
@@ -22,6 +23,7 @@
 **Step 1: Add Drizzle table**
 
 ```ts
+import { sql } from "drizzle-orm";
 // apps/backend/src/db/workers/worker-run.schema.ts
 import {
 	index,
@@ -31,7 +33,6 @@ import {
 	timestamp,
 	uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 
 export type WorkerRunTrigger = "scheduled" | "manual";
 export type WorkerRunStatus = "running" | "succeeded" | "failed";
@@ -97,6 +98,7 @@ EOF
 ### Task 2: Worker run repository (TDD)
 
 **Files:**
+
 - Create: `apps/backend/src/workers/worker-run.repository.ts`
 - Create: `apps/backend/src/workers/worker-run.repository.test.ts`
 
@@ -154,6 +156,7 @@ Implement `createMemoryWorkerRunStore(): WorkerRunStore` enforcing one-running-p
 ### Task 3: Workers core — list / run / lock (TDD)
 
 **Files:**
+
 - Create: `apps/backend/src/workers/workers.types.ts`
 - Create: `apps/backend/src/workers/workers.ts`
 - Create: `apps/backend/src/workers/workers.test.ts`
@@ -162,8 +165,9 @@ Implement `createMemoryWorkerRunStore(): WorkerRunStore` enforcing one-running-p
 
 ```ts
 import { describe, expect, test } from "bun:test";
-import { createWorkers } from "./workers";
+
 import { createMemoryWorkerRunStore } from "./worker-run.memory";
+import { createWorkers } from "./workers";
 
 describe("workers.run", () => {
 	test("starts a manual run, logs, and marks succeeded", async () => {
@@ -283,6 +287,7 @@ EOF
 ### Task 4: Nightly worker `runNow` + scheduled recording
 
 **Files:**
+
 - Modify: `apps/backend/src/title/watch/nightly-worker.ts`
 - Modify: `apps/backend/src/title/watch/nightly-worker.test.ts`
 - Modify: `apps/backend/src/title/watch/index.ts` (export if needed)
@@ -312,23 +317,24 @@ test("runNow syncs, enqueues, drains ignoring the night window", async () => {
 
 ```ts
 async function scheduledTick() {
-  const result = await nightlyWorker.tick();
-  if (!result.ran) return;
-  await workers.persistExternalRun({
-    workerId: "nightly-torrent-check",
-    trigger: "scheduled",
-    summary: `enqueued ${result.enqueued}, processed ${result.processed}`,
-    log: [/* info lines */],
-  });
+	const result = await nightlyWorker.tick();
+	if (!result.ran) return;
+	await workers.persistExternalRun({
+		workerId: "nightly-torrent-check",
+		trigger: "scheduled",
+		summary: `enqueued ${result.enqueued}, processed ${result.processed}`,
+		log: [/* info lines */],
+	});
 }
 ```
 
 Simpler alternative that keeps one code path: scheduled tick also goes through `workers.runScheduled("nightly-torrent-check")` which checks night window inside execute via calling `tick` logic — but then double-gating is messy.
 
-**Recommended:**  
-- `runNow()` = pipeline only.  
-- `tick()` = gates + `runNow()`.  
-- Manual UI → `workers.run` → `runNow` + logging inside workers execute wrapper.  
+**Recommended:**
+
+- `runNow()` = pipeline only.
+- `tick()` = gates + `runNow()`.
+- Manual UI → `workers.run` → `runNow` + logging inside workers execute wrapper.
 - Scheduled: after `tick()` if `ran`, call `workers.completeScheduledRun(...)` that inserts an already-finished run (or start/finish around `runNow` only when gates pass — gates live outside workers).
 
 Cleanest scheduled hook:
@@ -336,7 +342,7 @@ Cleanest scheduled hook:
 ```ts
 // in composition
 nightlyWorker.startWith(async () => {
-  if (!shouldRunGates()) return; // keep inside nightlyWorker.tick
+	if (!shouldRunGates()) return; // keep inside nightlyWorker.tick
 });
 ```
 
@@ -344,9 +350,8 @@ Actually keep `nightlyWorker.start()` as today, but change `tick` deps to includ
 
 ```ts
 const stop = (() => {
-  const base = createNightlyWorker(deps);
-  return base.start(); // can't intercept
-
+	const base = createNightlyWorker(deps);
+	return base.start(); // can't intercept
 })();
 ```
 
@@ -389,6 +394,7 @@ EOF
 ### Task 5: Drizzle repository + composition + tRPC router
 
 **Files:**
+
 - Create: `apps/backend/src/workers/worker-run.repository.ts` (Postgres `WorkerRunStore`)
 - Create: `apps/backend/src/workers/workers.router.ts`
 - Create: `apps/backend/src/workers/index.ts`
@@ -433,6 +439,7 @@ EOF
 ### Task 6: Frontend — routes + list page
 
 **Files:**
+
 - Create: `apps/frontend/src/features/workers/workers-page.tsx`
 - Create: `apps/frontend/src/routes/workers.tsx`
 - Create: `apps/frontend/src/routes/workers.$id.tsx` (stub ok)
@@ -460,6 +467,7 @@ EOF
 ### Task 7: Frontend — worker detail + run log
 
 **Files:**
+
 - Create: `apps/frontend/src/features/workers/worker-detail-page.tsx`
 - Modify: `apps/frontend/src/routes/workers.$id.tsx`
 - Optional: `apps/frontend/src/features/workers/run-log.tsx`
@@ -485,6 +493,7 @@ EOF
 ### Task 8: ADR note + verification
 
 **Files:**
+
 - Modify: `docs/adr/0001-module-boundaries.md` — one short paragraph that `workers` is a top-level feature owning WorkerRun persistence and calling Title watch only via ports/composition.
 - `CONTEXT.md` already updated in design commit.
 
@@ -493,6 +502,7 @@ EOF
 **Step 2: Commit** docs if changed.
 
 **Step 3:** Manual checklist:
+
 - [ ] Open `/workers` — see nightly worker Idle
 - [ ] Run → status Running → Succeeded; run appears in history
 - [ ] Open run — see info log lines

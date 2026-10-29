@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import type { TitleWatchEvent } from "../title/watch/title-watch-event";
 import { averageSpeedsByDay, buildTransferDays, createHome } from "./home";
 

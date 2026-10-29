@@ -8,12 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 export type TitleWatchState =
-	| "waiting"
-	| "downloading"
-	| "tracking"
-	| "paused"
-	| "completed"
-	| "off";
+	"waiting" | "downloading" | "tracking" | "paused" | "completed" | "off";
 export type TitleWatchSource = "auto-qb" | "manual";
 export type TitleWatchKind = "films" | "tv";
 export type TitleWatchWaitingOutcome =

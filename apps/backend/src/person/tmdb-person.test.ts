@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { parsePersonCredits, parsePersonDetails } from "./tmdb-person";
 
 describe("parsePersonDetails", () => {

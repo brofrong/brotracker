@@ -2,6 +2,7 @@
 
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import z from "zod";
+
 import { HomePage } from "#/features/home/home-page";
 
 /** Legacy search params lived on `/` — keep bookmarks working. */

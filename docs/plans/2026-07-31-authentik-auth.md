@@ -15,6 +15,7 @@
 ### Task 1: Authentik services in docker-compose.dev.yml
 
 **Files:**
+
 - Modify: `docker/docker-compose.dev.yml`
 - Create: `docker/authentik.env.example`
 - Modify: `.gitignore` — ignore `docker/authentik.env`
@@ -24,71 +25,71 @@
 Append (keep existing postgres/minio/byparr). Use official shape (no Redis on current Authentik):
 
 ```yaml
-  authentik-postgres:
-    image: docker.io/library/postgres:16-alpine
-    container_name: brotracker-authentik-postgres
-    restart: unless-stopped
-    env_file:
-      - authentik.env
-    environment:
-      POSTGRES_DB: ${PG_DB:-authentik}
-      POSTGRES_USER: ${PG_USER:-authentik}
-      POSTGRES_PASSWORD: ${PG_PASS:?database password required}
-    volumes:
-      - authentik_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+authentik-postgres:
+  image: docker.io/library/postgres:16-alpine
+  container_name: brotracker-authentik-postgres
+  restart: unless-stopped
+  env_file:
+    - authentik.env
+  environment:
+    POSTGRES_DB: ${PG_DB:-authentik}
+    POSTGRES_USER: ${PG_USER:-authentik}
+    POSTGRES_PASSWORD: ${PG_PASS:?database password required}
+  volumes:
+    - authentik_postgres_data:/var/lib/postgresql/data
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+    interval: 30s
+    timeout: 5s
+    retries: 5
+    start_period: 20s
 
-  authentik-server:
-    image: ghcr.io/goauthentik/server:2026.5.6
-    container_name: brotracker-authentik-server
-    restart: unless-stopped
-    command: server
-    env_file:
-      - authentik.env
-    environment:
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
-      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
-      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
-      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
-      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
-    ports:
-      - "9080:9000"
-      - "9443:9443"
-    volumes:
-      - authentik_data:/data
-      - authentik_templates:/templates
-    depends_on:
-      authentik-postgres:
-        condition: service_healthy
-    shm_size: 512mb
+authentik-server:
+  image: ghcr.io/goauthentik/server:2026.5.6
+  container_name: brotracker-authentik-server
+  restart: unless-stopped
+  command: server
+  env_file:
+    - authentik.env
+  environment:
+    AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
+    AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
+    AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+    AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+    AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+  ports:
+    - "9080:9000"
+    - "9443:9443"
+  volumes:
+    - authentik_data:/data
+    - authentik_templates:/templates
+  depends_on:
+    authentik-postgres:
+      condition: service_healthy
+  shm_size: 512mb
 
-  authentik-worker:
-    image: ghcr.io/goauthentik/server:2026.5.6
-    container_name: brotracker-authentik-worker
-    restart: unless-stopped
-    command: worker
-    env_file:
-      - authentik.env
-    environment:
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
-      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
-      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
-      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
-      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
-    volumes:
-      - authentik_data:/data
-      - authentik_templates:/templates
-      - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      authentik-postgres:
-        condition: service_healthy
-    shm_size: 512mb
-    user: root
+authentik-worker:
+  image: ghcr.io/goauthentik/server:2026.5.6
+  container_name: brotracker-authentik-worker
+  restart: unless-stopped
+  command: worker
+  env_file:
+    - authentik.env
+  environment:
+    AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
+    AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
+    AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+    AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+    AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+  volumes:
+    - authentik_data:/data
+    - authentik_templates:/templates
+    - /var/run/docker.sock:/var/run/docker.sock
+  depends_on:
+    authentik-postgres:
+      condition: service_healthy
+  shm_size: 512mb
+  user: root
 ```
 
 Add volumes `authentik_postgres_data`, `authentik_data`, `authentik_templates`.
@@ -149,6 +150,7 @@ git commit -m "chore: add Authentik services to dev compose"
 ### Task 2: Backend auth env + Better Auth instance
 
 **Files:**
+
 - Modify: `apps/backend/package.json` — add `better-auth`, `@better-auth/drizzle-adapter`
 - Modify: `apps/backend/src/utils/env.ts`
 - Modify: `apps/backend/.env.example`
@@ -183,35 +185,36 @@ Update `.env.example` accordingly (placeholder secrets OK).
 **Step 3: Create `auth.ts`**
 
 ```ts
-import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { betterAuth } from "better-auth";
 import { genericOAuth } from "better-auth/plugins";
+
+import * as authSchema from "../db/auth/auth.schema";
 import { db } from "../db/db";
 import { env } from "../utils/env";
-import * as authSchema from "../db/auth/auth.schema";
 
 export const auth = betterAuth({
-  baseURL: env.BETTER_AUTH_URL,
-  secret: env.BETTER_AUTH_SECRET,
-  trustedOrigins: [env.CORS_ORIGIN],
-  database: drizzleAdapter(db, {
-    provider: "pg",
-    schema: authSchema,
-  }),
-  plugins: [
-    genericOAuth({
-      config: [
-        {
-          providerId: "authentik",
-          discoveryUrl: env.AUTHENTIK_DISCOVERY_URL,
-          clientId: env.AUTHENTIK_CLIENT_ID,
-          clientSecret: env.AUTHENTIK_CLIENT_SECRET,
-          scopes: ["openid", "profile", "email"],
-          pkce: true,
-        },
-      ],
-    }),
-  ],
+	baseURL: env.BETTER_AUTH_URL,
+	secret: env.BETTER_AUTH_SECRET,
+	trustedOrigins: [env.CORS_ORIGIN],
+	database: drizzleAdapter(db, {
+		provider: "pg",
+		schema: authSchema,
+	}),
+	plugins: [
+		genericOAuth({
+			config: [
+				{
+					providerId: "authentik",
+					discoveryUrl: env.AUTHENTIK_DISCOVERY_URL,
+					clientId: env.AUTHENTIK_CLIENT_ID,
+					clientSecret: env.AUTHENTIK_CLIENT_SECRET,
+					scopes: ["openid", "profile", "email"],
+					pkce: true,
+				},
+			],
+		}),
+	],
 });
 ```
 
@@ -229,6 +232,7 @@ git commit -m "feat: add Better Auth config for Authentik OIDC"
 ### Task 3: Better Auth Drizzle schema + drop legacy `users`
 
 **Files:**
+
 - Create: `apps/backend/src/db/auth/auth.schema.ts` (via CLI)
 - Modify: `apps/backend/src/db/schema.ts`
 - Delete or stop exporting: `apps/backend/src/db/user/user.schema.ts`
@@ -283,6 +287,7 @@ git commit -m "feat: add Better Auth tables and drop legacy users"
 ### Task 4: Mount `/api/auth` on tRPC HTTP server
 
 **Files:**
+
 - Modify: `apps/backend/src/index.ts`
 - Modify: `apps/backend/src/http/static.ts` — skip `/api/auth` if static catch-all could steal it (check `tryServeStatic`)
 
@@ -290,6 +295,7 @@ git commit -m "feat: add Better Auth tables and drop legacy users"
 
 ```ts
 import { toNodeHandler } from "better-auth/node";
+
 import { auth } from "./auth/auth";
 
 const authHandler = toNodeHandler(auth);
@@ -297,7 +303,7 @@ const authHandler = toNodeHandler(auth);
 // inside middleware, after CORS, before static:
 const url = req.url ?? "";
 if (url.startsWith("/api/auth")) {
-  return authHandler(req, res);
+	return authHandler(req, res);
 }
 ```
 
@@ -323,6 +329,7 @@ git commit -m "feat: mount Better Auth handler on /api/auth"
 ### Task 5: tRPC session context + protectedProcedure
 
 **Files:**
+
 - Modify: `apps/backend/src/trpc.ts`
 - Create: `apps/backend/src/trpc/context.ts` (optional; can live in `trpc.ts`)
 - Modify: `apps/backend/src/index.ts` — pass `createContext` to HTTP + WS
@@ -335,18 +342,19 @@ git commit -m "feat: mount Better Auth handler on /api/auth"
 **Step 1: Context**
 
 ```ts
-import { fromNodeHeaders } from "better-auth/node";
 import type { CreateHTTPContextOptions } from "@trpc/server/adapters/standalone";
 import type { CreateWSSContextFnOptions } from "@trpc/server/adapters/ws";
+import { fromNodeHeaders } from "better-auth/node";
+
 import { auth } from "./auth/auth";
 
 export async function createContext(
-  opts: CreateHTTPContextOptions | CreateWSSContextFnOptions,
+	opts: CreateHTTPContextOptions | CreateWSSContextFnOptions,
 ) {
-  const session = await auth.api.getSession({
-    headers: fromNodeHeaders(opts.req.headers),
-  });
-  return { session };
+	const session = await auth.api.getSession({
+		headers: fromNodeHeaders(opts.req.headers),
+	});
+	return { session };
 }
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
@@ -360,18 +368,18 @@ Wire `initTRPC.context<Context>().create()`.
 import { TRPCError } from "@trpc/server";
 
 export const protectedProcedure = t.procedure
-  .use(loggingMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.session?.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
-    return next({
-      ctx: {
-        session: ctx.session,
-        user: ctx.session.user,
-      },
-    });
-  });
+	.use(loggingMiddleware)
+	.use(({ ctx, next }) => {
+		if (!ctx.session?.user) {
+			throw new TRPCError({ code: "UNAUTHORIZED" });
+		}
+		return next({
+			ctx: {
+				session: ctx.session,
+				user: ctx.session.user,
+			},
+		});
+	});
 ```
 
 **Step 3: Switch routers**
@@ -405,6 +413,7 @@ git commit -m "feat: require Better Auth session on all tRPC procedures"
 ### Task 6: Frontend auth client + hard gate
 
 **Files:**
+
 - Modify: `apps/frontend/package.json` — add `better-auth`
 - Create: `apps/frontend/src/utils/auth-client.ts`
 - Modify: `apps/frontend/src/routes/__root.tsx` (or dedicated `_authenticated` layout)
@@ -421,18 +430,19 @@ cd apps/frontend && bun add better-auth
 // auth-client.ts
 import { createAuthClient } from "better-auth/client";
 import { genericOAuthClient } from "better-auth/client/plugins";
+
 import { env } from "./env";
 
 function getAuthBaseURL(): string {
-  const host = env.VITE_BACKEND_URL.trim();
-  if (!host || host === "/") return ""; // same origin in prod
-  if (host.startsWith("http")) return host.replace(/\/+$/, "");
-  return `http://${host}`;
+	const host = env.VITE_BACKEND_URL.trim();
+	if (!host || host === "/") return ""; // same origin in prod
+	if (host.startsWith("http")) return host.replace(/\/+$/, "");
+	return `http://${host}`;
 }
 
 export const authClient = createAuthClient({
-  baseURL: getAuthBaseURL(),
-  plugins: [genericOAuthClient()],
+	baseURL: getAuthBaseURL(),
+	plugins: [genericOAuthClient()],
 });
 ```
 
@@ -488,6 +498,7 @@ git commit -m "feat: redirect unauthenticated users to Authentik"
 ### Task 7: Docs for local Authentik OIDC app setup
 
 **Files:**
+
 - Create: `docker/README-authentik.md` (short) **or** add section to existing README if present
 - Prefer minimal: comments in `authentik.env.example` + short `docs/plans` already cover flow; add `docker/AUTHENTIK.md` with redirect URI and discovery URL
 

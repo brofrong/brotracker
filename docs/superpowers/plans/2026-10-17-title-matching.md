@@ -40,36 +40,40 @@
 ### Task 1: Release-title parser
 
 **Files:**
+
 - Create: `packages/rutracker-ts/src/tracker/release-title.ts`
 - Test: `packages/rutracker-ts/test/unit/release-title.test.ts`
 
 **Interfaces:**
+
 - Produces:
+
   ```ts
   export type ParsedReleaseTitle = {
-    names: string[];        // display names in title order, trimmed
-    year: number | null;
-    isCamrip: boolean;      // used in part 2
-    hasRussianVoice: boolean; // used in part 2
+  	names: string[]; // display names in title order, trimmed
+  	year: number | null;
+  	isCamrip: boolean; // used in part 2
+  	hasRussianVoice: boolean; // used in part 2
   };
   export function parseReleaseTitle(title: string): ParsedReleaseTitle;
   ```
+
   Import path for consumers: `@brotracker/rutracker-ts/tracker/release-title`.
 
 - [ ] **Step 1: Write the failing tests** (`describe("parseReleaseTitle")`, `it.each`-style table with `bun:test`)
 
-  | input | names | year |
-  |---|---|---|
-  | `Одиссея / The Odyssey (Кристофер Нолан / Christopher Nolan) [2026, США, WEB-DL 2160p, HDR, Dub]` | `["Одиссея","The Odyssey"]` | 2026 |
-  | `Космическая одиссея / 2001: A Space Odyssey (Стэнли Кубрик / Stanley Kubrick) [1968, Великобритания, США, BDRip 1080p] MVO` | `["Космическая одиссея","2001: A Space Odyssey"]` | 1968 |
-  | `Одиссея / The Odyssey / 2026 / ДБ / WEB-DL (1080p)` (Kinozal) | `["Одиссея","The Odyssey"]` | 2026 |
-  | `Космическая одиссея / 2001: A Space Odyssey / 1968 / ПМ / BDRip (1080p)` | `["Космическая одиссея","2001: A Space Odyssey"]` | 1968 |
-  | `Одни из нас (2 сезон: 1-7 серии из 7) / The Last of Us / 2025 / ПМ / WEB-DL (1080p)` | `["Одни из нас","The Last of Us"]` | 2025 |
-  | `Одни из нас / The Last of Us / Сезон: 2 / Серии: 1-7 из 7 (Крэйг Мазин) [2025, США, драма, WEB-DL 1080p] Dub + Original` | `["Одни из нас","The Last of Us"]` | 2025 |
-  | `Одиссея / The Odyssey (2026) WEB-DLRip-AVC от DoMiNo & селезень \| D` (RuTor) | `["Одиссея","The Odyssey"]` | 2026 |
-  | `Inception 2010 1080p` | `["Inception"]` | 2010 |
-  | `Padre.Pio.2022.WEB-DL.1080p.mkv` | `["Padre Pio"]` | 2022 |
-  | `Какой-то релиз без года WEB-DL` | `["Какой-то релиз без года WEB-DL"]` | `null` |
+  | input                                                                                                                        | names                                             | year   |
+  | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | ------ |
+  | `Одиссея / The Odyssey (Кристофер Нолан / Christopher Nolan) [2026, США, WEB-DL 2160p, HDR, Dub]`                            | `["Одиссея","The Odyssey"]`                       | 2026   |
+  | `Космическая одиссея / 2001: A Space Odyssey (Стэнли Кубрик / Stanley Kubrick) [1968, Великобритания, США, BDRip 1080p] MVO` | `["Космическая одиссея","2001: A Space Odyssey"]` | 1968   |
+  | `Одиссея / The Odyssey / 2026 / ДБ / WEB-DL (1080p)` (Kinozal)                                                               | `["Одиссея","The Odyssey"]`                       | 2026   |
+  | `Космическая одиссея / 2001: A Space Odyssey / 1968 / ПМ / BDRip (1080p)`                                                    | `["Космическая одиссея","2001: A Space Odyssey"]` | 1968   |
+  | `Одни из нас (2 сезон: 1-7 серии из 7) / The Last of Us / 2025 / ПМ / WEB-DL (1080p)`                                        | `["Одни из нас","The Last of Us"]`                | 2025   |
+  | `Одни из нас / The Last of Us / Сезон: 2 / Серии: 1-7 из 7 (Крэйг Мазин) [2025, США, драма, WEB-DL 1080p] Dub + Original`    | `["Одни из нас","The Last of Us"]`                | 2025   |
+  | `Одиссея / The Odyssey (2026) WEB-DLRip-AVC от DoMiNo & селезень \| D` (RuTor)                                               | `["Одиссея","The Odyssey"]`                       | 2026   |
+  | `Inception 2010 1080p`                                                                                                       | `["Inception"]`                                   | 2010   |
+  | `Padre.Pio.2022.WEB-DL.1080p.mkv`                                                                                            | `["Padre Pio"]`                                   | 2022   |
+  | `Какой-то релиз без года WEB-DL`                                                                                             | `["Какой-то релиз без года WEB-DL"]`              | `null` |
 
   Flags:
   - `isCamrip` true: `Одиссея / The Odyssey (2026) CAMRip | Звук с TS`, `… [2026, HDCAM]`, `… [2026, TS] …`, `… экранка …`; false: `… [2010, BDRip 1080p, DTS-HD MA]`, `… [2026, WEB-DL 1080p]`.
@@ -83,9 +87,9 @@
 - [ ] **Step 3: Implement `parseReleaseTitle(title: string): ParsedReleaseTitle`**
 
   Algorithm (the tests don't fully pin the order, so follow it):
-  1. **Year:** first `(19|20)\d{2}` inside the first `[…]`; else a `(YYYY)` group in the text before `[`; else the first ` / `-segment that is exactly a year or a year range (`2025-2026` → 2025); else (fallback) the first standalone year in the whole title.
+  1. **Year:** first `(19|20)\d{2}` inside the first `[…]`; else a `(YYYY)` group in the text before `[`; else the first `/`-segment that is exactly a year or a year range (`2025-2026` → 2025); else (fallback) the first standalone year in the whole title.
   2. **Name head:** text before the earliest of: first `[`, the `(YYYY)` group from step 1, first `|`. For the fallback case, text before the found year with `.`/`_` turned into spaces.
-  3. Remove remaining `(...)` groups, then split on ` / `; stop at the first segment that is a year/year range; drop segments starting with `Сезон`, `Серии`, `Серия`, `Season`, `Episode(s)`, `S\d+`; trim; drop empties.
+  3. Remove remaining `(...)` groups, then split on `/`; stop at the first segment that is a year/year range; drop segments starting with `Сезон`, `Серии`, `Серия`, `Season`, `Episode(s)`, `S\d+`; trim; drop empties.
   4. **Flags:** case-sensitive `CAM|CAMRip|CamRip|HDCAM|TS|HDTS|TeleSync|TC|HDTC|TeleCine` as whole tokens, or `/экранк/i`. Voice: `Dub|Дубляж|ДБ|MVO|ПМ|Многоголос\p{L}*` as whole tokens (Unicode boundaries, see Global Constraints), or RuTor `\|\s*[DP]\b` suffix. AVO/DVO/Sub/Original alone don't count.
 
 - [ ] **Step 4: Run to verify pass**
@@ -105,19 +109,26 @@
 ### Task 2: Title ↔ release match
 
 **Files:**
+
 - Create: `apps/backend/src/title/release-match.ts`
 - Test: `apps/backend/src/title/release-match.test.ts`
 - Modify: `CONTEXT.md` (add **Release match** under "Titles & metadata": "Whether a tracker release belongs to a Title: one release name equals one Title name after normalization, and the year fits. _Avoid_: fuzzy match, similarity.")
 
 **Interfaces:**
+
 - Consumes: `ParsedReleaseTitle` (Task 1).
 - Produces:
+
   ```ts
   export function normalizeTitleName(name: string): string;
-  export type MatchTarget = { kind: TitleKind; year: number | null; names: string[] };
+  export type MatchTarget = {
+  	kind: TitleKind;
+  	year: number | null;
+  	names: string[];
+  };
   export function releaseMatchesTitle(
-    release: Pick<ParsedReleaseTitle, "names" | "year">,
-    target: MatchTarget,
+  	release: Pick<ParsedReleaseTitle, "names" | "year">,
+  	target: MatchTarget,
   ): boolean;
   ```
 
@@ -161,6 +172,7 @@
 ### Task 3: Original and Russian alternative names from TMDB
 
 **Files:**
+
 - Modify: `apps/backend/src/title/tmdb-meta.ts` (detail types, `parseMovieDetails`, `parseTvDetails`)
 - Modify: `apps/backend/src/title/fetch-tmdb-meta.ts` (details path)
 - Modify: `apps/backend/src/title/title.types.ts` (`TmdbMeta`, `TitleMeta`)
@@ -168,6 +180,7 @@
 - Test: `apps/backend/src/title/tmdb-meta.test.ts` (create)
 
 **Interfaces:**
+
 - Consumes: `normalizeTitleName` (Task 2).
 - Produces: `TmdbMeta` and `TitleMeta` gain `originalName: string | null` and `alternativeNames: string[]` (empty in `emptyMeta`). Frontend sees them on `title.get` via tRPC inference.
 
@@ -207,11 +220,13 @@
 ### Task 4: Mark title torrents as matching or not
 
 **Files:**
+
 - Modify: `apps/backend/src/title/title.types.ts` (`TitleTorrent`)
 - Modify: `apps/backend/src/title/title.ts` (`toTitleTorrent`, `torrents`)
 - Test: `apps/backend/src/title/title-torrents.test.ts`
 
 **Interfaces:**
+
 - Consumes: `parseReleaseTitle` (Task 1), `releaseMatchesTitle`, `MatchTarget` (Task 2), `TitleMeta.originalName/alternativeNames` (Task 3).
 - Produces: `TitleTorrent.matches: boolean` on every item of `title.torrents`. Sorting stays by `qualityScore`.
 
@@ -248,11 +263,13 @@
 ### Task 5: Title hero — names and mobile layout
 
 **Files:**
+
 - Create: `apps/frontend/src/features/title/title-hero.tsx` (move `TitleHero`, its props type and helpers it alone uses out of `title-page.tsx`, unchanged first)
 - Modify: `apps/frontend/src/features/title/title-page.tsx` (import the moved component)
 - Modify: `apps/frontend/src/shared/i18n/locales/ru.json`, `en.json` (`title.detail.originalName`, `title.detail.alsoKnownAs`)
 
 **Interfaces:**
+
 - Consumes: `meta.originalName`, `meta.alternativeNames` from `title.get` (Task 3); `useAppShellMobile` from `@astryxdesign/core/AppShell` (same hook as `shared/ui/navigation/navigation.tsx`).
 - Produces: `export function TitleHero(props: TitleHeroProps)` in `title-hero.tsx`. `TitleHeroProps` unchanged except it now reads the two new meta fields.
 
@@ -295,6 +312,7 @@
 ### Task 6: Title torrents — search by, year, other results, mobile rows
 
 **Files:**
+
 - Create: `apps/frontend/src/features/title/torrent-search.ts`
 - Test: `apps/frontend/src/features/title/torrent-search.test.ts`
 - Create: `apps/frontend/src/features/title/title-torrents.tsx` (move `TitleTorrentsList` out of `title-page.tsx`, unchanged first)
@@ -302,28 +320,44 @@
 - Modify: `apps/frontend/src/shared/i18n/locales/ru.json`, `en.json` (`title.torrents.searchBy`, `otherResults`, `noExactMatches`, `downloadAria`)
 
 **Interfaces:**
+
 - Consumes: `TitleTorrent.matches` (Task 4); `meta.originalName`, `meta.year` (Task 3).
 - Produces (in `torrent-search.ts`):
+
   ```ts
   export type SearchBy = "original" | "locale";
   export const SEARCH_BY_STORAGE_KEY = "brotracker.title.searchBy";
-  export function hasDistinctNames(meta: { name: string | null; originalName: string | null }): boolean;
-  export function searchNameFor(by: SearchBy, meta: { name: string | null; originalName: string | null }): string;
+  export function hasDistinctNames(meta: {
+  	name: string | null;
+  	originalName: string | null;
+  }): boolean;
+  export function searchNameFor(
+  	by: SearchBy,
+  	meta: { name: string | null; originalName: string | null },
+  ): string;
   export function buildTitleSearchQuery(input: {
-    name: string; year: number | null; season: number | null;
-    formatSeason: (name: string, season: number) => string;
+  	name: string;
+  	year: number | null;
+  	season: number | null;
+  	formatSeason: (name: string, season: number) => string;
   }): string;
-  export function splitByMatch<T extends { matches: boolean }>(items: T[]): { matched: T[]; others: T[] };
+  export function splitByMatch<T extends { matches: boolean }>(
+  	items: T[],
+  ): { matched: T[]; others: T[] };
   export function loadSearchBy(storage: Pick<Storage, "getItem">): SearchBy;
-  export function saveSearchBy(storage: Pick<Storage, "setItem">, by: SearchBy): void;
+  export function saveSearchBy(
+  	storage: Pick<Storage, "setItem">,
+  	by: SearchBy,
+  ): void;
   ```
+
   `TitleTorrentsList` additionally receives `originalName: string | null` and `year: number | null` props from `title-page.tsx`.
 
 - [ ] **Step 1: Write the failing tests** (Vitest, `describe` per function)
 
   - `hasDistinctNames({name:"Одиссея", originalName:"The Odyssey"})` → true; `{name:"The Odyssey", originalName:"the odyssey"}` → false; `{name:"Одиссея", originalName:null}` → false.
   - `searchNameFor("original", {name:"Одиссея", originalName:"The Odyssey"})` → `"The Odyssey"`; `"locale"` → `"Одиссея"`; `"original"` with `originalName:null` → `"Одиссея"`.
-  - `buildTitleSearchQuery({name:"The Odyssey", year:2026, season:null, formatSeason})` → `"The Odyssey 2026"`; `year:null` → `"The Odyssey"`; `season:2` with `formatSeason=(n,s)=>\`${n} сезон ${s}\`` → `"The Odyssey сезон 2"` (no year).
+  - `buildTitleSearchQuery({name:"The Odyssey", year:2026, season:null, formatSeason})` → `"The Odyssey 2026"`; `year:null` → `"The Odyssey"`; `season:2` with `formatSeason=(n,s)=>\`${n} сезон ${s}\``→`"The Odyssey сезон 2"` (no year).
   - `splitByMatch` keeps order inside each group.
   - `loadSearchBy` → `"original"` for missing or garbage values, `"locale"` when stored; `saveSearchBy` writes `SEARCH_BY_STORAGE_KEY`.
 
@@ -369,6 +403,7 @@
 ### Task 7: Release notes and full verification
 
 **Files:**
+
 - Create: `changes/unreleased/<YYYYMMDD-HHMMSS>-title-matching.md` (`type: fix`): "The title page no longer mixes in releases of other films with a similar name (e.g. «Космическая одиссея» on «Одиссея»); they are tucked into a collapsed «Other results» block."
 - Create: `changes/unreleased/<YYYYMMDD-HHMMSS>-title-names-search.md` (`type: feature`): "Title pages show the original and alternative titles, search by original or local title with the release year, and have a proper mobile layout."
 

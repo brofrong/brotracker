@@ -1,14 +1,21 @@
-import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import { mkdirSync, writeFileSync, rmSync, existsSync, readdirSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
-	parseNoteFile,
-	suggestBump,
-	renderReleaseNotes,
-	loadUnreleasedNotes,
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import {
 	archiveNotes,
+	loadUnreleasedNotes,
 	type ParsedNote,
+	parseNoteFile,
+	renderReleaseNotes,
+	suggestBump,
 } from "./release-notes";
 
 describe("parseNoteFile", () => {
@@ -122,7 +129,10 @@ describe("archiveNotes", () => {
 	let archive: string;
 
 	beforeEach(() => {
-		const base = join(tmpdir(), `release-archive-${Date.now()}-${Math.random()}`);
+		const base = join(
+			tmpdir(),
+			`release-archive-${Date.now()}-${Math.random()}`,
+		);
 		unreleased = join(base, "unreleased");
 		archive = join(base, "v1.0.0");
 		mkdirSync(unreleased, { recursive: true });
@@ -145,6 +155,8 @@ Archived note.
 		const moved = archiveNotes(unreleased, archive);
 		expect(moved).toEqual(["note.md"]);
 		expect(existsSync(join(archive, "note.md"))).toBe(true);
-		expect(readdirSync(unreleased).filter((f) => f.endsWith(".md"))).toEqual([]);
+		expect(readdirSync(unreleased).filter((f) => f.endsWith(".md"))).toEqual(
+			[],
+		);
 	});
 });

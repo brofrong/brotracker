@@ -1,4 +1,5 @@
 import type { TrackerInterface } from "@brotracker/rutracker-ts/tracker/tracker-interface";
+
 import { loadQbittorrentConfig } from "../settings/qbittorrent-config";
 import { extractTopicId } from "../title/topic-tag";
 import {

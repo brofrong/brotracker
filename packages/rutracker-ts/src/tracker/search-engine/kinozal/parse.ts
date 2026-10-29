@@ -1,9 +1,10 @@
 import { ok } from "neverthrow";
 import parse, { type HTMLElement } from "node-html-parser";
-import type { SearchPage, SearchResult } from "../../tracker-interface";
+
 import { formatTorrentId } from "../../torrent-id";
-import { resolveKinozalMirror } from "./hosts";
+import type { SearchPage, SearchResult } from "../../tracker-interface";
 import { checkHDR, checkResolution, formatDate, formatSize } from "./format";
+import { resolveKinozalMirror } from "./hosts";
 
 export function parseResponse(
 	html: string,

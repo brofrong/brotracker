@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
+
 import axios from "axios";
+
 import { toWindows1251Query } from "../../src/tracker/windows-1251-query";
 
 describe("toWindows1251Query", () => {

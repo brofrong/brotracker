@@ -1,7 +1,8 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { createTracker } from "../../src/tracker/tracker";
+
 import { createFileStore } from "../../src/tracker/storage/file-store";
+import { createTracker } from "../../src/tracker/tracker";
 import { env } from "../../src/utils/env";
 
 /** query used for search; fixtureName overrides filename when query has punctuation */

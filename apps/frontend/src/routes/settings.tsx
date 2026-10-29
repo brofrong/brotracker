@@ -2,6 +2,7 @@
 
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import z from "zod";
+
 import { SettingsLayout } from "#/features/settings/settings-layout";
 
 const settingsSearchSchema = z.object({

@@ -34,6 +34,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+
 import { useLocale } from "#/shared/i18n/locale-provider";
 import { formatBytes, formatSpeed } from "#/shared/lib/format";
 

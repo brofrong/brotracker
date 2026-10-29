@@ -9,16 +9,16 @@ From search results (table + cards), download a torrent into qBittorrent with th
 
 ## Decisions
 
-| Topic | Choice |
-|--------|--------|
-| Media type detection | `forumId` against existing `filmsCategories` / `tvCategories` in rutracker |
-| Ambiguous / unknown | User must pick Фильм or Сериал before Download is enabled |
-| Save paths | Settings `filmsPath` / `seriesPath` |
-| Modal | Astryx `Dialog` (purpose=`form`) with torrent info + SegmentedControl |
-| Table actions | **Скачать** (modal) + **На трекере** (`topicUrl`, new tab) |
-| Cards | Add **Скачать**; keep existing **На форум** |
-| Feedback | `useToast` success/error |
-| Torrent file fetch | Backend downloads `.torrent` via authenticated rutracker (`getTorrent`), then posts to qBittorrent |
+| Topic                | Choice                                                                                             |
+| -------------------- | -------------------------------------------------------------------------------------------------- |
+| Media type detection | `forumId` against existing `filmsCategories` / `tvCategories` in rutracker                         |
+| Ambiguous / unknown  | User must pick Фильм or Сериал before Download is enabled                                          |
+| Save paths           | Settings `filmsPath` / `seriesPath`                                                                |
+| Modal                | Astryx `Dialog` (purpose=`form`) with torrent info + SegmentedControl                              |
+| Table actions        | **Скачать** (modal) + **На трекере** (`topicUrl`, new tab)                                         |
+| Cards                | Add **Скачать**; keep existing **На форум**                                                        |
+| Feedback             | `useToast` success/error                                                                           |
+| Torrent file fetch   | Backend downloads `.torrent` via authenticated rutracker (`getTorrent`), then posts to qBittorrent |
 
 ## Flow
 
@@ -43,6 +43,7 @@ qbittorent.add: {
 ```
 
 Errors (user-facing):
+
 - qBittorrent not configured
 - films/series path empty
 - rutracker download failed

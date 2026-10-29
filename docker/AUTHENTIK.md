@@ -53,11 +53,11 @@ Copy the **Client ID** and **Client Secret** from the provider.
 
 Copy `apps/backend/.env.example` to `apps/backend/.env` if needed, then set:
 
-| Variable | Example / notes |
-|----------|-----------------|
-| `BETTER_AUTH_URL` | `http://localhost:3101` |
-| `OIDC_CLIENT_ID` | From Authentik provider |
-| `OIDC_CLIENT_SECRET` | From Authentik provider |
+| Variable             | Example / notes                                                                   |
+| -------------------- | --------------------------------------------------------------------------------- |
+| `BETTER_AUTH_URL`    | `http://localhost:3101`                                                           |
+| `OIDC_CLIENT_ID`     | From Authentik provider                                                           |
+| `OIDC_CLIENT_SECRET` | From Authentik provider                                                           |
 | `OIDC_DISCOVERY_URL` | `http://localhost:9080/application/o/brotracker/.well-known/openid-configuration` |
 
 The Better Auth signing secret is generated automatically and stored in the `app_settings` table (`better_auth_secret`) on first backend start — do not set it via env.

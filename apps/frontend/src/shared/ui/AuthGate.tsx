@@ -8,6 +8,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { authClient } from "#/shared/lib/auth-client";
 import { unauthorizedRedirect } from "#/shared/lib/unauthorized-redirect";
 

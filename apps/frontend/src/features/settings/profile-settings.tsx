@@ -14,6 +14,7 @@ import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+
 import { authClient, signOutAndRedirect } from "#/shared/lib/auth-client";
 import { env } from "#/shared/lib/env";
 import { LocaleToggle } from "#/shared/ui/LocaleToggle";

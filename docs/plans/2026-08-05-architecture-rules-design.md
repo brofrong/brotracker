@@ -9,14 +9,14 @@ Make BroTracker navigable for humans and AI agents: clear ownership, an acyclic 
 
 ## What we locked in
 
-| Artifact | Role |
-|---|---|
-| `CONTEXT.md` | Domain glossary |
-| `docs/adr/0001-module-boundaries.md` | Backend deep modules + import DAG |
-| `docs/adr/0002-frontend-vertical-slices.md` | Frontend VFS + thin routes |
-| `.cursor/rules/architecture.mdc` | Always-on pointer |
-| `.cursor/rules/frontend-features.mdc` | FE conventions |
-| `.cursor/rules/backend-modules.mdc` | BE conventions |
+| Artifact                                    | Role                              |
+| ------------------------------------------- | --------------------------------- |
+| `CONTEXT.md`                                | Domain glossary                   |
+| `docs/adr/0001-module-boundaries.md`        | Backend deep modules + import DAG |
+| `docs/adr/0002-frontend-vertical-slices.md` | Frontend VFS + thin routes        |
+| `.cursor/rules/architecture.mdc`            | Always-on pointer                 |
+| `.cursor/rules/frontend-features.mdc`       | FE conventions                    |
+| `.cursor/rules/backend-modules.mdc`         | BE conventions                    |
 
 ## Frontend target
 

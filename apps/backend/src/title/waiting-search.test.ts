@@ -1,4 +1,5 @@
 import { describe, expect, spyOn, test } from "bun:test";
+
 import {
 	DEFAULT_WATCHLIST_SETTINGS,
 	type WatchlistSettings,

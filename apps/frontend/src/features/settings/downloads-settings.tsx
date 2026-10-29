@@ -12,7 +12,9 @@ import { TextInput } from "@astryxdesign/core/TextInput";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { trpc } from "#/shared/lib/trpc";
+
 import { SecretInput, type StatusMessage } from "./settings-shared";
 
 export function DownloadsSettings() {

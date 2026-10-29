@@ -2,6 +2,7 @@ import {
 	DEFAULT_KINOZAL_MIRROR,
 	KINOZAL_MIRRORS,
 } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/constants";
+
 import { fetchWithProxy } from "../http/fetch-with-proxy";
 import { logger } from "../utils/logger";
 

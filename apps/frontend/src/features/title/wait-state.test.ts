@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import {
 	canWaitFor,
 	confettiColors,
@@ -7,8 +8,8 @@ import {
 	rulesSummary,
 	showsWatchPanel,
 	type TitleWatchState,
-	type WatchlistSettings,
 	waitButtonState,
+	type WatchlistSettings,
 } from "./wait-state";
 
 const RU: Record<string, string> = {

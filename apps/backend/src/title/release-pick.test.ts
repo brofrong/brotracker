@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
+
 import { DEFAULT_WATCHLIST_SETTINGS } from "../settings/watchlist-settings";
-import { type PickTarget, pickRelease } from "./release-pick";
+import { pickRelease, type PickTarget } from "./release-pick";
 import type { TitleTorrentCandidate } from "./title.types";
 
 const candidate = (

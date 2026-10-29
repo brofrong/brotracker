@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { parseEnv } from "./env";
 
 describe("parseEnv OIDC optionality", () => {

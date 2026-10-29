@@ -15,6 +15,7 @@
 ### Task 1: Title normalization helper
 
 **Files:**
+
 - Create: `apps/backend/src/torrent/title-norm.ts`
 - Create: `apps/backend/src/torrent/title-norm.test.ts`
 
@@ -22,6 +23,7 @@
 
 ```ts
 import { describe, expect, test } from "bun:test";
+
 import { normalizeTitle } from "./title-norm";
 
 describe("normalizeTitle", () => {
@@ -97,6 +99,7 @@ git commit -m "feat(backend): add torrent title normalization helper"
 ### Task 2: `torrents` schema + relations export
 
 **Files:**
+
 - Create: `apps/backend/src/db/torrent/torrent.schema.ts`
 - Modify: `apps/backend/src/db/schema.ts`
 - Modify: `apps/backend/src/db/relations.ts` (keep `defineRelations(schema, …)` over full schema)
@@ -104,13 +107,7 @@ git commit -m "feat(backend): add torrent title normalization helper"
 **Step 1: Add schema**
 
 ```ts
-import {
-	bigint,
-	integer,
-	pgTable,
-	text,
-	timestamp,
-} from "drizzle-orm/pg-core";
+import { bigint, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const torrents = pgTable("torrents", {
 	torrentId: text("torrent_id").primaryKey(),
@@ -168,6 +165,7 @@ git commit -m "feat(backend): add torrents table with pg_trgm index"
 ### Task 3: S3/MinIO client + env
 
 **Files:**
+
 - Modify: `apps/backend/src/utils/env.ts`
 - Create: `apps/backend/src/storage/s3.ts`
 - Modify: `apps/backend/.env` (local only, do not commit secrets)
@@ -219,6 +217,7 @@ git commit -m "feat(backend): add MinIO S3 client and bucket bootstrap"
 ### Task 4: Torrent repository (local search + upsert)
 
 **Files:**
+
 - Create: `apps/backend/src/torrent/torrent.repository.ts`
 - Create: `apps/backend/src/torrent/torrent.repository.test.ts` (optional integration; skip if no DB in CI — mark with note)
 
@@ -263,6 +262,7 @@ git commit -m "feat(backend): add torrents repository with trigram search"
 ### Task 5: Fix `getImage` (cookies + remove debug write)
 
 **Files:**
+
 - Modify: `packages/rutracker-ts/src/tracker/search-engine/rutracker/get-image.ts`
 - Modify: tracker wiring so `getImage` receives the same cookie/UA stack as `search` (read how `search.ts` / `http.ts` attach cookies; mirror that)
 - Remove `Bun.write("response.html", …)`
@@ -285,6 +285,7 @@ git commit -m "fix(rutracker-ts): make getImage use session cookies"
 ### Task 6: Cover queue worker
 
 **Files:**
+
 - Create: `apps/backend/src/torrent/cover.queue.ts`
 
 **Step 1: Implement in-process queue**
@@ -313,6 +314,7 @@ git commit -m "feat(backend): add background cover fetch queue"
 ### Task 7: Wire `torrentService` + router response shape
 
 **Files:**
+
 - Modify: `apps/backend/src/torrent/torrent.service.ts`
 - Modify: `apps/backend/src/torrent/torrent.router.ts`
 
@@ -327,6 +329,7 @@ search(query, options, { force?: boolean }): Promise<{
 ```
 
 Logic:
+
 1. If `!force`: `searchLocal`; if length > 0 → `{ source: "local", … }`
 2. Else tracker `search`; on err → `{ source: "tracker", results: [], totalResults: null }`
 3. On ok: `upsertFromTracker`; map `imageUrl` from DB after upsert (re-read keys or merge); `void enqueueCoverFetch(idsWithoutImage)`; `{ source: "tracker", … }`
@@ -355,6 +358,7 @@ git commit -m "feat(backend): local-first torrent search with force flag"
 ### Task 8: Frontend source badge, force button, covers
 
 **Files:**
+
 - Modify: `apps/frontend/src/routes/index.tsx`
 - Use Astryx: `Badge` / `StatusToken` / `Button` / `Image` (or img via allowed component) — run `bunx astryx component Badge` and `bunx astryx search "image"` before coding UI
 - No raw layout `<div>`; follow `apps/frontend/AGENTS.md`
@@ -392,7 +396,7 @@ git commit -m "feat(frontend): show search source, force tracker, covers"
 **Step 2:** Backend `bun run dev` — migrations + bucket OK  
 **Step 3:** Search a film → tracker → rows + later covers in MinIO  
 **Step 4:** Search again / typo → local + badge + force button  
-**Step 5:** Force → tracker again  
+**Step 5:** Force → tracker again
 
 **Step 6: Final commit** only if stray fixes remain
 
@@ -404,7 +408,7 @@ Plan complete and saved to `docs/plans/2026-07-31-torrent-search-cache.md`.
 
 **Two execution options:**
 
-1. **Subagent-Driven (this session)** — fresh subagent per task, review between tasks  
-2. **Parallel Session (separate)** — new session with executing-plans, batch with checkpoints  
+1. **Subagent-Driven (this session)** — fresh subagent per task, review between tasks
+2. **Parallel Session (separate)** — new session with executing-plans, batch with checkpoints
 
 Which approach?

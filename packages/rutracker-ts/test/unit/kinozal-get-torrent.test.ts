@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
+
 import { err } from "neverthrow";
-import { kinozalGetTorrent } from "../../src/tracker/search-engine/kinozal/get-torrent";
+
 import { KINOZAL_MIRRORS } from "../../src/tracker/search-engine/kinozal/constants";
+import { kinozalGetTorrent } from "../../src/tracker/search-engine/kinozal/get-torrent";
 import type { KinozalOptions } from "../../src/tracker/tracker-interface";
 
 function optionsThatNeverLeaveTheMachine(): KinozalOptions {

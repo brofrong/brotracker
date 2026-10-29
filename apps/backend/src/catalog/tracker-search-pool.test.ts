@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { createSearchPool, withDeadline } from "./tracker-search-pool";
 
 describe("withDeadline", () => {

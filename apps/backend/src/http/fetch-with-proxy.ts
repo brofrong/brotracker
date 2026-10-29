@@ -1,6 +1,7 @@
 import type { IncomingMessage } from "node:http";
 import http from "node:http";
 import https from "node:https";
+
 import { createProxyAgent } from "./proxy-agent";
 
 type FetchWithProxyOptions = {

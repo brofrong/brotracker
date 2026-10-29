@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import type { Title, TitleKind } from "./title.types";
 import { buildWaitingTarget, searchableOriginalName } from "./waiting-target";
 import type { TitleWatchRecord } from "./watch/check-topic-now";

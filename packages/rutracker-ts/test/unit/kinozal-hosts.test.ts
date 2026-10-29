@@ -1,13 +1,14 @@
 import { describe, expect, test } from "bun:test";
+
+import {
+	DEFAULT_KINOZAL_MIRROR,
+	KINOZAL_MIRRORS,
+} from "../../src/tracker/search-engine/kinozal/constants";
 import {
 	isKinozalDownloadUrl,
 	kinozalDownloadRequestUrl,
 	resolveKinozalMirror,
 } from "../../src/tracker/search-engine/kinozal/hosts";
-import {
-	DEFAULT_KINOZAL_MIRROR,
-	KINOZAL_MIRRORS,
-} from "../../src/tracker/search-engine/kinozal/constants";
 
 describe("resolveKinozalMirror", () => {
 	test("returns default mirror when no base url", () => {

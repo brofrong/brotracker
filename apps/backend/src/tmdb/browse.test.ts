@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { createTmdbBrowse, mapBrowseItem, type TmdbBrowseItem } from "./browse";
 
 describe("mapBrowseItem", () => {

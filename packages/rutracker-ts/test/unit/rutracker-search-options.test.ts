@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { toWindows1251Query } from "../../src/tracker/windows-1251-query";
+
 import {
 	createSearchOptions,
 	filmsCategories,
 	tvCategories,
 } from "../../src/tracker/search-engine/rutracker/search-options";
+import { toWindows1251Query } from "../../src/tracker/windows-1251-query";
 
 describe("rutracker createSearchOptions", () => {
 	test("omits forum filter when category is omitted (Catalog UI path)", () => {

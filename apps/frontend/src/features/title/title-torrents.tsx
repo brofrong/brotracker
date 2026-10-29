@@ -25,12 +25,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import {
 	buildTitleSearchQuery,
 	hasDistinctNames,
 	loadSearchBy,
-	type SearchBy,
 	saveSearchBy,
+	type SearchBy,
 	searchNameFor,
 	splitByMatch,
 } from "#/features/title/torrent-search";
