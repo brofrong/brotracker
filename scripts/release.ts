@@ -249,7 +249,8 @@ async function main() {
 	}
 
 	pkg.version = next;
-	writeFileSync(PKG_PATH, `${JSON.stringify(pkg, null, 2)}\n`);
+	// Tabs, to match `bun fmt` (CI runs `bun fmt --check`).
+	writeFileSync(PKG_PATH, `${JSON.stringify(pkg, null, "\t")}\n`);
 
 	await run(["git", "add", "package.json"]);
 	await run(["git", "commit", "-m", `chore: release ${tag}`]);
