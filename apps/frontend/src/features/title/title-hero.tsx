@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 
 import type { AppLocale } from "#/shared/i18n/locale";
 import { useLocale } from "#/shared/i18n/locale-provider";
+import type { Translate } from "#/shared/i18n/translate";
 import { trpc } from "#/shared/lib/trpc";
 
 import { WaitButton } from "./wait-button";
@@ -32,10 +33,7 @@ const MOBILE_POSTER_WIDTH = 96;
 const DESKTOP_POSTER_WIDTH = 208;
 const OVERVIEW_CLAMP_LINES = 3;
 
-function formatRuntime(
-	minutes: number,
-	t: (key: string, options?: Record<string, unknown>) => string,
-): string {
+function formatRuntime(minutes: number, t: Translate): string {
 	if (minutes < 60) {
 		return t("runtime.minutesOnly", { minutes });
 	}
@@ -114,7 +112,7 @@ type TitleWatchView = {
 
 function episodeProgressLabel(
 	watch: TitleWatchView | null,
-	t: (key: string, options?: Record<string, unknown>) => string,
+	t: Translate,
 ): string {
 	if (!watch?.progress) {
 		return t("detail.episodeProgressUnknown");

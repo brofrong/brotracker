@@ -1,3 +1,5 @@
+import type { Translate } from "#/shared/i18n/translate";
+
 export type TitleWatchState =
 	"waiting" | "downloading" | "tracking" | "paused" | "completed" | "off";
 
@@ -48,7 +50,7 @@ export function nextAction(state: WaitButtonState): WaitAction {
 /** "1080p+ · с озвучкой", "4K+ · HDR" — keys live under the `title` namespace. */
 export function rulesSummary(
 	settings: WatchlistSettings,
-	t: (key: string, options?: Record<string, unknown>) => string,
+	t: Translate,
 ): string {
 	const parts = [
 		t("wait.rules.minResolution", { value: settings.minResolution }),

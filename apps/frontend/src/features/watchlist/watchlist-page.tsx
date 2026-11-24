@@ -32,6 +32,7 @@ import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useLocale } from "#/shared/i18n/locale-provider";
+import type { Translate } from "#/shared/i18n/translate";
 import { formatEta, formatProgress, formatSpeed } from "#/shared/lib/format";
 import { trpc } from "#/shared/lib/trpc";
 
@@ -131,10 +132,7 @@ function useWatchlistActions() {
 	};
 }
 
-function metaLine(
-	item: WatchlistItem,
-	t: (key: string, options?: Record<string, unknown>) => string,
-): string {
+function metaLine(item: WatchlistItem, t: Translate): string {
 	const parts: string[] = [];
 	if (item.kind) {
 		parts.push(t(`kind.${item.kind}`));

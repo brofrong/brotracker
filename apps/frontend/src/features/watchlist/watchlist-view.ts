@@ -1,6 +1,8 @@
 import type { AppRouter } from "@brotracker/backend/appRouter";
 import type { inferRouterOutputs } from "@trpc/server";
 
+import type { Translate } from "#/shared/i18n/translate";
+
 export type WatchlistItem =
 	inferRouterOutputs<AppRouter>["title"]["watchlist"][number];
 
@@ -93,7 +95,7 @@ export type WaitingStatusDisplay = {
 /** Copy + StatusDot variant for a waiting row; keys live in the `watchlist` namespace. */
 export function waitingStatusDisplay(
 	status: WaitingStatus,
-	t: (key: string, options?: Record<string, unknown>) => string,
+	t: Translate,
 ): WaitingStatusDisplay {
 	if (status.kind === "error") {
 		return { text: status.message, variant: "error" };

@@ -69,7 +69,9 @@ export function TrackerDiagnostics({
 			status={result.ok ? "success" : "error"}
 			title={result.ok ? t("diagnostics.ok") : t("diagnostics.failed")}
 			description={failed?.detail}
-			defaultIsExpanded
+			collapsible={{
+				defaultIsOpen: true,
+			}}
 		>
 			<List density="compact" header={t("diagnostics.title")}>
 				{result.steps.map((step) => (
