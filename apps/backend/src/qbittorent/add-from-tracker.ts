@@ -1,6 +1,12 @@
-import { isKinozalDownloadUrl } from "@brotracker/rutracker-ts/tracker/search-engine/kinozal/hosts";
-import { isRutorDownloadUrl } from "@brotracker/rutracker-ts/tracker/search-engine/rutor/hosts";
-import { RUTRACKER_URL } from "@brotracker/rutracker-ts/tracker/search-engine/rutracker/constants";
+import {
+	isAllowedTrackerTorrentUrl,
+	TorrentFilePreconditionError,
+} from "../torrent/torrent-file";
+
+export {
+	isAllowedRutrackerTorrentUrl,
+	isAllowedTrackerTorrentUrl,
+} from "../torrent/torrent-file";
 
 export class AddFromTrackerPreconditionError extends Error {
 	constructor(message: string) {
@@ -14,30 +20,6 @@ export class AddFromTrackerGatewayError extends Error {
 		super(message);
 		this.name = "AddFromTrackerGatewayError";
 	}
-}
-
-/** Only allow RuTracker torrent download endpoints (blocks SSRF / cookie exfil). */
-export function isAllowedRutrackerTorrentUrl(torrentFileUrl: string): boolean {
-	try {
-		const url = new URL(torrentFileUrl);
-		const base = new URL(RUTRACKER_URL);
-		if (url.protocol !== "https:") return false;
-		if (url.hostname !== base.hostname) return false;
-		if (url.pathname !== "/forum/dl.php") return false;
-		const topicId = url.searchParams.get("t");
-		return Boolean(topicId && /^\d+$/.test(topicId));
-	} catch {
-		return false;
-	}
-}
-
-/** Allow RuTracker, Kinozal and RuTor torrent download endpoints only. */
-export function isAllowedTrackerTorrentUrl(torrentFileUrl: string): boolean {
-	return (
-		isAllowedRutrackerTorrentUrl(torrentFileUrl) ||
-		isKinozalDownloadUrl(torrentFileUrl) ||
-		isRutorDownloadUrl(torrentFileUrl)
-	);
 }
 
 export type AddFromTrackerDeps = {
@@ -90,6 +72,9 @@ export function createAddFromTracker(deps: AddFromTrackerDeps) {
 				error instanceof AddFromTrackerGatewayError
 			) {
 				throw error;
+			}
+			if (error instanceof TorrentFilePreconditionError) {
+				throw new AddFromTrackerPreconditionError(error.message);
 			}
 			throw new AddFromTrackerGatewayError(
 				error instanceof Error ? error.message : String(error),

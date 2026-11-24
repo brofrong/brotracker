@@ -7,11 +7,12 @@ import { Card } from "@astryxdesign/core/Card";
 import { Center } from "@astryxdesign/core/Center";
 import { Grid } from "@astryxdesign/core/Grid";
 import { Icon } from "@astryxdesign/core/Icon";
-import { HStack, VStack } from "@astryxdesign/core/Stack";
+import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { ImageOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { TorrentFileButton } from "#/shared/ui/torrent-file-button";
 import { TrackerSourceBadge } from "#/shared/ui/tracker-source-badge";
 
 export type SearchCardItem = {
@@ -124,16 +125,24 @@ function SearchCard({
 							width="100%"
 							onClick={() => onDownload(item)}
 						/>
-						<Button
-							href={item.topicUrl}
-							icon={<Icon icon="externalLink" size="sm" />}
-							rel="noopener noreferrer"
-							label={t("onForum")}
-							size="sm"
-							target="_blank"
-							variant="secondary"
-							width="100%"
-						/>
+						<HStack gap={2} vAlign="center" width="100%">
+							<StackItem size="fill">
+								<Button
+									href={item.topicUrl}
+									icon={<Icon icon="externalLink" size="sm" />}
+									rel="noopener noreferrer"
+									label={t("onForum")}
+									size="sm"
+									target="_blank"
+									variant="secondary"
+									width="100%"
+								/>
+							</StackItem>
+							<TorrentFileButton
+								title={item.title}
+								torrentFileUrl={item.torrentFileUrl}
+							/>
+						</HStack>
 					</VStack>
 				</VStack>
 			</VStack>

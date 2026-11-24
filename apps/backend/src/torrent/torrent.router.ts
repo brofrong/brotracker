@@ -1,7 +1,13 @@
+import { TRPCError } from "@trpc/server";
 import z from "zod";
 
 import { catalog } from "../catalog";
 import { protectedProcedure, router } from "../trpc";
+import {
+	TorrentFileGatewayError,
+	TorrentFilePreconditionError,
+} from "./torrent-file";
+import { fetchTorrentFile } from "./torrent-file.live";
 
 const searchOptionsSchema = z
 	.object({
@@ -72,5 +78,26 @@ export const torrentRouter = router({
 			return catalog.searchRefreshOrLocal(searchText, input.options, {
 				deadlineMs: SEARCH_DEADLINE_MS,
 			});
+		}),
+
+	/** The `.torrent` file itself, base64-encoded, for saving on the user's computer. */
+	downloadFile: protectedProcedure
+		.input(z.object({ torrentFileUrl: z.string().url() }))
+		.mutation(async ({ input }) => {
+			try {
+				const bytes = await fetchTorrentFile(input.torrentFileUrl);
+				return { base64: Buffer.from(bytes).toString("base64") };
+			} catch (error) {
+				if (error instanceof TorrentFilePreconditionError) {
+					throw new TRPCError({
+						code: "PRECONDITION_FAILED",
+						message: error.message,
+					});
+				}
+				if (error instanceof TorrentFileGatewayError) {
+					throw new TRPCError({ code: "BAD_GATEWAY", message: error.message });
+				}
+				throw error;
+			}
 		}),
 });

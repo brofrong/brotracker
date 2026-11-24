@@ -14,6 +14,11 @@
 		"searchPlaceholder": "Поиск...",
 		"download": "Скачать",
 		"onTracker": "На трекере",
+		"torrentFile": {
+			"tooltip": "Скачать .torrent",
+			"aria": "Скачать .torrent: {{title}}",
+			"failed": "Не удалось скачать .torrent"
+		},
 		"film": "Фильм",
 		"series": "Сериал",
 		"emDash": "—",

@@ -40,6 +40,7 @@ import { useLocale } from "#/shared/i18n/locale-provider";
 import { formatBytes } from "#/shared/lib/format";
 import { trpc } from "#/shared/lib/trpc";
 import { SearchBar } from "#/shared/ui/search-bar";
+import { TorrentFileButton } from "#/shared/ui/torrent-file-button";
 
 type ViewMode = "table" | "cards";
 
@@ -209,9 +210,9 @@ export function SearchPage({ search }: { search?: string }) {
 			{
 				key: "action",
 				header: "",
-				width: pixel(208),
+				width: pixel(248),
 				renderCell: (item) => (
-					<HStack gap={1}>
+					<HStack gap={1} vAlign="center">
 						<Button
 							label={t("download")}
 							size="sm"
@@ -225,6 +226,10 @@ export function SearchPage({ search }: { search?: string }) {
 							size="sm"
 							target="_blank"
 							variant="secondary"
+						/>
+						<TorrentFileButton
+							title={item.title}
+							torrentFileUrl={item.torrentFileUrl}
 						/>
 					</HStack>
 				),

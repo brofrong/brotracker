@@ -44,6 +44,7 @@ import {
 } from "#/shared/lib/format";
 import { transferStateLabelKey } from "#/shared/lib/transfer-status";
 import { trpc } from "#/shared/lib/trpc";
+import { TorrentFileButton } from "#/shared/ui/torrent-file-button";
 import { TrackerSourceBadge } from "#/shared/ui/tracker-source-badge";
 
 function badgeVariant(
@@ -359,7 +360,7 @@ export function TitleTorrentsList({
 					</VStack>
 				}
 				endContent={
-					<HStack gap={1}>
+					<HStack gap={1} vAlign="center">
 						{transfer ? null : (
 							<Button
 								icon={isMobile ? <Icon icon={Download} size="sm" /> : undefined}
@@ -384,6 +385,10 @@ export function TitleTorrentsList({
 							size="sm"
 							target="_blank"
 							variant="ghost"
+						/>
+						<TorrentFileButton
+							title={item.title}
+							torrentFileUrl={item.torrentFileUrl}
 						/>
 					</HStack>
 				}
